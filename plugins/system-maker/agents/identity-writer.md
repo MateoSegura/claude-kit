@@ -50,14 +50,14 @@ This is the core identity. It uses special frontmatter to auto-load for every ta
 
 ```yaml
 ---
-name: identity
+name: AGENT_NAME:identity
 description: "Core identity, methodology, and coding standards for [domain] development. Defines the agent's role, non-negotiable rules, and working methodology for all [domain] tasks."
 user-invocable: false
 ---
 ```
 
 Key frontmatter details:
-- `name: identity` — always use this name
+- `name: AGENT_NAME:identity` — always prefix with the plugin name (e.g., `coding-embedded-zephyr-engineer:identity`). This ensures skills are unambiguous when multiple plugins are loaded.
 - `description:` — must be broad enough to match ANY task in the domain. Claude uses this description to decide whether to load the skill. If the description is too narrow (e.g., "Zephyr devicetree configuration"), it only loads for devicetree tasks. Make it cover the entire domain.
 - `user-invocable: false` — prevents users from manually invoking it as a slash command. It loads automatically based on description match.
 
@@ -86,7 +86,7 @@ Step-by-step workflows for the 3-5 most common tasks in the domain. Each workflo
 
 ```markdown
 ---
-name: identity
+name: coding-embedded-zephyr-engineer:identity
 description: "Core identity, methodology, and coding standards for embedded systems development with Zephyr RTOS. Defines the agent's role, non-negotiable rules, and working methodology for all Zephyr firmware, devicetree, Kconfig, and driver development tasks."
 user-invocable: false
 ---
@@ -171,7 +171,7 @@ When creating the identity for a knowledge plugin (role="knowledge"):
 The identity SKILL.md must be MINIMAL — approximately 40 lines. It is a domain overview, NOT a persona.
 
 Structure:
-- Frontmatter: name: identity, description, user-invocable: false
+- Frontmatter: name: AGENT_NAME:identity, description, user-invocable: false (AGENT_NAME is the plugin name)
 - Title: "<Domain> — Domain Knowledge"
 - One paragraph describing the domain scope
 - Bullet list of what the plugin contains (skill categories)

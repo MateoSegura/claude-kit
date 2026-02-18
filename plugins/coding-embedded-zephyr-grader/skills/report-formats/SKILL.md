@@ -1,5 +1,5 @@
 ---
-name: report-formats
+name: coding-embedded-zephyr-grader:report-formats
 description: "Output format specifications for grading reports including Markdown scorecard, JSON schema for machine-readable results, HTML comparison tables, and report section structure for single and A/B grading modes."
 ---
 

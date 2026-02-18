@@ -1,5 +1,5 @@
 ---
-name: identity
+name: coding-embedded-zephyr-knowledge:identity
 description: "Domain overview for Zephyr RTOS embedded development knowledge base"
 user-invocable: false
 ---

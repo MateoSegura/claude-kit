@@ -1,5 +1,5 @@
 ---
-name: identity
+name: system-updater:identity
 description: Core identity and methodology for the system-updater plugin. Defines the plugin's role as a safe, surgical enhancement orchestrator for existing Claude Code plugins through a 7-phase staged workflow. Auto-loaded for all domain tasks.
 user-invocable: false
 ---

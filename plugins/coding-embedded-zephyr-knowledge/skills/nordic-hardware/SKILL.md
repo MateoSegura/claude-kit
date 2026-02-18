@@ -1,5 +1,5 @@
 ---
-name: nordic-hardware
+name: coding-embedded-zephyr-knowledge:nordic-hardware
 description: Nordic nRF hardware support — nRF52/53/54/91 families, BLE controller, power management (DCDC, RAM retention), nrfjprog/nrfutil, cellular modem
 user-invocable: false
 ---

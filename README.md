@@ -39,7 +39,6 @@ kit validate coding-embedded-zephyr-engineer
 **Smart loading:**
 - **Domain shortcuts** — `coding-embedded-zephyr` loads all three: `engineer`, `grader`, `knowledge`
 - **Companion auto-load** — a plugin can declare companions in `.claude-plugin/ctl.json`; kit loads them automatically. The `engineer` plugin always pulls in `knowledge`.
-- **Aliases** — named bundles in `config.json` (e.g., `zephyr-planned` = planner + knowledge + engineer)
 
 ## Plugins
 
@@ -50,7 +49,7 @@ kit validate coding-embedded-zephyr-engineer
 | `coding-embedded-zephyr-grader` | Firmware code review and grading |
 | `system-maker` | Build new domain plugins via guided workflow |
 | `system-updater` | Enhance existing plugins |
-| `core-planner` | Deterministic planning with plan files |
+| `core-spec` | Spec-driven development with plan files and verification |
 
 ## Update
 

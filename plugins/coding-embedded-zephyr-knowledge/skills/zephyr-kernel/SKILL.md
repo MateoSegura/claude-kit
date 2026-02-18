@@ -1,5 +1,5 @@
 ---
-name: zephyr-kernel
+name: coding-embedded-zephyr-knowledge:zephyr-kernel
 description: Zephyr RTOS kernel primitives — threads, scheduling, synchronization, timers, memory management, device driver model, logging, and power management
 user-invocable: false
 ---

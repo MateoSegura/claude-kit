@@ -1,5 +1,5 @@
 ---
-name: security-boot
+name: coding-embedded-zephyr-knowledge:security-boot
 description: Secure boot chain with MCUboot bootloader, TF-M trusted execution, and PSA Crypto — sysbuild configuration, image signing, and secure partitions
 user-invocable: false
 ---

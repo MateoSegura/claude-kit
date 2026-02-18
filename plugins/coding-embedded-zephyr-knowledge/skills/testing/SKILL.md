@@ -1,5 +1,5 @@
 ---
-name: testing
+name: coding-embedded-zephyr-knowledge:testing
 description: Zephyr testing strategy — twister test framework, hardware-in-the-loop patterns, test pyramid, coverage analysis, and CI integration
 user-invocable: false
 ---

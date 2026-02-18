@@ -1,5 +1,5 @@
 ---
-name: devicetree-kconfig
+name: coding-embedded-zephyr-knowledge:devicetree-kconfig
 description: Zephyr devicetree and Kconfig unified configuration — DTS syntax, overlays, bindings, Kconfig symbols, dependencies, and auto-enable strategies
 user-invocable: false
 ---

@@ -1,5 +1,5 @@
 ---
-name: serialization
+name: coding-embedded-zephyr-knowledge:serialization
 description: Data serialization in Zephyr — zcbor CBOR codec vs protobuf with nanopb, schema definition, code generation, and integration patterns
 user-invocable: false
 ---

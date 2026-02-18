@@ -1,5 +1,5 @@
 ---
-name: identity
+name: coding-embedded-zephyr-engineer:identity
 description: "Core identity, methodology, and coding standards for embedded systems development with Zephyr RTOS. Defines the agent's role, non-negotiable rules, and working methodology for all Zephyr firmware architecture, driver development, devicetree configuration, Kconfig management, board porting, power management, BLE/networking, testing, debugging, flashing, OTA/DFU, and CI/CD tasks."
 user-invocable: false
 ---

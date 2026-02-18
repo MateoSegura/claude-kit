@@ -1,5 +1,5 @@
 ---
-name: nxp-hardware
+name: coding-embedded-zephyr-knowledge:nxp-hardware
 description: NXP hardware support — i.MX RT crossover MCUs, LPC Cortex-M33, Kinetis, FlexSPI NOR boot, MCUXpresso SDK, security features (EdgeLock, HAB)
 user-invocable: false
 ---
