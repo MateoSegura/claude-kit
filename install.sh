@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-KIT_HOME="${KIT_HOME:-$HOME/.kit}"
+KIT_HOME="${KIT_HOME:-$HOME/.claude-kit}"
 REPO_URL="https://github.com/MateoSegura/claude-kit.git"
 BIN_DIR="$HOME/.local/bin"
 
@@ -12,10 +12,10 @@ _Y='\033[0;33m'
 _R='\033[0;31m'
 _N='\033[0m'
 
-info() { echo -e "${_B}[kit]${_N} $*"; }
-ok()   { echo -e "${_G}[kit]${_N} $*"; }
-warn() { echo -e "${_Y}[kit]${_N} $*"; }
-err()  { echo -e "${_R}[kit]${_N} $*" >&2; }
+info() { echo -e "${_B}[claude-kit]${_N} $*"; }
+ok()   { echo -e "${_G}[claude-kit]${_N} $*"; }
+warn() { echo -e "${_Y}[claude-kit]${_N} $*"; }
+err()  { echo -e "${_R}[claude-kit]${_N} $*" >&2; }
 
 # ── Dependency checks ─────────────────────────────────────────────────────────
 
@@ -43,18 +43,18 @@ if [ -d "$KIT_HOME/.git" ]; then
   VER=$(git -C "$KIT_HOME" describe --tags --always 2>/dev/null || git -C "$KIT_HOME" rev-parse --short HEAD)
   ok "Updated → $VER"
 else
-  info "Installing kit to $KIT_HOME ..."
+  info "Installing to $KIT_HOME ..."
   git clone "$REPO_URL" "$KIT_HOME"
   VER=$(git -C "$KIT_HOME" describe --tags --always 2>/dev/null || git -C "$KIT_HOME" rev-parse --short HEAD)
   ok "Installed → $VER"
 fi
 
-chmod +x "$KIT_HOME/kit"
+chmod +x "$KIT_HOME/claude-kit"
 
 # ── Link binary ───────────────────────────────────────────────────────────────
 
 mkdir -p "$BIN_DIR"
-ln -sf "$KIT_HOME/kit" "$BIN_DIR/kit"
+ln -sf "$KIT_HOME/claude-kit" "$BIN_DIR/claude-kit"
 
 # ── Add to PATH ───────────────────────────────────────────────────────────────
 
@@ -64,7 +64,7 @@ add_to_rc() {
   local rc="$1"
   if [ -f "$rc" ] && ! grep -qF 'local/bin' "$rc" 2>/dev/null; then
     echo "" >> "$rc"
-    echo "# kit (claude plugin loader)" >> "$rc"
+    echo "# claude-kit" >> "$rc"
     echo "$PATH_LINE" >> "$rc"
     info "Added ~/.local/bin to PATH in $(basename "$rc")"
   fi
@@ -86,16 +86,19 @@ esac
 # ── Done ──────────────────────────────────────────────────────────────────────
 
 echo ""
-ok "kit is ready."
+ok "claude-kit is ready."
 echo ""
-echo "  If 'kit' isn't found, restart your shell or run:"
+echo "  If 'claude-kit' isn't found, restart your shell or run:"
 echo "    export PATH=\"\$HOME/.local/bin:\$PATH\""
 echo ""
 echo "  Then:"
-echo "    kit list                          # see available domains"
-echo "    kit run coding-embedded-zephyr    # Zephyr engineer + grader + knowledge"
-echo "    kit run --yolo coding-embedded-zephyr-engineer  # no permission prompts"
+echo "    claude-kit list"
+echo "    claude-kit --kit coding-embedded-zephyr"
+echo "    claude-kit --kit coding-embedded-zephyr --model sonnet --yolo"
 echo ""
 echo "  Keep plugins up to date:"
-echo "    kit update"
+echo "    claude-kit update"
+echo ""
+echo "  To uninstall:"
+echo "    claude-kit uninstall"
 echo ""

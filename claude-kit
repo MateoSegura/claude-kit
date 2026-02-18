@@ -1,0 +1,361 @@
+#!/bin/bash
+set -euo pipefail
+
+# Resolve INSTALL_DIR even when invoked via symlink
+_SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$_SOURCE" ]; do
+  _DIR="$(cd "$(dirname "$_SOURCE")" && pwd)"
+  _SOURCE="$(readlink "$_SOURCE")"
+  [[ "$_SOURCE" != /* ]] && _SOURCE="$_DIR/$_SOURCE"
+done
+INSTALL_DIR="$(cd "$(dirname "$_SOURCE")" && pwd)"
+
+PLUGINS_DIR="$INSTALL_DIR/plugins"
+CONFIG_FILE="$INSTALL_DIR/config.json"
+
+KNOWN_TYPES="coding system"
+
+resolve_alias() {
+  local name="$1"
+  if [[ -f "$CONFIG_FILE" ]] && command -v jq &>/dev/null; then
+    local plugins
+    plugins=$(jq -r --arg n "$name" '.aliases[$n].plugins // empty | .[]' "$CONFIG_FILE" 2>/dev/null)
+    if [[ -n "$plugins" ]]; then
+      echo "$plugins"
+      return 0
+    fi
+  fi
+  return 1
+}
+
+resolve_prefix() {
+  local prefix="$1"
+  local found=false
+  for d in "$PLUGINS_DIR/$prefix"-*/; do
+    if [[ -d "$d" ]]; then
+      found=true
+      basename "$d"
+    fi
+  done
+  $found
+}
+
+resolve_companions() {
+  local plugin_dir="$1"
+  local ctljson="$plugin_dir/.claude-plugin/ctl.json"
+  if [[ -f "$ctljson" ]] && command -v jq &>/dev/null; then
+    jq -r '.companions // empty | .[]' "$ctljson" 2>/dev/null
+  fi
+}
+
+# Expand a single kit name into a deduplicated list of plugin names (with companions).
+# Appends results to the global all_plugins array.
+expand_kit() {
+  local kit_name="$1"
+
+  local -a plugin_names=()
+  local resolved
+  if resolved=$(resolve_alias "$kit_name"); then
+    while IFS= read -r p; do [[ -n "$p" ]] && plugin_names+=("$p"); done <<< "$resolved"
+  elif resolved=$(resolve_prefix "$kit_name"); then
+    while IFS= read -r p; do [[ -n "$p" ]] && plugin_names+=("$p"); done <<< "$resolved"
+  else
+    plugin_names=("$kit_name")
+  fi
+
+  for pname in "${plugin_names[@]}"; do
+    local pdir="$PLUGINS_DIR/$pname"
+    if [ ! -d "$pdir" ]; then
+      echo "Error: Kit '$pname' not found in $PLUGINS_DIR/" >&2
+      echo "" >&2
+      cmd_list >&2
+      exit 1
+    fi
+
+    # Companions first
+    local companions
+    companions=$(resolve_companions "$pdir")
+    if [[ -n "$companions" ]]; then
+      while IFS= read -r comp; do
+        if [[ -n "$comp" ]]; then
+          local comp_dir="$PLUGINS_DIR/$comp"
+          if [ ! -d "$comp_dir" ]; then
+            echo "Warning: Companion '$comp' (required by '$pname') not found." >&2
+          else
+            local already=false
+            for existing in "${all_plugins[@]+"${all_plugins[@]}"}"; do
+              [[ "$existing" == "$comp" ]] && already=true && break
+            done
+            [[ "$already" == "false" ]] && all_plugins+=("$comp")
+          fi
+        fi
+      done <<< "$companions"
+    fi
+
+    # Plugin itself
+    local already=false
+    for existing in "${all_plugins[@]+"${all_plugins[@]}"}"; do
+      [[ "$existing" == "$pname" ]] && already=true && break
+    done
+    [[ "$already" == "false" ]] && all_plugins+=("$pname")
+  done
+}
+
+cmd_run() {
+  local -a kit_names=()
+  local skip_permissions=false
+  local model="opus"
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --kit|-k)
+        [[ -z "${2:-}" ]] && { echo "Error: --kit requires a name"; exit 1; }
+        kit_names+=("$2")
+        shift 2
+        ;;
+      --model|-m)
+        [[ -z "${2:-}" ]] && { echo "Error: --model requires a value"; exit 1; }
+        model="$2"
+        shift 2
+        ;;
+      --dangerously-skip-permissions|--yolo|-y)
+        skip_permissions=true
+        shift
+        ;;
+      -*)
+        echo "Unknown flag: $1"
+        echo "Run 'claude-kit help' for usage."
+        exit 1
+        ;;
+      *)
+        # Bare positional arg treated as a kit name (convenience)
+        kit_names+=("$1")
+        shift
+        ;;
+    esac
+  done
+
+  if [[ ${#kit_names[@]} -eq 0 ]]; then
+    echo "Error: Specify at least one kit with --kit <name>"
+    echo ""
+    cmd_list
+    exit 1
+  fi
+
+  local -a all_plugins=()
+  for kit_name in "${kit_names[@]}"; do
+    expand_kit "$kit_name"
+  done
+
+  export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+
+  local -a claude_args=()
+
+  for p in "${all_plugins[@]}"; do
+    claude_args+=(--plugin-dir "$PLUGINS_DIR/$p")
+  done
+
+  claude_args+=(--model "$model")
+
+  if [ "$skip_permissions" = true ]; then
+    claude_args+=(--dangerously-skip-permissions)
+    echo "Warning: Running with --dangerously-skip-permissions"
+  fi
+
+  if [[ ${#all_plugins[@]} -gt 1 ]]; then
+    echo "Loading: ${all_plugins[*]}"
+  fi
+
+  # Launch from the user's current directory so their CLAUDE.md loads naturally.
+  exec claude "${claude_args[@]}"
+}
+
+cmd_list() {
+  echo "Available kits:"
+  if [ -d "$PLUGINS_DIR" ]; then
+    ls -1 "$PLUGINS_DIR/" 2>/dev/null | while read -r name; do
+      [ -d "$PLUGINS_DIR/$name" ] && echo "  $name"
+    done
+  else
+    echo "  (none)"
+  fi
+
+  if [ -d "$PLUGINS_DIR" ]; then
+    local -A seen_prefixes=()
+    local -a team_lines=()
+    for d in "$PLUGINS_DIR"/*/; do
+      [[ ! -d "$d" ]] && continue
+      local name; name=$(basename "$d")
+      local prefix="${name%-*}"
+      if [[ -n "$prefix" && "$prefix" != "$name" && -z "${seen_prefixes[$prefix]+x}" ]]; then
+        local count=0
+        for _ in "$PLUGINS_DIR/$prefix"-*/; do count=$((count + 1)); done
+        if [[ $count -ge 2 ]]; then
+          local members
+          members=$(for m in "$PLUGINS_DIR/$prefix"-*/; do printf "%s" "$(basename "$m"),"; done)
+          team_lines+=("  $prefix → [${members%,}]")
+        fi
+        seen_prefixes[$prefix]=1
+      fi
+    done
+    if [[ ${#team_lines[@]} -gt 0 ]]; then
+      echo ""
+      echo "Shortcuts (loads full group):"
+      printf '%s\n' "${team_lines[@]}"
+    fi
+  fi
+
+  if [[ -f "$CONFIG_FILE" ]] && command -v jq &>/dev/null; then
+    local aliases
+    aliases=$(jq -r '.aliases // empty | keys[]' "$CONFIG_FILE" 2>/dev/null)
+    if [[ -n "$aliases" ]]; then
+      echo ""
+      echo "Aliases:"
+      while IFS= read -r alias_name; do
+        local desc plugins_list
+        desc=$(jq -r --arg n "$alias_name" '.aliases[$n].description // "no description"' "$CONFIG_FILE" 2>/dev/null)
+        plugins_list=$(jq -r --arg n "$alias_name" '.aliases[$n].plugins | join(", ")' "$CONFIG_FILE" 2>/dev/null)
+        echo "  $alias_name → [$plugins_list] ($desc)"
+      done <<< "$aliases"
+    fi
+  fi
+}
+
+cmd_validate() {
+  local name="${1:?Usage: claude-kit validate <name>}"
+  local plugin_dir="$PLUGINS_DIR/$name"
+  local errors=0
+
+  [ ! -d "$plugin_dir" ] && { echo "Error: '$name' not found in $PLUGINS_DIR/"; exit 1; }
+
+  echo "Validating: $name"
+  echo ""
+
+  if [ -f "$plugin_dir/.claude-plugin/plugin.json" ]; then
+    echo "  [OK] .claude-plugin/plugin.json exists"
+    command -v jq &>/dev/null && ! jq empty "$plugin_dir/.claude-plugin/plugin.json" 2>/dev/null && {
+      echo "  [FAIL] plugin.json is not valid JSON"; errors=$((errors + 1))
+    }
+  else
+    echo "  [FAIL] .claude-plugin/plugin.json MISSING (required)"; errors=$((errors + 1))
+  fi
+
+  for dir in commands agents skills hooks; do
+    if [ -d "$plugin_dir/$dir" ]; then
+      local count; count=$(find "$plugin_dir/$dir" -type f | wc -l)
+      echo "  [OK] $dir/ ($count files)"
+    else
+      echo "  [--] $dir/ (optional)"
+    fi
+  done
+
+  if [ -f "$plugin_dir/hooks/hooks.json" ] && command -v jq &>/dev/null; then
+    if ! jq empty "$plugin_dir/hooks/hooks.json" 2>/dev/null; then
+      echo "  [FAIL] hooks/hooks.json invalid JSON"; errors=$((errors + 1))
+    else
+      local type; type=$(jq -r '.hooks | type' "$plugin_dir/hooks/hooks.json" 2>/dev/null)
+      [[ "$type" == "object" ]] && echo "  [OK] hooks/hooks.json uses event-based keys"
+      [[ "$type" == "array" ]]  && { echo "  [WARN] hooks/hooks.json needs event-based keys"; errors=$((errors + 1)); }
+    fi
+  fi
+
+  local ctl_json="$plugin_dir/.claude-plugin/ctl.json"
+  if command -v jq &>/dev/null && [ -f "$ctl_json" ]; then
+    local companions
+    companions=$(jq -r '.companions // empty | .[]' "$ctl_json" 2>/dev/null)
+    if [[ -n "$companions" ]]; then
+      while IFS= read -r comp; do
+        [[ -z "$comp" ]] && continue
+        if [ -d "$PLUGINS_DIR/$comp" ]; then
+          echo "  [OK] companion '$comp' exists"
+        else
+          echo "  [FAIL] companion '$comp' NOT FOUND"; errors=$((errors + 1))
+        fi
+      done <<< "$companions"
+    fi
+  fi
+
+  echo ""
+  [ "$errors" -eq 0 ] && echo "Validation passed." || { echo "$errors issue(s) found."; exit 1; }
+}
+
+cmd_update() {
+  echo "Updating claude-kit..."
+  git -C "$INSTALL_DIR" pull --ff-only
+  local ver
+  ver=$(git -C "$INSTALL_DIR" describe --tags --always 2>/dev/null || git -C "$INSTALL_DIR" rev-parse --short HEAD 2>/dev/null || echo "unknown")
+  echo "claude-kit updated → $ver"
+}
+
+cmd_uninstall() {
+  local bin_link="$HOME/.local/bin/claude-kit"
+
+  echo "This will remove:"
+  echo "  $INSTALL_DIR  (plugins and CLI)"
+  echo "  $bin_link  (symlink)"
+  echo ""
+  read -r -p "Continue? [y/N] " confirm
+  [[ "$confirm" != [yY] ]] && { echo "Aborted."; exit 0; }
+
+  [ -L "$bin_link" ] && rm -f "$bin_link" && echo "Removed $bin_link"
+  rm -rf "$INSTALL_DIR" && echo "Removed $INSTALL_DIR"
+
+  echo ""
+  echo "claude-kit uninstalled."
+  echo "You can remove the PATH line from your shell rc file manually if desired."
+}
+
+# ── Dispatch ──────────────────────────────────────────────────────────────────
+
+case "${1:-help}" in
+  list)
+    cmd_list
+    ;;
+  update)
+    cmd_update
+    ;;
+  uninstall)
+    cmd_uninstall
+    ;;
+  validate)
+    shift; cmd_validate "$@"
+    ;;
+  help|--help|-h)
+    cat <<'EOF'
+Usage:
+  claude-kit --kit <name> [--kit <name>...] [options]
+  claude-kit list
+  claude-kit update
+  claude-kit uninstall
+  claude-kit validate <name>
+
+Options:
+  --kit, -k <name>                  Kit to load (repeatable)
+  --model, -m <model>               Claude model (default: opus)
+  --dangerously-skip-permissions    Skip all permission prompts
+  --yolo, -y                        Alias for --dangerously-skip-permissions
+
+Examples:
+  claude-kit --kit coding-embedded-zephyr
+  claude-kit --kit coding-embedded-zephyr --kit system-planner
+  claude-kit --kit coding-embedded-zephyr --model sonnet --yolo
+
+Kit shortcuts load full groups:
+  coding-embedded-zephyr  →  engineer + grader + knowledge (companions auto-loaded)
+
+EOF
+    ;;
+  --kit|-k|--model|-m|--dangerously-skip-permissions|--yolo|-y)
+    # Flags at top level → implicit run
+    cmd_run "$@"
+    ;;
+  -*)
+    echo "Unknown flag: $1"
+    echo "Run 'claude-kit help' for usage."
+    exit 1
+    ;;
+  *)
+    # Bare positional → implicit run with kit name
+    cmd_run "$@"
+    ;;
+esac
