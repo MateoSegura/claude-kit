@@ -41,18 +41,14 @@
         "matcher": "Write|Edit",
         "hooks": [
           {
-            "type": "prompt",
-            "model": "haiku",
-            "timeout": 15,
-            "prompt": "You are a plan file integrity checker for the core-planner plugin.\n\nA file was just written or edited. Check if it is under the docs/plans/ directory.\n\nTool input: {{tool_input}}\nTool result: {{tool_result}}\n\nIf the file is NOT under docs/plans/, respond only: {\"ok\": true}\n\nIf the file IS under docs/plans/, check:\n1. If it's an overview.md: verify it has all required sections (## Context, ## Goal, ## Architecture Decisions, ## Constraints, ## Phase Summary, ## Key Files). Report any missing sections.\n2. If it's a phase-NN.md: verify it has the template sections (## Objective, ## Steps, ## Files to Create/Modify, ## Acceptance Criteria, ## Dependencies). Report any missing sections.\n3. If it's status.log: WARN — status.log should only be written by hook scripts, not directly by Claude. This may indicate a non-negotiable rule violation.\n\nAlways end your response with either {\"ok\": true} if no issues found, or {\"ok\": false, \"reason\": \"...\"} if issues detected. This is PostToolUse so the edit already happened — just report findings for awareness.",
-            "description": "Check plan file integrity after writes"
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-plan-integrity.sh",
+            "description": "Validate plan file structure after writes (overview.md sections, phase file sections, status.log guard)"
           },
           {
-            "type": "prompt",
-            "model": "haiku",
-            "timeout": 15,
-            "description": "Check if edited file aligns with current phase scope (advisory drift detection)",
-            "prompt": "You are a plan-alignment drift detector for the core-planner plugin. Your job is to check whether a file edit falls within the current phase's declared scope. This is an advisory check — a nudge, not a hard block.\n\nINPUT: The tool just completed a Write or Edit. The file path is in {{tool_input}}.\n\nPROCEDURE:\n\n1. Extract the file path from the tool input.\n\n2. If the file is under docs/plans/, respond immediately: {\"ok\": true}\n   Plan file edits are always in scope.\n\n3. Read docs/plans/.active to find the active plan directory.\n   If .active does not exist or is empty: {\"ok\": true}\n   No active plan means nothing to check against.\n\n4. Determine the current phase number:\n   a. Read docs/plans/<active>/.current-phase (single integer).\n   b. If missing, read phase files to find the lowest-numbered phase with uncompleted steps (lines containing \"- [ ]\").\n   c. If neither works: {\"ok\": true}\n\n5. Read docs/plans/<active>/phases/phase-NN.md (zero-pad the phase number, e.g., phase-03.md).\n   If the phase file does not exist: {\"ok\": true}\n\n6. Check if the edited file appears in:\n   a. The \"## Files to Create/Modify\" section — match the file path or a parent directory prefix (e.g., phase lists \"src/api/\" and edit is \"src/api/routes.ts\")\n   b. The \"## Steps\" section — check if the file is mentioned in any step description\n   \n7. If the file is found in either section: {\"ok\": true}\n\n8. If NOT found:\n   {\"ok\": false, \"reason\": \"Edit to <filepath> is not in Phase <NN>'s scope. Current phase targets: <comma-separated list from Files to Create/Modify>. If this edit is intentional (bug fix, unplanned dependency, refactor), acknowledge the drift and either update the phase file to include this work or refocus on the current phase's objectives.\"}\n\nKeep your response to ONLY the JSON verdict. No explanation needed."
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-phase-drift.sh",
+            "description": "Advisory drift detection: warn when edit falls outside current phase scope"
           }
         ]
       }
