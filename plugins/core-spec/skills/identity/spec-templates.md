@@ -2,7 +2,9 @@
 
 Reference templates for the files created by `/spec:new`. These define the canonical format that the context-recovery agent expects.
 
-Named spec directories follow the convention `docs/specs/<name>-<YYYY-MM-DD>/` where:
+> **Note**: The spec root defaults to `docs/specs/` but is configurable per-project via `~/.claude-kit/spec-registry.json`. All path examples below use the default; the actual root is resolved at runtime by `/spec:new` (Step 0) and by hook scripts via `resolve-active-spec.sh`.
+
+Named spec directories follow the convention `<SPEC_ROOT>/<name>-<YYYY-MM-DD>/` where:
 - `<name>` must be 2-4 kebab-case words
 - `<YYYY-MM-DD>` is the creation date
 
@@ -87,7 +89,7 @@ Phase files use zero-padded naming: `phase-01.md`, `phase-02.md`, etc.
 
 ## status.log format
 
-The status.log is append-only and written exclusively by hook scripts. Located at `docs/specs/<name>-<YYYY-MM-DD>/status.log`.
+The status.log is append-only and written exclusively by hook scripts. Located at `<SPEC_ROOT>/<name>-<YYYY-MM-DD>/status.log`.
 
 Format:
 

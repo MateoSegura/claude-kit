@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Check if any build directories have uncommitted work before stopping.
 # Called by the Stop hook to warn about potential lost work.
-# NOTE: Build directory pattern /tmp/agent-config-build-* matches the convention defined in commands/make-agent.md Phase 2
+# NOTE: Build directory pattern /tmp/claude-kit-build-* matches the convention defined in commands/make-agent.md Phase 2
 
-BUILD_DIRS=$(ls -d /tmp/agent-config-build-* 2>/dev/null)
+BUILD_DIRS=$(ls -d /tmp/claude-kit-build-* 2>/dev/null)
 
 if [ -z "$BUILD_DIRS" ]; then
   exit 0

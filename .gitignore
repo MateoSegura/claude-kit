@@ -7,7 +7,7 @@ Thumbs.db
 .idea/
 
 # Build artifacts
-/tmp/agent-config-build-*/
+/tmp/claude-kit-build-*/
 
 # Local overrides
 *.local

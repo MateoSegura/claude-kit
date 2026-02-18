@@ -17,8 +17,8 @@ if [ -z "$FILE_PATH" ]; then
   exit 0
 fi
 
-# Always allow: spec directory files, dotfiles/configs, docs, markdown, json, yaml, toml, scripts
-if echo "$FILE_PATH" | grep -qE '(^|/)docs/specs/|/\.claude|\.claude-plugin|CLAUDE\.md|\.md$|\.json$|\.ya?ml$|\.toml$|\.txt$|\.log$|\.sh$|\.conf$|\.cfg$|\.ini$|Makefile|CMakeLists|Kconfig|\.gitignore|\.editorconfig'; then
+# Always allow: spec root files, dotfiles/configs, docs, markdown, json, yaml, toml, scripts
+if echo "$FILE_PATH" | grep -qF "${SPEC_ROOT}/" || echo "$FILE_PATH" | grep -qE '/\.claude|\.claude-plugin|CLAUDE\.md|\.md$|\.json$|\.ya?ml$|\.toml$|\.txt$|\.log$|\.sh$|\.conf$|\.cfg$|\.ini$|Makefile|CMakeLists|Kconfig|\.gitignore|\.editorconfig'; then
   exit 0
 fi
 
@@ -32,7 +32,7 @@ if [ -z "$ACTIVE_PLAN_DIR" ] || [ ! -f "$ACTIVE_PLAN_DIR/overview.md" ]; then
   echo "BLOCKED: No active spec found in $(pwd)." >&2
   echo "[spec] Create a spec first with /spec:new before creating new source files." >&2
   echo "[spec] Editing existing files is always allowed." >&2
-  echo "[spec] Allowed without spec: docs/specs/ files, configs (.json, .yaml, .toml), docs (.md), scripts (.sh)." >&2
+  echo "[spec] Allowed without spec: spec root ($SPEC_ROOT/) files, configs (.json, .yaml, .toml), docs (.md), scripts (.sh)." >&2
   exit 2
 fi
 

@@ -12,7 +12,7 @@ You are the orchestrator for enhancing existing Claude Code plugins. You guide t
 ## Critical Rules — Read Before Doing Anything
 
 1. **Never break existing functionality.** Every change must be backwards-compatible. Never remove hooks, skills, or agents that the user didn't ask to remove.
-2. **Staging directory**: ALL changes are made to a staging copy at `/tmp/agent-config-update-<PLUGIN_NAME>/`. The original plugin is untouched until finalization.
+2. **Staging directory**: ALL changes are made to a staging copy at `/tmp/claude-kit-update-<PLUGIN_NAME>/`. The original plugin is untouched until finalization.
 3. **User's ~/.claude is sacred**: Never read, modify, or reference `~/.claude`.
 4. **Plugin directories**: `$CLAUDE_KIT_BUNDLED_DIR` for bundled plugins, `$CLAUDE_KIT_LOCAL_DIR` for user-created local plugins — NEVER `/tmp`. Updated plugins are installed back to `$CLAUDE_KIT_OUTPUT_DIR`.
 5. **Format reference**: The canonical plugin format reference lives at `$CLAUDE_KIT_BUNDLED_DIR/system-maker/skills/plugin-structure/`. Pass this path to change-writer agents.
@@ -290,8 +290,8 @@ After receiving the plugin analysis, check if the target plugin has companions:
 1. Create the staging directory by copying the existing plugin:
 
    ```bash
-   rm -rf /tmp/agent-config-update-<PLUGIN_NAME>
-   cp -r $CLAUDE_KIT_OUTPUT_DIR/<PLUGIN_NAME> /tmp/agent-config-update-<PLUGIN_NAME>
+   rm -rf /tmp/claude-kit-update-<PLUGIN_NAME>
+   cp -r $CLAUDE_KIT_OUTPUT_DIR/<PLUGIN_NAME> /tmp/claude-kit-update-<PLUGIN_NAME>
    ```
 
 2. Group the changes into independent batches that can run in parallel:
@@ -308,7 +308,7 @@ After receiving the plugin analysis, check if the target plugin has companions:
    ```
    You are the change-writer agent. Implement these changes to the plugin.
 
-   STAGING_DIR: /tmp/agent-config-update-<PLUGIN_NAME>
+   STAGING_DIR: /tmp/claude-kit-update-<PLUGIN_NAME>
    FORMAT_REFERENCE_DIR: $CLAUDE_KIT_BUNDLED_DIR/system-maker/skills/plugin-structure/
 
    PLUGIN_ANALYSIS:
@@ -326,15 +326,15 @@ After receiving the plugin analysis, check if the target plugin has companions:
 
    ```bash
    # Validate all JSON files
-   python3 -m json.tool /tmp/agent-config-update-<PLUGIN_NAME>/.claude-plugin/plugin.json > /dev/null 2>&1 && echo "plugin.json: OK" || echo "plugin.json: INVALID"
-   python3 -m json.tool /tmp/agent-config-update-<PLUGIN_NAME>/hooks/hooks.json > /dev/null 2>&1 && echo "hooks.json: OK" || echo "hooks.json: INVALID"
-   test -f /tmp/agent-config-update-<PLUGIN_NAME>/.lsp.json && (python3 -m json.tool /tmp/agent-config-update-<PLUGIN_NAME>/.lsp.json > /dev/null 2>&1 && echo ".lsp.json: OK" || echo ".lsp.json: INVALID")
-   test -f /tmp/agent-config-update-<PLUGIN_NAME>/.mcp.json && (python3 -m json.tool /tmp/agent-config-update-<PLUGIN_NAME>/.mcp.json > /dev/null 2>&1 && echo ".mcp.json: OK" || echo ".mcp.json: INVALID")
+   python3 -m json.tool /tmp/claude-kit-update-<PLUGIN_NAME>/.claude-plugin/plugin.json > /dev/null 2>&1 && echo "plugin.json: OK" || echo "plugin.json: INVALID"
+   python3 -m json.tool /tmp/claude-kit-update-<PLUGIN_NAME>/hooks/hooks.json > /dev/null 2>&1 && echo "hooks.json: OK" || echo "hooks.json: INVALID"
+   test -f /tmp/claude-kit-update-<PLUGIN_NAME>/.lsp.json && (python3 -m json.tool /tmp/claude-kit-update-<PLUGIN_NAME>/.lsp.json > /dev/null 2>&1 && echo ".lsp.json: OK" || echo ".lsp.json: INVALID")
+   test -f /tmp/claude-kit-update-<PLUGIN_NAME>/.mcp.json && (python3 -m json.tool /tmp/claude-kit-update-<PLUGIN_NAME>/.mcp.json > /dev/null 2>&1 && echo ".mcp.json: OK" || echo ".mcp.json: INVALID")
    ```
 
    ```bash
    # Check all agent .md files have frontmatter (start with ---)
-   for f in /tmp/agent-config-update-<PLUGIN_NAME>/agents/*.md 2>/dev/null; do
+   for f in /tmp/claude-kit-update-<PLUGIN_NAME>/agents/*.md 2>/dev/null; do
      [ -f "$f" ] || continue
      first_line=$(head -1 "$f")
      if [ "$first_line" = "---" ]; then
@@ -347,12 +347,12 @@ After receiving the plugin analysis, check if the target plugin has companions:
 
    ```bash
    # Check agent .md files use 'tools:' not 'allowed-tools:' in frontmatter
-   grep -l "allowed-tools:" /tmp/agent-config-update-<PLUGIN_NAME>/agents/*.md 2>/dev/null && echo "WARNING: Agent files should use 'tools:' not 'allowed-tools:'" || echo "OK: Agent frontmatter correct"
+   grep -l "allowed-tools:" /tmp/claude-kit-update-<PLUGIN_NAME>/agents/*.md 2>/dev/null && echo "WARNING: Agent files should use 'tools:' not 'allowed-tools:'" || echo "OK: Agent frontmatter correct"
    ```
 
    ```bash
    # Check command/skill .md files use 'allowed-tools:' not 'tools:' in frontmatter
-   for f in /tmp/agent-config-update-<PLUGIN_NAME>/commands/*.md 2>/dev/null; do
+   for f in /tmp/claude-kit-update-<PLUGIN_NAME>/commands/*.md 2>/dev/null; do
      [ -f "$f" ] || continue
      if head -20 "$f" | grep -q "^tools:"; then
        echo "WARNING: Command $f should use 'allowed-tools:' not 'tools:'"
@@ -362,7 +362,7 @@ After receiving the plugin analysis, check if the target plugin has companions:
 
    ```bash
    # List all files with line counts
-   find /tmp/agent-config-update-<PLUGIN_NAME> -type f | sort | while read f; do
+   find /tmp/claude-kit-update-<PLUGIN_NAME> -type f | sort | while read f; do
      lines=$(wc -l < "$f" 2>/dev/null || echo "?")
      echo "$lines $f"
    done
@@ -397,7 +397,7 @@ The `plugin-reviewer` agent performs an exhaustive 9-category audit of the entir
    You are the plugin-reviewer agent. Perform an exhaustive quality audit of this plugin.
 
    AGENT_NAME: <PLUGIN_NAME>
-   BUILD_DIR: /tmp/agent-config-update-<PLUGIN_NAME>
+   BUILD_DIR: /tmp/claude-kit-update-<PLUGIN_NAME>
    APPROVED_ARCH: Not applicable — this is an UPDATE to an existing plugin. Instead of checking against an approved architecture, audit the plugin as-is for internal consistency, correctness, and conformance to the plugin specification from your plugin-structure skill. Skip architecture conformance checks (S6, S7, S8, S11) and instead verify that all files present are well-formed and internally consistent.
 
    This is a STAGED UPDATE, not a fresh build. The plugin existed before and was modified. Focus especially on:
@@ -423,7 +423,7 @@ The `plugin-reviewer` agent performs an exhaustive 9-category audit of the entir
 4. **Apply mechanical fixes directly.** For each finding with `fix_type: "mechanical"`:
 
    - Use the Edit tool to apply the fix described in the finding's `fix` field.
-   - The file path is relative to the staging directory: `/tmp/agent-config-update-<PLUGIN_NAME>/<finding.file>`.
+   - The file path is relative to the staging directory: `/tmp/claude-kit-update-<PLUGIN_NAME>/<finding.file>`.
    - Track each fix applied.
 
 5. **Re-spawn the change-writer for content and structural fixes.** If there are findings with `fix_type: "content"` or `fix_type: "structural"`, batch them and launch a change-writer subagent:
@@ -436,7 +436,7 @@ The `plugin-reviewer` agent performs an exhaustive 9-category audit of the entir
    ```
    You are the change-writer agent. The plugin-reviewer found issues that need fixing. Apply these targeted fixes.
 
-   STAGING_DIR: /tmp/agent-config-update-<PLUGIN_NAME>
+   STAGING_DIR: /tmp/claude-kit-update-<PLUGIN_NAME>
    FORMAT_REFERENCE_DIR: $CLAUDE_KIT_BUNDLED_DIR/system-maker/skills/plugin-structure/
 
    REVIEW FINDINGS TO FIX:
@@ -499,7 +499,7 @@ The `plugin-reviewer` agent performs an exhaustive 9-category audit of the entir
    If "Abort": Clean up the staging directory and stop:
 
    ```bash
-   rm -rf /tmp/agent-config-update-<PLUGIN_NAME>
+   rm -rf /tmp/claude-kit-update-<PLUGIN_NAME>
    ```
 
 8. **If the overall grade is A, B, or C**: Proceed directly to Phase 7. No re-review needed.
@@ -517,7 +517,7 @@ The `plugin-reviewer` agent performs an exhaustive 9-category audit of the entir
 1. Show the user a diff of what changed:
 
    ```bash
-   diff -rq $CLAUDE_KIT_OUTPUT_DIR/<PLUGIN_NAME> /tmp/agent-config-update-<PLUGIN_NAME> | head -50
+   diff -rq $CLAUDE_KIT_OUTPUT_DIR/<PLUGIN_NAME> /tmp/claude-kit-update-<PLUGIN_NAME> | head -50
    ```
 
 2. For each new or modified file, show a brief summary of what it contains.
@@ -541,14 +541,14 @@ The `plugin-reviewer` agent performs an exhaustive 9-category audit of the entir
    a. Create a backup of the current plugin:
 
    ```bash
-   cp -r $CLAUDE_KIT_OUTPUT_DIR/<PLUGIN_NAME> /tmp/agent-config-backup-<PLUGIN_NAME>-$(date +%Y%m%d-%H%M%S)
+   cp -r $CLAUDE_KIT_OUTPUT_DIR/<PLUGIN_NAME> /tmp/claude-kit-backup-<PLUGIN_NAME>-$(date +%Y%m%d-%H%M%S)
    ```
 
    b. Copy the staging directory to replace the live plugin:
 
    ```bash
    rm -rf $CLAUDE_KIT_OUTPUT_DIR/<PLUGIN_NAME>
-   cp -r /tmp/agent-config-update-<PLUGIN_NAME> $CLAUDE_KIT_OUTPUT_DIR/<PLUGIN_NAME>
+   cp -r /tmp/claude-kit-update-<PLUGIN_NAME> $CLAUDE_KIT_OUTPUT_DIR/<PLUGIN_NAME>
    ```
 
    c. Run validation on the live plugin:
@@ -560,7 +560,7 @@ The `plugin-reviewer` agent performs an exhaustive 9-category audit of the entir
    d. Clean up staging:
 
    ```bash
-   rm -rf /tmp/agent-config-update-<PLUGIN_NAME>
+   rm -rf /tmp/claude-kit-update-<PLUGIN_NAME>
    ```
 
    e. Present completion message:
@@ -568,7 +568,7 @@ The `plugin-reviewer` agent performs an exhaustive 9-category audit of the entir
    ```
    Plugin <PLUGIN_NAME> has been updated successfully.
 
-   Backup saved to: /tmp/agent-config-backup-<PLUGIN_NAME>-<timestamp>
+   Backup saved to: /tmp/claude-kit-backup-<PLUGIN_NAME>-<timestamp>
 
    Changes applied:
    - <list of changes>
@@ -582,7 +582,7 @@ The `plugin-reviewer` agent performs an exhaustive 9-category audit of the entir
 6. If "Abort": clean up staging and inform the user:
 
    ```bash
-   rm -rf /tmp/agent-config-update-<PLUGIN_NAME>
+   rm -rf /tmp/claude-kit-update-<PLUGIN_NAME>
    ```
 
 </phase_7>
@@ -651,6 +651,6 @@ If Phase 5 validation detects issues (invalid JSON, wrong frontmatter fields):
 
 Total subagent dispatches: 4+ (analyzer, planner, 1+ writers, reviewer, + optional fix writer)
 
-Key difference from system-maker: The updater works on a COPY of the existing plugin in `/tmp/agent-config-update-<PLUGIN_NAME>/`. The original is untouched until the user explicitly finalizes. A timestamped backup is created before replacing the live plugin. The deep review (Phase 6) audits the ENTIRE staged plugin — not just the changed files — catching any issues the change-writer introduced before the user sees the result.
+Key difference from system-maker: The updater works on a COPY of the existing plugin in `/tmp/claude-kit-update-<PLUGIN_NAME>/`. The original is untouched until the user explicitly finalizes. A timestamped backup is created before replacing the live plugin. The deep review (Phase 6) audits the ENTIRE staged plugin — not just the changed files — catching any issues the change-writer introduced before the user sees the result.
 
 </workflow_summary>

@@ -25,7 +25,7 @@ This plugin is fundamentally different from domain-expert plugins:
 - **Domain plugins** (like `coding-embedded-zephyr-engineer`, `coding-frontend-react-engineer`) help users write code in a specific domain
 - **System-maker** helps users CREATE those domain plugins
 
-When system-maker runs, it builds a plugin skeleton in `/tmp/agent-config-build-<name>/`, validates it with comprehensive review, then installs it to `$CLAUDE_KIT_OUTPUT_DIR/` (local plugins directory for user installs, bundled directory for dev checkouts).
+When system-maker runs, it builds a plugin skeleton in `/tmp/claude-kit-build-<name>/`, validates it with comprehensive review, then installs it to `$CLAUDE_KIT_OUTPUT_DIR/` (local plugins directory for user installs, bundled directory for dev checkouts).
 
 The plugins you create contain:
 - Agent definitions (subagents with specific roles)
@@ -46,7 +46,7 @@ These rules are ABSOLUTE. Violating them breaks plugins or corrupts the user's e
 
 - **NEVER** read, modify, or reference `~/.claude` — the user's Claude configuration is sacred
 - **NEVER** write directly to `$CLAUDE_KIT_OUTPUT_DIR/` during plugin creation
-- **ALWAYS** use staging: `/tmp/agent-config-build-<name>/` for all file writes
+- **ALWAYS** use staging: `/tmp/claude-kit-build-<name>/` for all file writes
 - **ONLY** copy to the plugins directory after user approval in Phase 11
 
 ### 2. Frontmatter Field Conventions
@@ -126,7 +126,7 @@ The `claude-kit validate` command enforces the regex. Non-compliant names will f
 
 ### 8. Build Directory Lifecycle
 
-1. Create: `mkdir -p /tmp/agent-config-build-<name>`
+1. Create: `mkdir -p /tmp/claude-kit-build-<name>`
 2. Write all files to this directory during Phases 1-10
 3. Validate with plugin-reviewer
 4. Copy to `$CLAUDE_KIT_OUTPUT_DIR/<name>` ONLY after user approval

@@ -18,10 +18,10 @@ You are a surgeon, not an architect. The change-planner already decided WHAT to 
 ## Input
 
 You receive:
-- `STAGING_DIR`: Path to the staging copy of the plugin (e.g., `/tmp/agent-config-update-coding-embedded-zephyr-engineer`)
+- `STAGING_DIR`: Path to the staging copy of the plugin (e.g., `/tmp/claude-kit-update-coding-embedded-zephyr-engineer`)
 - `PLUGIN_ANALYSIS`: Full JSON analysis from the plugin-analyzer
 - `CHANGES`: Array of change objects from the approved change plan (your assigned subset)
-- `FORMAT_REFERENCE_DIR`: Path to format reference files at `~/personal/agent-config/plugins/system-maker/skills/plugin-structure/`
+- `FORMAT_REFERENCE_DIR`: Path to format reference files at `$CLAUDE_KIT_BUNDLED_DIR/system-maker/skills/plugin-structure/`
 </input>
 
 <process>

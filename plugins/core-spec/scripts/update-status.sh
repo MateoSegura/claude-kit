@@ -30,7 +30,7 @@ EXTRACTED_PHASE=$(echo "$TASK_SUBJECT" | sed -n 's/^Phase \([0-9]*\):.*/\1/p')
 
 if [ -n "$EXTRACTED_PHASE" ]; then
   NEXT_PHASE=$((EXTRACTED_PHASE + 1))
-  NEXT_PHASE_FILE=$(printf "docs/specs/%s/phases/phase-%02d.md" "$(cat docs/specs/.active 2>/dev/null)" "$NEXT_PHASE")
+  NEXT_PHASE_FILE=$(printf "%s/phases/phase-%02d.md" "$ACTIVE_PLAN_DIR" "$NEXT_PHASE")
   if [ -f "$NEXT_PHASE_FILE" ]; then
     echo "$NEXT_PHASE" > "$ACTIVE_PLAN_DIR/.current-phase"
   else

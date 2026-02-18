@@ -1,6 +1,6 @@
 # Workflow Patterns for Plan Operations
 
-Step-by-step workflows for all major plan operations in the spec plugin.
+Step-by-step workflows for all major plan operations in the spec plugin. All path references below use `docs/specs/` as the default spec root. The actual root is configurable per-project via `~/.claude-kit/spec-registry.json` and resolved at runtime by `resolve-active-spec.sh` (scripts) or by reading the registry (agents/commands).
 
 ## Creating a New Named Plan
 

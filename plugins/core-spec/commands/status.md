@@ -9,17 +9,28 @@ Show the current state of the project plan. Reads from plan files and TaskList t
 
 <workflow>
 
+## Step 0: Resolve spec root
+
+Determine where spec files are stored for this project:
+
+1. Read `~/.claude-kit/spec-registry.json`
+2. Look for an entry in `.registrations` whose key matches the current project root (the working directory)
+3. If found, use that value as `SPEC_ROOT`
+4. If not found or the registry file doesn't exist, use `docs/specs` as `SPEC_ROOT`
+
+Use `SPEC_ROOT` in all subsequent path references (e.g., `<SPEC_ROOT>/.active`, `<SPEC_ROOT>/<dir>/overview.md`).
+
 ## Step 1: Determine which plan to show
 
 If the user provided a plan name as an argument (e.g., `/spec:status my-plan`), look for it:
 ```
-Use Glob to check: docs/specs/<name>*/overview.md
+Use Glob to check: <SPEC_ROOT>/<name>*/overview.md
 ```
 This glob handles the date suffix (e.g., `my-plan-2026-02-16`).
 
 If no argument was provided, read the active spec:
 ```
-Read docs/specs/.active to get the active spec directory name
+Read <SPEC_ROOT>/.active to get the active spec directory name
 ```
 
 **Edge cases:**
@@ -31,7 +42,7 @@ Read docs/specs/.active to get the active spec directory name
 
 - If `.active` points to a nonexistent directory, output:
   ```
-  Warning: .active points to <directory>, but docs/specs/<directory>/ does not exist.
+  Warning: .active points to <directory>, but <SPEC_ROOT>/<directory>/ does not exist.
   Run /spec:new to create a new spec or fix the .active reference.
   ```
   And stop.
@@ -47,9 +58,9 @@ Read docs/specs/.active to get the active spec directory name
 Determine the plan directory `<resolved-dir>` from Step 1 (either from user argument or from .active).
 
 Read in parallel:
-1. `docs/specs/<resolved-dir>/overview.md` — extract goal and phase summary table
-2. `docs/specs/<resolved-dir>/status.log` — read last 20 lines for recent activity
-3. Use Glob to find all `docs/specs/<resolved-dir>/phases/phase-*.md` files
+1. `<SPEC_ROOT>/<resolved-dir>/overview.md` — extract goal and phase summary table
+2. `<SPEC_ROOT>/<resolved-dir>/status.log` — read last 20 lines for recent activity
+3. Use Glob to find all `<SPEC_ROOT>/<resolved-dir>/phases/phase-*.md` files
 
 ## Step 3: Get TaskList state
 
