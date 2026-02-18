@@ -3,7 +3,7 @@ description: "Show current plan status — displays phase progress, recent activ
 allowed-tools: Read, Glob, Grep, TaskList, TaskGet
 ---
 
-# /core-planner:status
+# /spec:status
 
 Show the current state of the project plan. Reads from plan files and TaskList to give a complete picture.
 
@@ -11,28 +11,28 @@ Show the current state of the project plan. Reads from plan files and TaskList t
 
 ## Step 1: Determine which plan to show
 
-If the user provided a plan name as an argument (e.g., `/core-planner:status my-plan`), look for it:
+If the user provided a plan name as an argument (e.g., `/spec:status my-plan`), look for it:
 ```
-Use Glob to check: docs/plans/<name>*/overview.md
+Use Glob to check: docs/specs/<name>*/overview.md
 ```
 This glob handles the date suffix (e.g., `my-plan-2026-02-16`).
 
-If no argument was provided, read the active plan:
+If no argument was provided, read the active spec:
 ```
-Read docs/plans/.active to get the active plan directory name
+Read docs/specs/.active to get the active spec directory name
 ```
 
 **Edge cases:**
 - If `.active` does not exist and no argument was provided, output:
   ```
-  No active plan found. Use /core-planner:plan to create one.
+  No active spec found. Use /spec:new to create one.
   ```
   And stop.
 
 - If `.active` points to a nonexistent directory, output:
   ```
-  Warning: .active points to <directory>, but docs/plans/<directory>/ does not exist.
-  Run /core-planner:plan to create a new plan or fix the .active reference.
+  Warning: .active points to <directory>, but docs/specs/<directory>/ does not exist.
+  Run /spec:new to create a new spec or fix the .active reference.
   ```
   And stop.
 
@@ -47,9 +47,9 @@ Read docs/plans/.active to get the active plan directory name
 Determine the plan directory `<resolved-dir>` from Step 1 (either from user argument or from .active).
 
 Read in parallel:
-1. `docs/plans/<resolved-dir>/overview.md` — extract goal and phase summary table
-2. `docs/plans/<resolved-dir>/status.log` — read last 20 lines for recent activity
-3. Use Glob to find all `docs/plans/<resolved-dir>/phases/phase-*.md` files
+1. `docs/specs/<resolved-dir>/overview.md` — extract goal and phase summary table
+2. `docs/specs/<resolved-dir>/status.log` — read last 20 lines for recent activity
+3. Use Glob to find all `docs/specs/<resolved-dir>/phases/phase-*.md` files
 
 ## Step 3: Get TaskList state
 
@@ -70,7 +70,7 @@ The current phase is:
 
 Display the status report. Include the plan name (extracted from the directory name, e.g., "api-refactor-2026-02-16" → "api-refactor").
 
-If viewing an inactive plan (not the one in .active), add a note: "(viewing inactive plan — active plan is <active>)".
+If viewing an inactive spec (not the one in .active), add a note: "(viewing inactive spec — active spec is <active>)".
 
 ```markdown
 ## Plan Status: [Project Title] ([plan-name])
@@ -104,7 +104,7 @@ If viewing an inactive plan (not the one in .active), add a note: "(viewing inac
 - **TaskList empty but plan exists**: Plan was created before TaskList integration — show phase files only
 - **Compaction markers in status.log**: Note them as "[context compaction occurred]" in the activity feed
 - **Mismatched phases**: If phase files exist that don't have TaskList items, note the discrepancy
-- **Multiple plans exist**: If Glob finds multiple plans, mention "Use /core-planner:status <name> to view other plans" in the output
-- **.active points to nonexistent directory**: Handled in Step 1 — warn and suggest /core-planner:plan
+- **Multiple plans exist**: If Glob finds multiple plans, mention "Use /spec:status <name> to view other plans" in the output
+- **.active points to nonexistent directory**: Handled in Step 1 — warn and suggest /spec:new
 
 </edge_cases>
