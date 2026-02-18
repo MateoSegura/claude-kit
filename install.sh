@@ -88,6 +88,44 @@ case "$(basename "${SHELL:-bash}")" in
   *)     add_to_rc "$HOME/.bashrc"; add_to_rc "$HOME/.profile" ;;
 esac
 
+# ── Statusline (optional) ─────────────────────────────────────────────────────
+
+CLAUDE_SETTINGS="$HOME/.claude/settings.json"
+STATUSLINE_SCRIPT="$HOME/.claude/statusline-command.sh"
+STATUSLINE_SRC="$KIT_HOME/scripts/statusline-command.sh"
+
+echo ""
+read -r -p "$(echo -e "${_B}[claude-kit]${_N} Install Claude Code status line (shows ctx %, tokens, model)? [Y/n] ")" _sl_ans
+_sl_ans="${_sl_ans:-Y}"
+
+if [[ "$_sl_ans" =~ ^[Yy] ]]; then
+  cp "$STATUSLINE_SRC" "$STATUSLINE_SCRIPT"
+  chmod +x "$STATUSLINE_SCRIPT"
+
+  # Wire settings.json — create if missing, update statusLine key if present
+  if [ ! -f "$CLAUDE_SETTINGS" ]; then
+    mkdir -p "$(dirname "$CLAUDE_SETTINGS")"
+    echo '{"statusLine":{"type":"command","command":"bash '"$STATUSLINE_SCRIPT"'"}}' > "$CLAUDE_SETTINGS"
+  elif command -v python3 &>/dev/null; then
+    python3 - "$CLAUDE_SETTINGS" "$STATUSLINE_SCRIPT" <<'PYEOF'
+import sys, json
+path, script = sys.argv[1], sys.argv[2]
+with open(path) as f:
+    data = json.load(f)
+data["statusLine"] = {"type": "command", "command": f"bash {script}"}
+with open(path, "w") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+PYEOF
+  else
+    warn "python3 not found — manually add to $CLAUDE_SETTINGS:"
+    warn '  "statusLine": {"type": "command", "command": "bash '"$STATUSLINE_SCRIPT"'"}'
+  fi
+  ok "Status line installed."
+else
+  info "Skipped status line install."
+fi
+
 # ── Done ──────────────────────────────────────────────────────────────────────
 
 echo ""

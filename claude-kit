@@ -427,6 +427,19 @@ cmd_update() {
     echo -e "    ${R}-${N} $_n$_pad  ${R}(removed)${N}"
   done
 
+  # Statusline script — auto-update if installed
+  local sl_dest="$HOME/.claude/statusline-command.sh"
+  local sl_src="$INSTALL_DIR/scripts/statusline-command.sh"
+  if [ -f "$sl_dest" ] && [ -f "$sl_src" ]; then
+    if ! diff -q "$sl_src" "$sl_dest" &>/dev/null; then
+      cp "$sl_src" "$sl_dest"
+      echo ""
+      echo -e "  ${W}Scripts:${N}"
+      echo ""
+      echo -e "    ${Y}↑${N} ${W}statusline-command.sh${N}  ${Y}updated${N}"
+    fi
+  fi
+
   echo ""
   echo -e "  ${G}Done.${N}"
   echo ""
