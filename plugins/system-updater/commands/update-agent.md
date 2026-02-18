@@ -14,8 +14,8 @@ You are the orchestrator for enhancing existing Claude Code plugins. You guide t
 1. **Never break existing functionality.** Every change must be backwards-compatible. Never remove hooks, skills, or agents that the user didn't ask to remove.
 2. **Staging directory**: ALL changes are made to a staging copy at `/tmp/agent-config-update-<PLUGIN_NAME>/`. The original plugin is untouched until finalization.
 3. **User's ~/.claude is sacred**: Never read, modify, or reference `~/.claude`.
-4. **INSTALL_DIR**: `~/personal/agent-config` — this is where installed plugins live. Always check `INSTALL_DIR/plugins/` for existing plugins — NEVER `/tmp`.
-5. **Format reference**: The canonical plugin format reference lives at `~/personal/agent-config/plugins/system-maker/skills/plugin-structure/`. Pass this path to change-writer agents.
+4. **Plugin directories**: `$CLAUDE_KIT_BUNDLED_DIR` for bundled plugins, `$CLAUDE_KIT_LOCAL_DIR` for user-created local plugins — NEVER `/tmp`. Updated plugins are installed back to `$CLAUDE_KIT_OUTPUT_DIR`.
+5. **Format reference**: The canonical plugin format reference lives at `$CLAUDE_KIT_BUNDLED_DIR/system-maker/skills/plugin-structure/`. Pass this path to change-writer agents.
 6. **Fitness first**: Always run the fitness check before planning changes. If the change doesn't belong in this plugin, recommend system-maker instead — don't force it.
 7. **Agent frontmatter**: Agent files use `tools:`, command/skill files use `allowed-tools:`. Hooks use event-based top-level keys.
 8. **Subagent spawning**: You (the orchestrator) CAN spawn subagents via the Task tool.
@@ -33,30 +33,40 @@ You are the orchestrator for enhancing existing Claude Code plugins. You guide t
 
 ### Steps
 
-1. List available plugins:
+1. List available plugins from both bundled and local directories:
 
    ```bash
-   ls -1 ~/personal/agent-config/plugins/ 2>/dev/null
+   echo "Bundled:"; ls -1 $CLAUDE_KIT_BUNDLED_DIR/ 2>/dev/null
+   echo "Local:"; ls -1 $CLAUDE_KIT_LOCAL_DIR/ 2>/dev/null
    ```
 
-2. Present the list to the user via AskUserQuestion:
+2. Present the combined list to the user via AskUserQuestion:
 
    ```
    Which plugin would you like to update?
 
-   Available plugins:
-   - <list each plugin>
+   Bundled plugins:
+   - <list each bundled plugin>
+
+   Local plugins:
+   - <list each local plugin, or "(none)">
 
    (System plugins like system-maker and system-updater can also be updated.)
    ```
 
-3. Once the user selects a plugin, verify it exists:
+3. Once the user selects a plugin, resolve its directory (local takes priority if both exist):
 
    ```bash
-   test -d ~/personal/agent-config/plugins/<SELECTED>/.claude-plugin && echo "VALID" || echo "NOT_FOUND"
+   if [ -d "$CLAUDE_KIT_LOCAL_DIR/<SELECTED>" ]; then
+     PLUGIN_DIR="$CLAUDE_KIT_LOCAL_DIR/<SELECTED>"
+   elif [ -d "$CLAUDE_KIT_BUNDLED_DIR/<SELECTED>" ]; then
+     PLUGIN_DIR="$CLAUDE_KIT_BUNDLED_DIR/<SELECTED>"
+   else
+     echo "NOT_FOUND"
+   fi
    ```
 
-4. Store: `PLUGIN_NAME`, `PLUGIN_DIR = ~/personal/agent-config/plugins/<PLUGIN_NAME>`
+4. Store: `PLUGIN_NAME`, `PLUGIN_DIR` (resolved path from step 3)
 
 </phase_1>
 
@@ -97,7 +107,7 @@ You are the orchestrator for enhancing existing Claude Code plugins. You guide t
    ```
    You are the plugin-analyzer agent. Analyze this plugin completely.
 
-   PLUGIN_DIR: ~/personal/agent-config/plugins/<PLUGIN_NAME>
+   PLUGIN_DIR: $CLAUDE_KIT_OUTPUT_DIR/<PLUGIN_NAME>
    PLUGIN_NAME: <PLUGIN_NAME>
 
    Read every file. Catalog the structure. Return the full JSON analysis per your agent definition.
@@ -158,7 +168,7 @@ After receiving the plugin analysis, check if the target plugin has companions:
    You are the change-planner agent. Evaluate whether this update fits the existing plugin and produce a change plan.
 
    PLUGIN_NAME: <PLUGIN_NAME>
-   INSTALL_DIR: ~/personal/agent-config
+   INSTALL_DIR: $CLAUDE_KIT_OUTPUT_DIR
 
    PLUGIN_ANALYSIS:
    <insert full PLUGIN_ANALYSIS JSON>
@@ -184,7 +194,7 @@ After receiving the plugin analysis, check if the target plugin has companions:
      Reason: <fitness_reasoning>
 
      Instead, create a new plugin using system-maker:
-       ctl.sh run system-maker
+       claude-kit --kit system-maker
 
      Suggested name: <suggested_name>
      Suggested description: <suggested_prompt>
@@ -281,7 +291,7 @@ After receiving the plugin analysis, check if the target plugin has companions:
 
    ```bash
    rm -rf /tmp/agent-config-update-<PLUGIN_NAME>
-   cp -r ~/personal/agent-config/plugins/<PLUGIN_NAME> /tmp/agent-config-update-<PLUGIN_NAME>
+   cp -r $CLAUDE_KIT_OUTPUT_DIR/<PLUGIN_NAME> /tmp/agent-config-update-<PLUGIN_NAME>
    ```
 
 2. Group the changes into independent batches that can run in parallel:
@@ -299,7 +309,7 @@ After receiving the plugin analysis, check if the target plugin has companions:
    You are the change-writer agent. Implement these changes to the plugin.
 
    STAGING_DIR: /tmp/agent-config-update-<PLUGIN_NAME>
-   FORMAT_REFERENCE_DIR: ~/personal/agent-config/plugins/system-maker/skills/plugin-structure/
+   FORMAT_REFERENCE_DIR: $CLAUDE_KIT_BUNDLED_DIR/system-maker/skills/plugin-structure/
 
    PLUGIN_ANALYSIS:
    <insert PLUGIN_ANALYSIS JSON>
@@ -427,7 +437,7 @@ The `plugin-reviewer` agent performs an exhaustive 9-category audit of the entir
    You are the change-writer agent. The plugin-reviewer found issues that need fixing. Apply these targeted fixes.
 
    STAGING_DIR: /tmp/agent-config-update-<PLUGIN_NAME>
-   FORMAT_REFERENCE_DIR: ~/personal/agent-config/plugins/system-maker/skills/plugin-structure/
+   FORMAT_REFERENCE_DIR: $CLAUDE_KIT_BUNDLED_DIR/system-maker/skills/plugin-structure/
 
    REVIEW FINDINGS TO FIX:
    <insert the content and structural findings array as JSON>
@@ -507,7 +517,7 @@ The `plugin-reviewer` agent performs an exhaustive 9-category audit of the entir
 1. Show the user a diff of what changed:
 
    ```bash
-   diff -rq ~/personal/agent-config/plugins/<PLUGIN_NAME> /tmp/agent-config-update-<PLUGIN_NAME> | head -50
+   diff -rq $CLAUDE_KIT_OUTPUT_DIR/<PLUGIN_NAME> /tmp/agent-config-update-<PLUGIN_NAME> | head -50
    ```
 
 2. For each new or modified file, show a brief summary of what it contains.
@@ -531,20 +541,20 @@ The `plugin-reviewer` agent performs an exhaustive 9-category audit of the entir
    a. Create a backup of the current plugin:
 
    ```bash
-   cp -r ~/personal/agent-config/plugins/<PLUGIN_NAME> /tmp/agent-config-backup-<PLUGIN_NAME>-$(date +%Y%m%d-%H%M%S)
+   cp -r $CLAUDE_KIT_OUTPUT_DIR/<PLUGIN_NAME> /tmp/agent-config-backup-<PLUGIN_NAME>-$(date +%Y%m%d-%H%M%S)
    ```
 
    b. Copy the staging directory to replace the live plugin:
 
    ```bash
-   rm -rf ~/personal/agent-config/plugins/<PLUGIN_NAME>
-   cp -r /tmp/agent-config-update-<PLUGIN_NAME> ~/personal/agent-config/plugins/<PLUGIN_NAME>
+   rm -rf $CLAUDE_KIT_OUTPUT_DIR/<PLUGIN_NAME>
+   cp -r /tmp/agent-config-update-<PLUGIN_NAME> $CLAUDE_KIT_OUTPUT_DIR/<PLUGIN_NAME>
    ```
 
    c. Run validation on the live plugin:
 
    ```bash
-   ~/personal/agent-config/ctl.sh validate <PLUGIN_NAME>
+   claude-kit validate <PLUGIN_NAME>
    ```
 
    d. Clean up staging:
@@ -564,7 +574,7 @@ The `plugin-reviewer` agent performs an exhaustive 9-category audit of the entir
    - <list of changes>
 
    To use the updated plugin:
-     ctl.sh run <PLUGIN_NAME>
+     claude-kit --kit <PLUGIN_NAME>
    ```
 
 5. If "Review a specific file": read and display the requested file, then re-present the finalization options.

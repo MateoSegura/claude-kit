@@ -11,3 +11,6 @@ Thumbs.db
 
 # Local overrides
 *.local
+
+# User-created plugins (installed by user, not shipped with claude-kit)
+local/
