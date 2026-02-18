@@ -11,7 +11,18 @@ done
 INSTALL_DIR="$(cd "$(dirname "$_SOURCE")" && pwd)"
 
 PLUGINS_DIR="$INSTALL_DIR/plugins"
+LOCAL_DIR="$INSTALL_DIR/local/plugins"
 CONFIG_FILE="$INSTALL_DIR/config.json"
+INSTALLED_MARKER="$INSTALL_DIR/.installed"
+
+# Mode detection: user install (.installed present) vs dev checkout
+if [ -f "$INSTALLED_MARKER" ]; then
+  CK_MODE="user"
+  CK_OUTPUT_DIR="$LOCAL_DIR"
+else
+  CK_MODE="dev"
+  CK_OUTPUT_DIR="$PLUGINS_DIR"
+fi
 
 KNOWN_TYPES="coding system"
 
@@ -31,7 +42,7 @@ resolve_alias() {
 resolve_prefix() {
   local prefix="$1"
   local found=false
-  for d in "$PLUGINS_DIR/$prefix"-*/; do
+  for d in "$PLUGINS_DIR/$prefix"-*/ "$LOCAL_DIR/$prefix"-*/; do
     if [[ -d "$d" ]]; then
       found=true
       basename "$d"
@@ -64,9 +75,13 @@ expand_kit() {
   fi
 
   for pname in "${plugin_names[@]}"; do
+    # Search bundled first, then local
     local pdir="$PLUGINS_DIR/$pname"
     if [ ! -d "$pdir" ]; then
-      echo "Error: Kit '$pname' not found in $PLUGINS_DIR/" >&2
+      pdir="$LOCAL_DIR/$pname"
+    fi
+    if [ ! -d "$pdir" ]; then
+      echo "Error: Kit '$pname' not found in $PLUGINS_DIR/ or $LOCAL_DIR/" >&2
       echo "" >&2
       cmd_list >&2
       exit 1
@@ -79,6 +94,7 @@ expand_kit() {
       while IFS= read -r comp; do
         if [[ -n "$comp" ]]; then
           local comp_dir="$PLUGINS_DIR/$comp"
+          [ ! -d "$comp_dir" ] && comp_dir="$LOCAL_DIR/$comp"
           if [ ! -d "$comp_dir" ]; then
             echo "Warning: Companion '$comp' (required by '$pname') not found." >&2
           else
@@ -149,10 +165,24 @@ cmd_run() {
 
   export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 
+  # Expose kit layout to agents so system-maker/updater know where to install
+  export CLAUDE_KIT_HOME="$INSTALL_DIR"
+  export CLAUDE_KIT_BUNDLED_DIR="$PLUGINS_DIR"
+  export CLAUDE_KIT_LOCAL_DIR="$LOCAL_DIR"
+  export CLAUDE_KIT_OUTPUT_DIR="$CK_OUTPUT_DIR"
+  export CLAUDE_KIT_MODE="$CK_MODE"
+
+  # Ensure local/plugins directory exists
+  mkdir -p "$LOCAL_DIR"
+
   local -a claude_args=()
 
   for p in "${all_plugins[@]}"; do
-    claude_args+=(--plugin-dir "$PLUGINS_DIR/$p")
+    if [ -d "$PLUGINS_DIR/$p" ]; then
+      claude_args+=(--plugin-dir "$PLUGINS_DIR/$p")
+    else
+      claude_args+=(--plugin-dir "$LOCAL_DIR/$p")
+    fi
   done
 
   claude_args+=(--model "$model")
@@ -171,13 +201,25 @@ cmd_run() {
 }
 
 cmd_list() {
-  echo "Available kits:"
+  echo "Bundled kits:"
   if [ -d "$PLUGINS_DIR" ]; then
     ls -1 "$PLUGINS_DIR/" 2>/dev/null | while read -r name; do
       [ -d "$PLUGINS_DIR/$name" ] && echo "  $name"
     done
   else
     echo "  (none)"
+  fi
+
+  echo ""
+  echo "Local kits:"
+  if [ -d "$LOCAL_DIR" ]; then
+    local found_local=false
+    ls -1 "$LOCAL_DIR/" 2>/dev/null | while read -r name; do
+      [ -d "$LOCAL_DIR/$name" ] && { echo "  $name"; found_local=true; }
+    done
+    $found_local || echo "  (none — run 'claude-kit --kit system-maker' to create one)"
+  else
+    echo "  (none — run 'claude-kit --kit system-maker' to create one)"
   fi
 
   if [ -d "$PLUGINS_DIR" ]; then
@@ -224,9 +266,10 @@ cmd_list() {
 cmd_validate() {
   local name="${1:?Usage: claude-kit validate <name>}"
   local plugin_dir="$PLUGINS_DIR/$name"
+  [ ! -d "$plugin_dir" ] && plugin_dir="$LOCAL_DIR/$name"
   local errors=0
 
-  [ ! -d "$plugin_dir" ] && { echo "Error: '$name' not found in $PLUGINS_DIR/"; exit 1; }
+  [ ! -d "$plugin_dir" ] && { echo "Error: '$name' not found in $PLUGINS_DIR/ or $LOCAL_DIR/"; exit 1; }
 
   echo "Validating: $name"
   echo ""

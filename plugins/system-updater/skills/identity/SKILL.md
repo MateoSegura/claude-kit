@@ -81,7 +81,7 @@ For detailed workflow instructions and error recovery patterns, see [workflow-pa
 
 These are hard rules you NEVER violate:
 
-1. **Staging-Based Changes**: ALL modifications happen in `/tmp/agent-config-update-PLUGIN_NAME/`. The live plugin at `~/personal/agent-config/plugins/PLUGIN_NAME/` is NEVER touched until explicit finalization.
+1. **Staging-Based Changes**: ALL modifications happen in `/tmp/agent-config-update-PLUGIN_NAME/`. The live plugin at `$CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME/` is NEVER touched until explicit finalization.
 
 2. **Backwards Compatibility**: Every change must preserve existing functionality. Never remove or break existing hooks, skills, agents, or commands unless the user explicitly requests their removal.
 
@@ -103,7 +103,7 @@ These are hard rules you NEVER violate:
 
 11. **Parallel Execution**: When a phase specifies PARALLEL, issue all Task tool calls for that phase in a single response. Do not wait between independent operations.
 
-12. **Canonical Format Reference**: The definitive plugin specification lives at `~/personal/agent-config/plugins/system-maker/skills/plugin-structure/`. Always pass this path to change-writer agents as FORMAT_REFERENCE_DIR.
+12. **Canonical Format Reference**: The definitive plugin specification lives at `$CLAUDE_KIT_BUNDLED_DIR/system-maker/skills/plugin-structure/`. Always pass this path to change-writer agents as FORMAT_REFERENCE_DIR.
 </non_negotiables>
 
 <coding_standards>

@@ -25,7 +25,7 @@ This plugin is fundamentally different from domain-expert plugins:
 - **Domain plugins** (like `coding-embedded-zephyr-engineer`, `coding-frontend-react-engineer`) help users write code in a specific domain
 - **System-maker** helps users CREATE those domain plugins
 
-When system-maker runs, it builds a plugin skeleton in `/tmp/agent-config-build-<name>/`, validates it with comprehensive review, then installs it to `~/personal/agent-config/plugins/`.
+When system-maker runs, it builds a plugin skeleton in `/tmp/agent-config-build-<name>/`, validates it with comprehensive review, then installs it to `$CLAUDE_KIT_OUTPUT_DIR/` (local plugins directory for user installs, bundled directory for dev checkouts).
 
 The plugins you create contain:
 - Agent definitions (subagents with specific roles)
@@ -45,7 +45,7 @@ These rules are ABSOLUTE. Violating them breaks plugins or corrupts the user's e
 ### 1. Sacred Directories
 
 - **NEVER** read, modify, or reference `~/.claude` — the user's Claude configuration is sacred
-- **NEVER** write directly to `~/personal/agent-config/plugins/` during plugin creation
+- **NEVER** write directly to `$CLAUDE_KIT_OUTPUT_DIR/` during plugin creation
 - **ALWAYS** use staging: `/tmp/agent-config-build-<name>/` for all file writes
 - **ONLY** copy to the plugins directory after user approval in Phase 11
 
@@ -122,14 +122,14 @@ All plugin names MUST match `^[a-z]+-[a-z][-a-z]*$` using the format `<type>-<do
 Standard domains: embedded, cloud, frontend, backend, mobile, ml, devops.
 Standard roles: engineer, grader, tester, debugger, deployer, migrator.
 System plugins (`system-maker`, `system-updater`) don't require domain/tech/role.
-The `ctl.sh` validation enforces the regex. Non-compliant names will fail.
+The `claude-kit validate` command enforces the regex. Non-compliant names will fail.
 
 ### 8. Build Directory Lifecycle
 
 1. Create: `mkdir -p /tmp/agent-config-build-<name>`
 2. Write all files to this directory during Phases 1-10
 3. Validate with plugin-reviewer
-4. Copy to `~/personal/agent-config/plugins/<name>` ONLY after user approval
+4. Copy to `$CLAUDE_KIT_OUTPUT_DIR/<name>` ONLY after user approval
 
 Never skip the staging step.
 
@@ -344,7 +344,7 @@ Knowledge plugins are a core architectural pattern for avoiding domain knowledge
 
 ### Knowledge-First Creation Flow
 
-When creating a role plugin (engineer, grader, tester), Phase 2.5 checks for an existing knowledge plugin in the same domain. If missing, an abbreviated creation workflow builds one first. This ensures domain knowledge is centralized before role-specific development begins.
+When creating a role plugin (engineer, grader, tester), Phase 2.5 checks for an existing knowledge plugin in both `$CLAUDE_KIT_BUNDLED_DIR` and `$CLAUDE_KIT_LOCAL_DIR`. If missing, an abbreviated creation workflow builds one first. This ensures domain knowledge is centralized before role-specific development begins.
 
 ### One Knowledge Plugin Per Discipline
 

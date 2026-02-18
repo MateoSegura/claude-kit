@@ -51,6 +51,11 @@ fi
 
 chmod +x "$KIT_HOME/claude-kit"
 
+# ── Create local plugin directory and mark as user install ────────────────────
+
+mkdir -p "$KIT_HOME/local/plugins"
+touch "$KIT_HOME/.installed"
+
 # ── Link binary ───────────────────────────────────────────────────────────────
 
 mkdir -p "$BIN_DIR"

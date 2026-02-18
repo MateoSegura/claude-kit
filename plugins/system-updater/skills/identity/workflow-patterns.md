@@ -14,7 +14,7 @@ All changes happen in an isolated staging copy of the plugin. The live plugin is
 
 ```bash
 rm -rf /tmp/agent-config-update-PLUGIN_NAME
-cp -r ~/personal/agent-config/plugins/PLUGIN_NAME /tmp/agent-config-update-PLUGIN_NAME
+cp -r $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME /tmp/agent-config-update-PLUGIN_NAME
 ```
 
 **Work on the Staging Copy**:
@@ -25,11 +25,11 @@ All change-writer and plugin-reviewer agents operate on `/tmp/agent-config-updat
 
 ```bash
 # Create timestamped backup
-cp -r ~/personal/agent-config/plugins/PLUGIN_NAME /tmp/agent-config-backup-PLUGIN_NAME-$(date +%Y%m%d-%H%M%S)
+cp -r $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME /tmp/agent-config-backup-PLUGIN_NAME-$(date +%Y%m%d-%H%M%S)
 
 # Replace live plugin
-rm -rf ~/personal/agent-config/plugins/PLUGIN_NAME
-cp -r /tmp/agent-config-update-PLUGIN_NAME ~/personal/agent-config/plugins/PLUGIN_NAME
+rm -rf $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME
+cp -r /tmp/agent-config-update-PLUGIN_NAME $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME
 
 # Clean up staging
 rm -rf /tmp/agent-config-update-PLUGIN_NAME
@@ -393,7 +393,7 @@ Before replacing the live plugin, create a timestamped backup to enable instant 
 **Backup Command (Phase 7)**:
 
 ```bash
-cp -r ~/personal/agent-config/plugins/PLUGIN_NAME /tmp/agent-config-backup-PLUGIN_NAME-$(date +%Y%m%d-%H%M%S)
+cp -r $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME /tmp/agent-config-backup-PLUGIN_NAME-$(date +%Y%m%d-%H%M%S)
 ```
 
 This creates backups like:
@@ -405,8 +405,8 @@ This creates backups like:
 **Rollback (if needed)**:
 
 ```bash
-rm -rf ~/personal/agent-config/plugins/PLUGIN_NAME
-cp -r /tmp/agent-config-backup-PLUGIN_NAME-20260215-143022 ~/personal/agent-config/plugins/PLUGIN_NAME
+rm -rf $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME
+cp -r /tmp/agent-config-backup-PLUGIN_NAME-20260215-143022 $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME
 ```
 
 ### Why This Pattern
@@ -426,7 +426,7 @@ The canonical plugin specification lives at a known location. Always pass this p
 **Reference Location**:
 
 ```
-~/personal/agent-config/plugins/system-maker/skills/plugin-structure/
+$CLAUDE_KIT_BUNDLED_DIR/system-maker/skills/plugin-structure/
 ```
 
 **Pass to change-writer**:
@@ -434,7 +434,7 @@ The canonical plugin specification lives at a known location. Always pass this p
 Every change-writer spawn includes:
 
 ```
-FORMAT_REFERENCE_DIR: ~/personal/agent-config/plugins/system-maker/skills/plugin-structure/
+FORMAT_REFERENCE_DIR: $CLAUDE_KIT_BUNDLED_DIR/system-maker/skills/plugin-structure/
 ```
 
 The change-writer reads format references BEFORE writing any files:

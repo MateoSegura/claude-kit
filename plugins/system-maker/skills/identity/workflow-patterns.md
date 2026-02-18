@@ -48,7 +48,7 @@ Key characteristics:
 4. **Check for existing plugins**
    ```bash
    # CRITICAL: Check INSTALLED plugins, not /tmp build dir
-   ls -1 ~/personal/agent-config/plugins/ 2>/dev/null
+   ls -1 $CLAUDE_KIT_BUNDLED_DIR/ $CLAUDE_KIT_LOCAL_DIR/ 2>/dev/null
    ```
 
    Compare against proposed name and domain.
@@ -491,7 +491,7 @@ After fixes:
     Files: <count>
     Grade: <final grade>
     Build dir: /tmp/agent-config-build-<name>
-    Target: ~/personal/agent-config/plugins/<name>/"
+    Target: $CLAUDE_KIT_OUTPUT_DIR/<name>/"
    ```
 
 2. **Request approval**
@@ -505,7 +505,7 @@ After fixes:
 
    Check target directory:
    ```bash
-   ls -d ~/personal/agent-config/plugins/<name> 2>/dev/null
+   ls -d $CLAUDE_KIT_OUTPUT_DIR/<name> 2>/dev/null
    ```
 
    If exists:
@@ -516,24 +516,24 @@ After fixes:
 5. **Copy to plugins directory**
    ```bash
    # If overwriting
-   rm -rf ~/personal/agent-config/plugins/<name>
+   rm -rf $CLAUDE_KIT_OUTPUT_DIR/<name>
 
    # Copy build
-   cp -r /tmp/agent-config-build-<name> ~/personal/agent-config/plugins/<name>
+   cp -r /tmp/agent-config-build-<name> $CLAUDE_KIT_OUTPUT_DIR/<name>
    ```
 
 6. **Verify copy**
    ```bash
    diff <(cd /tmp/agent-config-build-<name> && find . -type f | sort) \
-        <(cd ~/personal/agent-config/plugins/<name> && find . -type f | sort)
+        <(cd $CLAUDE_KIT_OUTPUT_DIR/<name> && find . -type f | sort)
    ```
 
 7. **Confirm success**
    ```
    "Plugin <name> installed successfully.
 
-    Launch: ./ctl.sh run <name>
-    List: ./ctl.sh list"
+    Launch: claude-kit --kit<name>
+    List: claude-kit list"
    ```
 
 **Error Recovery:**
@@ -612,7 +612,7 @@ AskUserQuestion: "Build dir exists. Overwrite | Choose different name | Abort?"
 **Handled in Phase 11:**
 
 ```bash
-ls -d ~/personal/agent-config/plugins/<name> && echo "EXISTS" || echo "CLEAR"
+ls -d $CLAUDE_KIT_OUTPUT_DIR/<name> && echo "EXISTS" || echo "CLEAR"
 ```
 
 If EXISTS:
