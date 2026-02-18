@@ -9,3 +9,11 @@ The context-recovery agent will read this file to restore orientation.
 [2026-02-18T22:45:56Z] COMPLETED (task #?): unknown task
 [2026-02-18T22:46:36Z] COMPLETED (task #?): unknown task
 [2026-02-18T22:47:26Z] COMPLETED (task #?): unknown task
+--- COMPACTION_SNAPSHOT [2026-02-18T22:53:10Z] ---
+Context compaction triggered. State above this line was in context before compaction.
+The context-recovery agent will read this file to restore orientation.
+---
+[2026-02-18T22:54:37Z] COMPLETED (task #?): unknown task
+[2026-02-18T22:54:38Z] COMPLETED (task #?): unknown task
+[2026-02-18T22:56:37Z] COMPLETED (task #?): unknown task
+[2026-02-18T22:56:38Z] COMPLETED (task #?): unknown task
