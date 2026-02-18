@@ -1,0 +1,37 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$TOOL_INPUT_FILE_PATH\" | grep -qE '^\\.claude/|/\\.claude/'; then echo 'BLOCKED: Cannot write to .claude directory' >&2; exit 2; fi"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[system-updater] Subagent starting: $SUBAGENT_NAME\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-staging.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

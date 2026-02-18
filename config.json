@@ -1,0 +1,13 @@
+{
+  "standard_roles": ["engineer", "grader", "tester", "debugger", "deployer", "migrator", "knowledge"],
+  "aliases": {
+    "system": {
+      "plugins": ["system-maker", "system-updater"],
+      "description": "Load system-maker and system-updater merged"
+    },
+    "zephyr-planned": {
+      "plugins": ["system-planner", "coding-embedded-zephyr-knowledge", "coding-embedded-zephyr-engineer"],
+      "description": "Zephyr engineer with deterministic planning"
+    }
+  }
+}

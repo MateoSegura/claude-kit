@@ -1,0 +1,54 @@
+---
+description: {{DESCRIPTION}}
+tools:
+  - {{TOOL_1}}
+  - {{TOOL_2}}
+skills:
+  - {{SKILL_1}}
+# model: {{MODEL}}
+# color: "{{COLOR}}"
+---
+
+<role>
+You are {{DISPLAY_NAME}}, a specialized agent for {{ROLE_DESCRIPTION}}.
+</role>
+
+<context>
+You operate within the agent-config plugin system. Your purpose is to {{PURPOSE}}.
+</context>
+
+<instructions>
+## Process
+
+### Step 1: {{STEP_1_NAME}}
+{{STEP_1_INSTRUCTIONS}}
+
+### Step 2: {{STEP_2_NAME}}
+{{STEP_2_INSTRUCTIONS}}
+
+### Step 3: {{STEP_3_NAME}}
+{{STEP_3_INSTRUCTIONS}}
+</instructions>
+
+<constraints>
+- {{CONSTRAINT_1}}
+- {{CONSTRAINT_2}}
+- {{CONSTRAINT_3}}
+</constraints>
+
+<output-format>
+Return your result in the following format:
+
+```json
+{
+  "result": "structured output definition"
+}
+```
+</output-format>
+
+<example>
+Input: {{EXAMPLE_INPUT}}
+
+Output:
+{{EXAMPLE_OUTPUT}}
+</example>

@@ -1,0 +1,206 @@
+{
+  "mcpServers": {
+    "kconfig-explorer": {
+      "_status": "STUB — not yet implemented. Build with MCP maker agent.",
+      "_description": "Search, explain, and resolve Kconfig option dependencies without web lookups. Parses Kconfig files from ZEPHYR_BASE to provide option descriptions, defaults, dependencies, and reverse dependencies.",
+      "_detailed_spec": {
+        "tools": [
+          {
+            "name": "search_option",
+            "description": "Full-text search across Kconfig symbol names, help text, and prompt text",
+            "parameters": {
+              "query": "string — search term or CONFIG_ symbol pattern",
+              "type_filter": "optional string — bool|int|string|hex|tristate",
+              "subsystem": "optional string — kernel|drivers|networking|bluetooth|crypto|logging"
+            },
+            "returns": "[{name, type, default, depends_on, help_text, file_path}]"
+          },
+          {
+            "name": "resolve_dependencies",
+            "description": "Returns the full transitive dependency tree for a Kconfig symbol",
+            "parameters": {
+              "symbol": "string — CONFIG_ symbol name (e.g., CONFIG_BT_CTLR)"
+            },
+            "returns": "{symbol, direct_deps: [], transitive_deps: [], selects: [], implied_by: []}"
+          },
+          {
+            "name": "reverse_deps",
+            "description": "Returns all symbols that depend on, select, or imply a given symbol",
+            "parameters": {
+              "symbol": "string — CONFIG_ symbol name"
+            },
+            "returns": "[{symbol, relationship: 'depends_on'|'select'|'imply', file_path}]"
+          },
+          {
+            "name": "validate_prj_conf",
+            "description": "Validates a prj.conf file against the Kconfig tree, checking for typos, unmet dependencies, and conflicts",
+            "parameters": {
+              "path": "string — path to prj.conf or .conf file"
+            },
+            "returns": "[{issue, severity: 'error'|'warning', symbol, suggestion}]"
+          }
+        ],
+        "implementation_notes": "Use Python kconfiglib to parse Kconfig tree from $ZEPHYR_BASE. Build SQLite index for fast search. Rebuild index when ZEPHYR_BASE changes or west update is run. Server should be implemented as a stdio MCP server in Python.",
+        "fallback_strategy": "Use Bash to grep Kconfig files in $ZEPHYR_BASE. Use 'west build -t menuconfig' for interactive exploration. WebSearch docs.zephyrproject.org/latest/kconfig.html for online lookup."
+      },
+      "command": "python3",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/kconfig-explorer/server.py"],
+      "env": {
+        "ZEPHYR_BASE": "${ZEPHYR_BASE}"
+      },
+      "disabled": true
+    },
+    "devicetree-navigator": {
+      "_status": "STUB — not yet implemented. Build with MCP maker agent.",
+      "_description": "Navigate compiled devicetree, resolve node references, validate overlay syntax against bindings. Uses edtlib from Zephyr's Python devicetree tools.",
+      "_detailed_spec": {
+        "tools": [
+          {
+            "name": "find_binding",
+            "description": "Look up a devicetree binding by compatible string, returning all properties with types and descriptions",
+            "parameters": {
+              "compatible": "string — e.g., 'nordic,nrf-spim' or 'st,stm32-spi'"
+            },
+            "returns": "{compatible, description, bus, properties: [{name, type, required, description, default}], on_bus}"
+          },
+          {
+            "name": "resolve_node",
+            "description": "Resolve a DTS node path or label to its full property set after overlay merging",
+            "parameters": {
+              "identifier": "string — DT_NODELABEL name (e.g., 'i2c0') or path (e.g., '/soc/i2c@40003000')",
+              "board": "string — board name for base DTS resolution"
+            },
+            "returns": "{path, label, compatible, status, properties: {}, children: []}"
+          },
+          {
+            "name": "validate_overlay",
+            "description": "Validate a .overlay file against its target board's DTS and bindings",
+            "parameters": {
+              "overlay_path": "string — path to .overlay file",
+              "board": "string — target board name"
+            },
+            "returns": "[{severity, line, message, expected_type, binding_file}]"
+          },
+          {
+            "name": "list_compatibles",
+            "description": "List all available compatible strings, optionally filtered by category",
+            "parameters": {
+              "category": "optional string — sensor|gpio|spi|i2c|uart|pwm|adc|flash|led|can|dma"
+            },
+            "returns": "[{compatible, description, bus, binding_file}]"
+          }
+        ],
+        "implementation_notes": "Use Python devicetree library (edtlib/dtlib) from $ZEPHYR_BASE/scripts/dts/python-devicetree. Parse binding YAML files from $ZEPHYR_BASE/dts/bindings/. For resolve_node, parse the compiled zephyr.dts from build/zephyr/ or compile the board's base DTS with overlays. Server should be stdio MCP in Python.",
+        "fallback_strategy": "Use Bash to grep $ZEPHYR_BASE/dts/bindings/ for compatible strings. Read binding YAML files directly with Read tool. Use 'west build --cmake-only' to generate zephyr.dts for DTS validation."
+      },
+      "command": "python3",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/devicetree-navigator/server.py"],
+      "env": {
+        "ZEPHYR_BASE": "${ZEPHYR_BASE}"
+      },
+      "disabled": true
+    },
+    "zephyr-docs-search": {
+      "_status": "STUB — not yet implemented. Build with MCP maker agent.",
+      "_description": "Semantic search over Zephyr documentation including API references, guides, and samples. Version-correct — indexes docs for the project's specific Zephyr version.",
+      "_detailed_spec": {
+        "tools": [
+          {
+            "name": "search_docs",
+            "description": "Full-text search over Zephyr documentation",
+            "parameters": {
+              "query": "string — search query",
+              "scope": "optional string — api|guide|sample|release_notes|all"
+            },
+            "returns": "[{title, path, section, snippet, relevance_score}]"
+          },
+          {
+            "name": "get_api",
+            "description": "Get API documentation for a specific function, struct, or macro",
+            "parameters": {
+              "name": "string — function/struct/macro name (e.g., 'k_sem_init', 'struct k_thread')"
+            },
+            "returns": "{name, signature, description, params: [{name, type, description}], return: {type, description}, since_version, deprecated, thread_safe, isr_safe, group}"
+          },
+          {
+            "name": "list_samples",
+            "description": "List Zephyr sample applications, optionally filtered by subsystem",
+            "parameters": {
+              "subsystem": "optional string — basic|bluetooth|networking|sensor|drivers|crypto|display"
+            },
+            "returns": "[{name, path, description, boards, subsystem}]"
+          },
+          {
+            "name": "get_sample",
+            "description": "Get the full source of a Zephyr sample application",
+            "parameters": {
+              "sample_path": "string — relative path like 'samples/bluetooth/peripheral_hr'"
+            },
+            "returns": "{files: [{path, content}], readme, prj_conf, cmakelists}"
+          }
+        ],
+        "implementation_notes": "Index RST/MD files from $ZEPHYR_BASE/doc/ using tantivy or whoosh for full-text search. Parse Doxygen XML output from doc build for API signatures. Index sample directories from $ZEPHYR_BASE/samples/. Rebuild index per Zephyr version. Server should be stdio MCP in Python.",
+        "fallback_strategy": "Use Grep to search $ZEPHYR_BASE/doc/ and $ZEPHYR_BASE/include/ for API documentation. Read sample source files directly. WebSearch docs.zephyrproject.org for online documentation."
+      },
+      "command": "python3",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/zephyr-docs-search/server.py"],
+      "env": {
+        "ZEPHYR_BASE": "${ZEPHYR_BASE}"
+      },
+      "disabled": true
+    },
+    "hardware-registry": {
+      "_status": "STUB — not yet implemented. Build with MCP maker agent.",
+      "_description": "Board catalog with capabilities, pin mappings, peripheral availability, and comparison. Aggregates board DTS, defconfig, and documentation from ZEPHYR_BASE/boards/.",
+      "_detailed_spec": {
+        "tools": [
+          {
+            "name": "get_board",
+            "description": "Get complete board information including arch, SoC, memory, peripherals, and supported features",
+            "parameters": {
+              "board": "string — board name (e.g., 'nrf52840dk', 'nucleo_h743zi', 'esp32c3_devkitm')"
+            },
+            "returns": "{name, arch, soc, ram_kb, flash_kb, peripherals: [], supported_features: [], shields: [], defconfig, doc_url}"
+          },
+          {
+            "name": "search_boards",
+            "description": "Search for boards matching requirements",
+            "parameters": {
+              "query": "optional string — text search",
+              "family": "optional string — nordic|stm32|esp32|nxp|riscv",
+              "features": "optional string[] — required features like 'ble', 'wifi', 'flash', 'adc'",
+              "arch": "optional string — arm|riscv|xtensa|x86"
+            },
+            "returns": "[{name, arch, soc, ram_kb, flash_kb, matching_features}]"
+          },
+          {
+            "name": "get_board_pins",
+            "description": "Get pin mapping for a specific peripheral on a board",
+            "parameters": {
+              "board": "string — board name",
+              "peripheral": "string — peripheral name (e.g., 'spi1', 'i2c0', 'uart0', 'pwm0')"
+            },
+            "returns": "{peripheral, pins: [{function, port, pin, alt_func}], pinctrl_states: []}"
+          },
+          {
+            "name": "compare_boards",
+            "description": "Side-by-side comparison of two boards",
+            "parameters": {
+              "board_a": "string",
+              "board_b": "string"
+            },
+            "returns": "{common: {features, peripherals}, only_a: {...}, only_b: {...}, memory_comparison: {}}"
+          }
+        ],
+        "implementation_notes": "Parse board directories from $ZEPHYR_BASE/boards/ — read board.yml, defconfig, DTS files, and doc/index.rst. Extract supported features from board.yml. Extract pin mappings from DTS pinctrl nodes. Cache per Zephyr version. Server should be stdio MCP in Python.",
+        "fallback_strategy": "Use Bash to read board DTS and defconfig files from $ZEPHYR_BASE/boards/. Use 'west boards' to list available boards. WebSearch for vendor datasheet pin mappings."
+      },
+      "command": "python3",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/hardware-registry/server.py"],
+      "env": {
+        "ZEPHYR_BASE": "${ZEPHYR_BASE}"
+      },
+      "disabled": true
+    }
+  }
+}

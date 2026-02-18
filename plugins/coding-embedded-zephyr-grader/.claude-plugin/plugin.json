@@ -1,0 +1,5 @@
+{
+  "name": "coding-embedded-zephyr-grader",
+  "description": "Objective, blind, quantitative code grading agent for embedded Zephyr RTOS applications. Produces numerical scorecards across 9 weighted dimensions using automated tools (cppcheck, clang-tidy, lizard, west build, checkpatch, arm-zephyr-eabi-size) and structured rubrics. Supports single-submission grading and A/B blind comparison modes.",
+  "version": "1.0.0"
+}
