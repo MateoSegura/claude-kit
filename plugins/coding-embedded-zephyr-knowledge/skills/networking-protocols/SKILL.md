@@ -1,5 +1,5 @@
 ---
-name: networking-protocols
+name: coding-embedded-zephyr-knowledge:networking-protocols
 description: Zephyr networking protocols — BLE, MQTT, CoAP, HTTP, sockets API, TLS/DTLS configuration and secure communication patterns
 user-invocable: false
 ---

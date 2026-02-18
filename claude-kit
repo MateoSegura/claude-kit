@@ -15,7 +15,6 @@ from datetime import datetime
 INSTALL_DIR      = pathlib.Path(os.path.realpath(__file__)).parent
 PLUGINS_DIR      = INSTALL_DIR / "plugins"
 LOCAL_DIR        = INSTALL_DIR / "local" / "plugins"
-CONFIG_FILE      = INSTALL_DIR / "config.json"
 INSTALLED_MARKER = INSTALL_DIR / ".installed"
 MANIFEST_FILE    = INSTALL_DIR / "local" / "setup-manifest.json"
 BACKUP_DIR       = INSTALL_DIR / "local" / "backups"
@@ -40,16 +39,6 @@ def col(color: str, text: str) -> str:
 def p(text: str = "") -> None:
     print(text)
 
-# ── Config ───────────────────────────────────────────────────────────────────
-
-def load_config() -> dict:
-    if CONFIG_FILE.exists():
-        try:
-            return json.loads(CONFIG_FILE.read_text())
-        except json.JSONDecodeError:
-            pass
-    return {}
-
 # ── Plugin helpers ────────────────────────────────────────────────────────────
 
 def plugin_version(plugin_dir: pathlib.Path) -> str:
@@ -66,12 +55,6 @@ def find_plugin_dir(name: str):
         d = base / name
         if d.is_dir():
             return d
-    return None
-
-def resolve_alias(name: str):
-    aliases = load_config().get("aliases", {})
-    if name in aliases:
-        return aliases[name].get("plugins", [])
     return None
 
 def resolve_prefix(prefix: str) -> list:
@@ -94,12 +77,8 @@ def resolve_companions(plugin_dir: pathlib.Path) -> list:
 
 def expand_kit(kit_name: str, seen: set) -> list:
     """Expand a kit name into deduplicated plugin names, companions first."""
-    alias_result = resolve_alias(kit_name)
-    if alias_result is not None:
-        plugin_names = alias_result
-    else:
-        prefix_result = resolve_prefix(kit_name)
-        plugin_names = prefix_result if prefix_result else [kit_name]
+    prefix_result = resolve_prefix(kit_name)
+    plugin_names = prefix_result if prefix_result else [kit_name]
 
     result = []
     for pname in plugin_names:
@@ -235,15 +214,6 @@ def cmd_list() -> None:
             for prefix, members in sorted(shortcuts.items()):
                 p(f"  {prefix} → [{', '.join(sorted(members))}]")
 
-    # Aliases from config.json
-    aliases = load_config().get("aliases", {})
-    if aliases:
-        p()
-        p(col(C.W, "Aliases:"))
-        for alias_name, alias_data in sorted(aliases.items()):
-            desc = alias_data.get("description", "no description")
-            plugins_list = ", ".join(alias_data.get("plugins", []))
-            p(f"  {alias_name} → [{plugins_list}] ({desc})")
 
 # ── cmd_update ────────────────────────────────────────────────────────────────
 
@@ -645,7 +615,7 @@ def cmd_help() -> None:
 
   {DIM}Launch:{C.N}
     {CY}claude-kit --kit <name>{C.N}
-    {CY}claude-kit --kit <name> --kit core-planner{C.N}   {DIM}combine kits{C.N}
+    {CY}claude-kit --kit <name> --kit core-spec{C.N}   {DIM}combine kits{C.N}
     {CY}claude-kit --kit <name> --yolo{C.N}               {DIM}skip permission prompts{C.N}
     {CY}claude-kit --kit <name> --model sonnet{C.N}       {DIM}choose model  (default: opus){C.N}
 

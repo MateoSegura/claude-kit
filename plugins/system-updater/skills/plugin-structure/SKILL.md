@@ -1,5 +1,5 @@
 ---
-name: plugin-structure
+name: system-updater:plugin-structure
 description: Canonical reference specification for Claude Code plugin file formats, frontmatter fields, hooks schema, and component conventions. Preloaded by the plugin-reviewer agent to audit plugins for correctness and completeness.
 user-invocable: false
 ---
@@ -168,7 +168,7 @@ Skills are knowledge files that get preloaded into agents. They contain referenc
 
 ```yaml
 ---
-name: skill-name                     # REQUIRED
+name: plugin-name:skill-name         # REQUIRED (prefix with plugin name)
 description: "What knowledge this skill provides" # REQUIRED
 user-invocable: true | false
 allowed-tools: Tool1, Tool2          # NOT tools (same as commands)
@@ -199,7 +199,7 @@ For detailed coding standards, see [coding-standards.md](coding-standards.md).
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `name` | string | **yes** | Skill identifier, kebab-case. Must match directory name. |
+| `name` | string | **yes** | Format: `plugin-name:skill-name`. The `skill-name` portion must match the directory name. Plugin prefix ensures unambiguous display when multiple plugins are loaded. |
 | `description` | string | **yes** | What knowledge this skill provides. Claude uses this for auto-invocation. |
 | `user-invocable` | boolean | no | Set to `false` to hide from user's command menu (for identity skills). Default: true. |
 | `allowed-tools` | string | no | Comma-separated tools the skill can use (same pattern as commands). |
@@ -311,7 +311,7 @@ The hooks format uses **event names as top-level keys** with arrays of matcher/h
 | Command | `tools: Read, Write` | `allowed-tools: Read, Write` |
 | Skill | `tools: Read` | `allowed-tools: Read` |
 | Agent | Missing `description` field | Add `description: "..."` |
-| Skill | Missing `name` field | Add `name: skill-name` |
+| Skill | Missing `name` field | Add `name: plugin-name:skill-name` |
 | hooks.json | Flat array instead of event keys | Use event-based structure |
 | Hook script | Missing shebang | Add `#!/bin/bash` |
 | Hook script | Hardcoded paths | Use `${CLAUDE_PLUGIN_ROOT}/...` |

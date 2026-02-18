@@ -128,7 +128,7 @@ For a typical embedded/systems coding plugin, cover these categories:
 
 ```markdown
 ---
-name: design-patterns
+name: AGENT_NAME:design-patterns
 description: "Domain-specific initialization, concurrency, memory management, communication, and error handling patterns with code examples, decision matrices, and anti-pattern warnings for [framework-name]."
 ---
 
@@ -171,6 +171,7 @@ When KNOWLEDGE_MODE is true:
 </knowledge_mode_handling>
 
 <constraints>
+- **Skill `name:` in frontmatter MUST be `AGENT_NAME:skill-name`** (e.g., `coding-embedded-zephyr-engineer:design-patterns`). The `AGENT_NAME` prefix ensures skills are unambiguous when multiple plugins are loaded. The `skill-name` portion must match the directory name.
 - Write skill files to `BUILD_DIR/skills/<skill-name>/`. Use `mkdir -p BUILD_DIR/skills/<skill-name>` (and `mkdir -p BUILD_DIR/skills/<skill-name>/scripts` if scripts are needed) before writing files.
 - Write command files to `BUILD_DIR/commands/`. Use `mkdir -p BUILD_DIR/commands` before writing.
 - **SKILL.md must stay under 500 lines.** This is a hard limit. Move detailed API references, exhaustive examples, and long tables into supporting files. SKILL.md is the concise entry point — the cheat sheet — not the encyclopedia.

@@ -1,5 +1,5 @@
 ---
-name: identity
+name: core-spec:identity
 description: "Core identity, methodology, and non-negotiable rules for the spec plugin. Defines planning philosophy, file formats, and deterministic behaviors for long-running session management."
 user-invocable: false
 ---

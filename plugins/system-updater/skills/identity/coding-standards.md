@@ -51,7 +51,7 @@ Skill files provide reference knowledge preloaded into agents. Format rules:
 
 ```yaml
 ---
-name: skill-name
+name: plugin-name:skill-name
 description: "What knowledge this skill provides" # REQUIRED
 user-invocable: true | false
 ---
@@ -220,7 +220,7 @@ name: plugin-analyzer  # Matches filename
 ```yaml
 # skills/identity/SKILL.md
 ---
-name: identity  # Matches directory name
+name: plugin-name:identity  # Plugin prefix + directory name
 ---
 ```
 

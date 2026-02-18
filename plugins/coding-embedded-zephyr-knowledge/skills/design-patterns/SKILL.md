@@ -1,5 +1,5 @@
 ---
-name: design-patterns
+name: coding-embedded-zephyr-knowledge:design-patterns
 description: Zephyr firmware architecture patterns and anti-patterns — subsystem decomposition, initialization orchestration, state machines, memory management, error handling, communication patterns, and common architectural anti-patterns to avoid
 user-invocable: false
 ---
