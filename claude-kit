@@ -323,11 +323,113 @@ cmd_validate() {
 }
 
 cmd_update() {
-  echo "Updating claude-kit..."
-  git -C "$INSTALL_DIR" pull --ff-only
-  local ver
-  ver=$(git -C "$INSTALL_DIR" describe --tags --always 2>/dev/null || git -C "$INSTALL_DIR" rev-parse --short HEAD 2>/dev/null || echo "unknown")
-  echo "claude-kit updated → $ver"
+  local R='\033[0;31m' G='\033[0;32m' Y='\033[0;33m'
+  local C='\033[0;36m' W='\033[1;37m' DIM='\033[2m' N='\033[0m'
+
+  # Read version field from a plugin.json (no jq required)
+  _ck_version() {
+    local f="$1/.claude-plugin/plugin.json"
+    [ -f "$f" ] || echo "?"
+    grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$f" 2>/dev/null \
+      | grep -o '"[^"]*"$' | tr -d '"' || echo "?"
+  }
+
+  echo ""
+  echo -e "${W}claude-kit update${N}"
+  echo -e "${DIM}────────────────────────────────────────${N}"
+  echo ""
+
+  # Snapshot plugin versions before pull
+  declare -A _old=()
+  if [ -d "$PLUGINS_DIR" ]; then
+    for _d in "$PLUGINS_DIR"/*/; do
+      [ -d "$_d" ] || continue
+      local _n; _n=$(basename "$_d")
+      _old["$_n"]=$(_ck_version "$_d")
+    done
+  fi
+
+  local old_ref
+  old_ref=$(git -C "$INSTALL_DIR" rev-parse --short HEAD 2>/dev/null || echo "?")
+
+  echo -e "  ${C}Pulling from origin...${N}"
+  echo ""
+
+  local pull_out pull_rc
+  pull_out=$(git -C "$INSTALL_DIR" pull --ff-only 2>&1) || pull_rc=$?
+
+  if [ "${pull_rc:-0}" -ne 0 ]; then
+    echo -e "  ${R}✗ Pull failed${N}"
+    echo ""
+    echo "$pull_out" | sed 's/^/    /'
+    echo ""
+    exit 1
+  fi
+
+  local new_ref
+  new_ref=$(git -C "$INSTALL_DIR" describe --tags --always 2>/dev/null \
+    || git -C "$INSTALL_DIR" rev-parse --short HEAD 2>/dev/null || echo "?")
+
+  if echo "$pull_out" | grep -q "Already up to date"; then
+    echo -e "  ${G}✓ Already up to date${N}  ${DIM}($new_ref)${N}"
+    echo ""
+    return 0
+  fi
+
+  local n_commits
+  n_commits=$(git -C "$INSTALL_DIR" rev-list "${old_ref}..HEAD" --count 2>/dev/null || echo "?")
+  local commit_word; [ "$n_commits" = "1" ] && commit_word="commit" || commit_word="commits"
+
+  echo -e "  ${G}✓ Updated to ${W}$new_ref${N}  ${DIM}($n_commits new $commit_word)${N}"
+  echo ""
+
+  # Compute column width for alignment
+  local max_len=0
+  for _n in "${!_old[@]}"; do
+    [ ${#_n} -gt $max_len ] && max_len=${#_n}
+  done
+  if [ -d "$PLUGINS_DIR" ]; then
+    for _d in "$PLUGINS_DIR"/*/; do
+      local _n; _n=$(basename "$_d")
+      [ ${#_n} -gt $max_len ] && max_len=${#_n}
+    done
+  fi
+
+  echo -e "  ${W}Plugin versions:${N}"
+  echo ""
+
+  declare -A _shown=()
+
+  if [ -d "$PLUGINS_DIR" ]; then
+    for _d in "$PLUGINS_DIR"/*/; do
+      [ -d "$_d" ] || continue
+      local _n _nv _ov _pad
+      _n=$(basename "$_d")
+      _nv=$(_ck_version "$_d")
+      _ov="${_old[$_n]:-}"
+      _pad=$(printf '%*s' $((max_len - ${#_n})) '')
+
+      if [ -z "$_ov" ]; then
+        echo -e "    ${G}+${N} ${W}$_n${N}$_pad  ${G}$_nv${N}  ${DIM}(new)${N}"
+      elif [ "$_ov" != "$_nv" ]; then
+        echo -e "    ${Y}↑${N} ${W}$_n${N}$_pad  ${Y}$_ov → $_nv${N}"
+      else
+        echo -e "    ${DIM}  $_n$_pad  $_nv${N}"
+      fi
+      _shown["$_n"]=1
+    done
+  fi
+
+  # Plugins removed by the pull
+  for _n in "${!_old[@]}"; do
+    [ -n "${_shown[$_n]:-}" ] && continue
+    local _pad; _pad=$(printf '%*s' $((max_len - ${#_n})) '')
+    echo -e "    ${R}-${N} $_n$_pad  ${R}(removed)${N}"
+  done
+
+  echo ""
+  echo -e "  ${G}Done.${N}"
+  echo ""
 }
 
 cmd_uninstall() {
@@ -369,8 +471,8 @@ Usage:
   claude-kit --kit <name> [--kit <name>...] [options]
   claude-kit list
   claude-kit update
-  claude-kit uninstall
   claude-kit validate <name>
+  claude-kit uninstall
 
 Options:
   --kit, -k <name>                  Kit to load (repeatable)
@@ -385,6 +487,12 @@ Examples:
 
 Kit shortcuts load full groups:
   coding-embedded-zephyr  →  engineer + grader + knowledge (companions auto-loaded)
+
+Commands:
+  list      Show all available kits (bundled + local)
+  update    Pull latest bundled plugins, show version changes with colored diff
+  validate  Check a kit's plugin structure for correctness
+  uninstall Remove claude-kit and the CLI symlink
 
 EOF
     ;;
