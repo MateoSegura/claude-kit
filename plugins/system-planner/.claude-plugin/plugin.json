@@ -1,0 +1,5 @@
+{
+  "name": "system-planner",
+  "description": "Deterministic context management for long-running Claude Code sessions — enforces structured planning with named plans under docs/plans/, tracks progress via file-based state, and recovers context after compaction through hooks and agents.",
+  "version": "1.0.0"
+}

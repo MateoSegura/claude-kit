@@ -1,0 +1,5 @@
+{
+  "name": "system-updater",
+  "description": "Agent Updater — guides users through enhancing existing Claude Code plugins via a structured 6-phase workflow with fitness checking, surgical change planning, and staging-based safe implementation.",
+  "version": "1.0.0"
+}

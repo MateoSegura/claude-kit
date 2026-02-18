@@ -1,0 +1,63 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/enforce-sysbuild.sh",
+            "description": "Enforce sysbuild usage for MCUboot integration"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Review the code change for Zephyr RTOS anti-patterns. Tool input: $ARGUMENTS\n\nIf the file is NOT C source code (.c or .h extension), respond {\"ok\": true} immediately and skip all checks.\n\nFor C source files, check for ALL of these anti-patterns:\n\n1. **Static macro init** - K_THREAD_DEFINE, K_SEM_DEFINE, K_MUTEX_DEFINE, K_MSGQ_DEFINE used instead of runtime k_*_init functions\n2. **Direct register access** - volatile pointer casts to hardcoded addresses instead of using Zephyr HAL/devicetree APIs\n3. **printk() usage** - printk() instead of LOG_MODULE_REGISTER + LOG_INF/WRN/ERR/DBG\n4. **Heap allocation** - k_malloc(), malloc(), k_calloc() instead of private k_heap_alloc or k_mem_slab\n5. **Missing device_is_ready()** - DEVICE_DT_GET used without subsequent device_is_ready() check\n6. **Blocking in ISR** - k_sem_take with timeout, k_mutex_lock, or k_sleep called in interrupt context\n7. **Missing error checks** - Zephyr API calls (return int) used without checking return value\n8. **#ifdef CONFIG_*** - #ifdef CONFIG_* instead of IS_ENABLED(CONFIG_*)\n9. **assert in production** - assert() or __ASSERT in production code paths instead of proper error returns\n10. **Missing LOG_MODULE_REGISTER** - .c files using LOG_* macros without LOG_MODULE_REGISTER at top\n\nSeverity rules:\n- For NEW files (file_path does not already exist): Report anti-patterns as ERROR\n- For MODIFIED files (editing existing file): Report anti-patterns as WARNING\n\nIf any anti-patterns are found, respond:\n{\"ok\": false, \"reason\": \"Anti-pattern found: [describe the issue and suggest the fix]\"}\n\nIf no anti-patterns found or file is not C code, respond:\n{\"ok\": true}",
+            "description": "Domain-aware linting for Zephyr RTOS anti-patterns"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/validate-dts-overlay.sh",
+            "description": "Validate devicetree overlay syntax and documentation"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/validate-kconfig.sh",
+            "description": "Validate Kconfig symbol naming and check for duplicates"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/run-build-async.sh",
+            "async": true,
+            "timeout": 300,
+            "description": "Capture build results and trigger tests if applicable"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "agent",
+            "prompt": "Verify deliverable quality before allowing Claude to stop. Context: $ARGUMENTS\n\nCheck ALL of the following:\n\n1. **Build success** - If C code was written, verify west build succeeded (check for build output)\n2. **DTS resolution** - All devicetree node references resolve (no missing phandles)\n3. **Kconfig dependencies** - All Kconfig symbols have satisfied dependencies\n4. **No unresolved TODOs** - No TODO/FIXME comments left in new files\n5. **Logging configured** - All .c files have LOG_MODULE_REGISTER if they use LOG_* macros\n6. **Error handling** - Functions that can fail return int error codes (not void)\n7. **Sysbuild verification** - If sysbuild was configured, both app and MCUboot images were produced\n\nUse Read, Grep, and Glob tools to verify these conditions. Read build logs, check source files, and validate configuration.\n\nIf ALL checks pass, respond:\n{\"ok\": true}\n\nIf ANY check fails, respond:\n{\"ok\": false, \"reason\": \"[Specific issue found and what needs to be fixed]\"}\n\nDo not allow Claude to stop if there are unresolved issues.",
+            "timeout": 120,
+            "description": "Comprehensive deliverable verification before stop"
+          }
+        ]
+      }
+    ]
+  }
+}

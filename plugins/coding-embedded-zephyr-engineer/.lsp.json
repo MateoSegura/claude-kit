@@ -1,0 +1,17 @@
+{
+  "lsp": {
+    "c": {
+      "command": "clangd",
+      "args": [
+        "--background-index",
+        "--clang-tidy",
+        "--header-insertion=iwyu",
+        "--compile-commands-dir=build"
+      ]
+    },
+    "python": {
+      "command": "pyright-langserver",
+      "args": ["--stdio"]
+    }
+  }
+}

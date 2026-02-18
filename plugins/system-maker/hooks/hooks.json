@@ -1,0 +1,49 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[system-maker] Writing/editing file: $TOOL_INPUT_FILE_PATH\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "A plugin file was just written or edited: $ARGUMENTS. Validate that it follows the correct frontmatter format:\n\n1. Agent files (agents/*.md) MUST use 'tools:' NOT 'allowed-tools:'\n2. Command files (commands/*.md) MUST use 'allowed-tools:' NOT 'tools:'\n3. Skill files (skills/*/SKILL.md) MUST use 'allowed-tools:' NOT 'tools:' if they have tool restrictions\n4. All .md files must start with --- frontmatter delimiter\n5. All .json files must be valid JSON (no trailing commas, proper quotes)\n6. Agent frontmatter must include both 'name:' and 'description:' fields\n7. Agent skills: field should include 'identity' as the first skill if this is a plugin agent file\n\nRespond with {\"ok\": true} if the file is valid, or {\"ok\": false, \"reason\": \"specific violation description with file path and line number if possible\"} if there is a format error.",
+            "model": "haiku"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[system-maker] Subagent starting: $SUBAGENT_NAME\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-uncommitted-build.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

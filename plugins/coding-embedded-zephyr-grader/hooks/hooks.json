@@ -1,0 +1,52 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/restrict-file-writes.sh",
+            "description": "Restrict file writes to report formats only (md, json, html)"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You are validating a grading report file write. Review the file path and content from $ARGUMENTS.\n\nCheck that:\n1. File is NOT inside a submission directory (submissions are read-only)\n2. Content is a well-structured grading report (not code, not config)\n3. All numeric scores are in 0-100 range with supporting evidence\n4. No qualitative-only judgments without data/metrics\n5. If the file contains dimension scores, each has clear justification\n\nRespond {\"ok\": true} if all checks pass.\nRespond {\"ok\": false, \"reason\": \"specific issue\"} if validation fails.",
+            "description": "Smart validation of grading report content"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/run-tool-pipeline-async.sh",
+            "async": true,
+            "timeout": 300000,
+            "description": "Launch static analysis tools after successful west build"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You are verifying that grading work is complete. Review the conversation history and $ARGUMENTS.\n\nFor Single Submission Mode, verify:\n1. All 9 dimensions scored (0-100) or explicitly marked N/A with justification\n2. Aggregate score computed using the weighted formula\n3. All 3 output formats generated: Markdown report, JSON structured data, HTML formatted report\n4. Every dimension score includes supporting evidence (metrics, tool outputs, code examples)\n5. LLM-evaluated dimensions (Clarity, Documentation, Error Handling) have confidence levels assigned\n\nFor A/B Comparison Mode, additionally verify:\n6. Both submissions scored independently with full dimension breakdowns\n7. Side-by-side comparison table showing dimension-by-dimension differences\n8. Recommendation with clear reasoning about which submission is superior\n\nRespond {\"ok\": true} if all verification checks pass.\nRespond {\"ok\": false, \"reason\": \"specific missing element\"} if work is incomplete.",
+            "description": "Verify all grading dimensions scored and reports generated"
+          }
+        ]
+      }
+    ]
+  }
+}

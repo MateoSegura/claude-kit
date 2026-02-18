@@ -1,0 +1,99 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "agent",
+            "prompt": "You are the context-recovery agent for the system-planner plugin. Your job is to restore working context after conversation history was compacted. Be precise and concise.\n\nRECOVERY PROCEDURE:\n\n1. Read docs/plans/.active to find the active plan directory. If missing, output \"No active plan found. Use /system-planner:plan to create one.\" and stop.\n\n2. FAST PATH — Read docs/plans/<active>/state.json. If it exists and contains valid JSON, extract:\n   - current_phase (integer)\n   - last_completed_task_id\n   - last_completed_phase\n   - timestamp\n   Use these values directly. Skip to step 4.\n\n3. FALLBACK — If state.json is missing or malformed:\n   a. Read docs/plans/<active>/.current-phase for the current phase number (single integer).\n   b. Read docs/plans/<active>/status.log (last 40 lines). Find the most recent COMPACTION_SNAPSHOT marker. Parse COMPLETED entries after it for progress context.\n   c. If .current-phase is also missing, infer current phase from the highest phase number in COMPLETED entries + 1.\n\n4. Read docs/plans/<active>/overview.md — extract the Context section (original request and conversation state), Goal, Architecture Decisions, Constraints, and Key Files.\n\n5. Read the current phase file: docs/plans/<active>/phases/phase-NN.md (zero-pad the phase number, e.g., phase-03.md).\n\n6. VERIFY: Read the phase file from step 5. Check for uncompleted steps (lines containing \"- [ ]\"). If ALL steps show \"- [x]\" (completed), increment the phase number and read the next phase file. If that file does not exist, check TaskList for in-progress or pending tasks. Report whichever phase has remaining work.\n\n7. Check TaskList for in-progress and pending tasks.\n\nOUTPUT FORMAT (keep under 500 words):\n**Project**: [one-line goal from overview.md]\n**Context**: [original request summary from Context section]\n**Current Phase**: [N — phase title]\n**Last Completed**: [most recent COMPLETED entry]\n**Next Steps**: [remaining uncompleted steps from current phase file]\n**Key Decisions**: [architecture decisions from overview.md that affect current work]\n**Active Tasks**: [in-progress TaskList items with IDs]",
+            "model": "sonnet",
+            "timeout": 45,
+            "description": "Restore context after compaction by reading state.json snapshot and plan files (sonnet model for higher accuracy)"
+          }
+        ]
+      },
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ACTIVE_DIR=\"\"; if [ -f docs/plans/.active ]; then ACTIVE_DIR=\"docs/plans/$(cat docs/plans/.active)\"; fi; if [ -n \"$ACTIVE_DIR\" ] && [ -f \"$ACTIVE_DIR/status.log\" ]; then echo \"[system-planner] Active plan: $(cat docs/plans/.active)\"; echo \"Recent activity:\"; tail -5 \"$ACTIVE_DIR/status.log\"; else echo \"[system-planner] No active plan. Use /system-planner:plan to create one.\"; fi",
+            "description": "Show recent plan activity on session start/resume"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/verify-plan.sh",
+            "description": "Block source file edits without an active plan"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "model": "haiku",
+            "timeout": 15,
+            "prompt": "You are a plan file integrity checker for the system-planner plugin.\n\nA file was just written or edited. Check if it is under the docs/plans/ directory.\n\nTool input: {{tool_input}}\nTool result: {{tool_result}}\n\nIf the file is NOT under docs/plans/, respond only: {\"ok\": true}\n\nIf the file IS under docs/plans/, check:\n1. If it's an overview.md: verify it has all required sections (## Context, ## Goal, ## Architecture Decisions, ## Constraints, ## Phase Summary, ## Key Files). Report any missing sections.\n2. If it's a phase-NN.md: verify it has the template sections (## Objective, ## Steps, ## Files to Create/Modify, ## Acceptance Criteria, ## Dependencies). Report any missing sections.\n3. If it's status.log: WARN — status.log should only be written by hook scripts, not directly by Claude. This may indicate a non-negotiable rule violation.\n\nAlways end your response with either {\"ok\": true} if no issues found, or {\"ok\": false, \"reason\": \"...\"} if issues detected. This is PostToolUse so the edit already happened — just report findings for awareness.",
+            "description": "Check plan file integrity after writes"
+          },
+          {
+            "type": "prompt",
+            "model": "haiku",
+            "timeout": 15,
+            "description": "Check if edited file aligns with current phase scope (advisory drift detection)",
+            "prompt": "You are a plan-alignment drift detector for the system-planner plugin. Your job is to check whether a file edit falls within the current phase's declared scope. This is an advisory check — a nudge, not a hard block.\n\nINPUT: The tool just completed a Write or Edit. The file path is in {{tool_input}}.\n\nPROCEDURE:\n\n1. Extract the file path from the tool input.\n\n2. If the file is under docs/plans/, respond immediately: {\"ok\": true}\n   Plan file edits are always in scope.\n\n3. Read docs/plans/.active to find the active plan directory.\n   If .active does not exist or is empty: {\"ok\": true}\n   No active plan means nothing to check against.\n\n4. Determine the current phase number:\n   a. Read docs/plans/<active>/.current-phase (single integer).\n   b. If missing, read phase files to find the lowest-numbered phase with uncompleted steps (lines containing \"- [ ]\").\n   c. If neither works: {\"ok\": true}\n\n5. Read docs/plans/<active>/phases/phase-NN.md (zero-pad the phase number, e.g., phase-03.md).\n   If the phase file does not exist: {\"ok\": true}\n\n6. Check if the edited file appears in:\n   a. The \"## Files to Create/Modify\" section — match the file path or a parent directory prefix (e.g., phase lists \"src/api/\" and edit is \"src/api/routes.ts\")\n   b. The \"## Steps\" section — check if the file is mentioned in any step description\n   \n7. If the file is found in either section: {\"ok\": true}\n\n8. If NOT found:\n   {\"ok\": false, \"reason\": \"Edit to <filepath> is not in Phase <NN>'s scope. Current phase targets: <comma-separated list from Files to Create/Modify>. If this edit is intentional (bug fix, unplanned dependency, refactor), acknowledge the drift and either update the phase file to include this work or refocus on the current phase's objectives.\"}\n\nKeep your response to ONLY the JSON verdict. No explanation needed."
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/update-status.sh",
+            "description": "Append task completion to active plan's status.log"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "auto|manual",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/pre-compact-snapshot.sh",
+            "description": "Write compaction boundary marker to status.log"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "agent",
+            "prompt": "Before allowing the session to end, verify plan consistency.\n\n1. Read docs/plans/.active to find the active plan directory. If missing, respond: {\"ok\": true} — no plan means nothing to verify.\n2. Read docs/plans/<active>/status.log — check for recent activity\n3. Check TaskList — are there in-progress tasks that weren't completed?\n4. Read the current phase file (identify from status.log) — are there steps marked as started but not finished?\n\nIf ALL of these are true, respond: {\"ok\": true}\n- No in-progress tasks left hanging (all either completed or still pending)\n- No obvious inconsistencies between status.log and TaskList\n\nIf ANY issue is found, respond:\n{\"ok\": false, \"reason\": \"[describe the inconsistency — e.g., 'Task #3 is marked in_progress but has no completion entry in status.log']\"}\n\nBe strict about in-progress tasks. It's better to warn about an abandoned task than to let the session end silently.",
+            "model": "haiku",
+            "timeout": 30,
+            "description": "Check plan consistency before session end"
+          }
+        ]
+      }
+    ]
+  }
+}

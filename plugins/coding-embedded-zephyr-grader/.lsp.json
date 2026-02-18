@@ -1,0 +1,8 @@
+{
+  "lsp": {
+    "c": {
+      "command": "clangd",
+      "args": ["--background-index", "--compile-commands-dir=build"]
+    }
+  }
+}
