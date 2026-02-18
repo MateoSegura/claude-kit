@@ -128,20 +128,40 @@ fi
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 
+_W='\033[1;37m'
+_C='\033[0;36m'
+_DIM='\033[2m'
+
 echo ""
-ok "claude-kit is ready."
+echo -e "${_G}  ┌─────────────────────────────────────────────┐${_N}"
+echo -e "${_G}  │        claude-kit installed successfully     │${_N}"
+echo -e "${_G}  └─────────────────────────────────────────────┘${_N}"
 echo ""
-echo "  If 'claude-kit' isn't found, restart your shell or run:"
-echo "    export PATH=\"\$HOME/.local/bin:\$PATH\""
+
+# PATH notice if needed
+if ! command -v claude-kit &>/dev/null 2>&1; then
+  echo -e "  ${_Y}Note:${_N} claude-kit isn't on your PATH yet."
+  echo -e "  Run this, then open a new terminal:"
+  echo ""
+  echo -e "    ${_C}export PATH=\"\$HOME/.local/bin:\$PATH\"${_N}"
+  echo ""
+fi
+
+echo -e "  ${_W}Quick start${_N}"
 echo ""
-echo "  Then:"
-echo "    claude-kit list"
-echo "    claude-kit --kit coding-embedded-zephyr"
-echo "    claude-kit --kit coding-embedded-zephyr --model sonnet --yolo"
+echo -e "  ${_DIM}1.${_N} See what kits are available"
+echo -e "     ${_C}claude-kit list${_N}"
 echo ""
-echo "  Keep plugins up to date:"
-echo "    claude-kit update"
+echo -e "  ${_DIM}2.${_N} Launch a kit  ${_DIM}(opens Claude Code with that plugin loaded)${_N}"
+echo -e "     ${_C}claude-kit --kit <name>${_N}"
+echo -e "     ${_C}claude-kit --kit <name> --yolo${_N}   ${_DIM}# skip permission prompts${_N}"
 echo ""
-echo "  To uninstall:"
-echo "    claude-kit uninstall"
+echo -e "  ${_DIM}3.${_N} Build your own kit  ${_DIM}(AI-guided agent creator)${_N}"
+echo -e "     ${_C}claude-kit --kit system-maker${_N}"
+echo ""
+echo -e "  ${_DIM}4.${_N} Stay up to date"
+echo -e "     ${_C}claude-kit update${_N}"
+echo ""
+echo -e "  ${_DIM}────────────────────────────────────────────────${_N}"
+echo -e "  ${_DIM}Docs & source: github.com/MateoSegura/claude-kit${_N}"
 echo ""
