@@ -337,7 +337,7 @@ Options:
 
 Examples:
   claude-kit --kit coding-embedded-zephyr
-  claude-kit --kit coding-embedded-zephyr --kit system-planner
+  claude-kit --kit coding-embedded-zephyr --kit core-planner
   claude-kit --kit coding-embedded-zephyr --model sonnet --yolo
 
 Kit shortcuts load full groups:

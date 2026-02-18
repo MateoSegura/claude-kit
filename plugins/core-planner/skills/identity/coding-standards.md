@@ -1,6 +1,6 @@
 # Plan File Formatting Standards and Conventions
 
-This document defines the canonical format for plan files, naming conventions, and formatting rules enforced by the system-planner plugin.
+This document defines the canonical format for plan files, naming conventions, and formatting rules enforced by the core-planner plugin.
 
 ## overview.md Required Sections
 

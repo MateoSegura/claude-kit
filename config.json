@@ -6,7 +6,7 @@
       "description": "Load system-maker and system-updater merged"
     },
     "zephyr-planned": {
-      "plugins": ["system-planner", "coding-embedded-zephyr-knowledge", "coding-embedded-zephyr-engineer"],
+      "plugins": ["core-planner", "coding-embedded-zephyr-knowledge", "coding-embedded-zephyr-engineer"],
       "description": "Zephyr engineer with deterministic planning"
     }
   }

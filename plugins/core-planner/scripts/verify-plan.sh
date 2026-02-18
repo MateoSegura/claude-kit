@@ -24,8 +24,8 @@ fi
 # Check if active plan exists and has overview.md
 if [ -z "$ACTIVE_PLAN_DIR" ] || [ ! -f "$ACTIVE_PLAN_DIR/overview.md" ]; then
   echo "BLOCKED: No active plan found in $(pwd)." >&2
-  echo "[system-planner] Create a plan first with /system-planner:plan before editing source files." >&2
-  echo "[system-planner] Allowed without plan: docs/plans/ files, configs (.json, .yaml, .toml), docs (.md), scripts (.sh)." >&2
+  echo "[core-planner] Create a plan first with /core-planner:plan before editing source files." >&2
+  echo "[core-planner] Allowed without plan: docs/plans/ files, configs (.json, .yaml, .toml), docs (.md), scripts (.sh)." >&2
   exit 2
 fi
 
