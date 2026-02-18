@@ -5,7 +5,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash, AskUserQuestion, TaskCreate,
 
 # /spec:new
 
-Create a spec that survives context compaction. All state is written to files in `docs/specs/` so it can be recovered after compaction.
+Create a spec that survives context compaction. All state is written to files under your configured spec root (default `docs/specs/`, registered per-project in `~/.claude-kit/spec-registry.json`) so it can be recovered after compaction.
 
 The key difference from a plain plan: **requirements and acceptance criteria come first**. Phases are derived from the spec — they describe how to satisfy the requirements, not just a list of steps.
 
@@ -15,22 +15,64 @@ The key difference from a plain plan: **requirements and acceptance criteria com
 2. **Always create overview.md first** — this is the spec gate that unlocks source file editing (PreToolUse hook checks for it)
 3. **Create TaskList items for each phase** — this integrates with the TaskCompleted hook for automatic status tracking
 4. **Use the templates from spec-templates.md** — the context-recovery agent expects this format
-5. **Write the spec directory name to docs/specs/.active after creating the spec** — this is how all hooks and agents find the active spec
+5. **Write the spec directory name to `<SPEC_ROOT>/.active` after creating the spec** — this is how all hooks and agents find the active spec
 
 </critical_rules>
 
 <workflow>
 
+## Step 0: Spec root configuration
+
+Before checking for existing specs, determine where to store spec files for this project.
+
+```bash
+# Detect project root
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+
+# Check if this project already has a registered spec root
+REGISTERED=$(jq -r --arg p "$PROJECT_ROOT" \
+  '.registrations[$p] // empty' \
+  ~/.claude-kit/spec-registry.json 2>/dev/null)
+```
+
+**If `REGISTERED` is non-empty:**
+- Use it as `SPEC_ROOT` — skip the question, tell the user: `[spec] Using registered spec root: <REGISTERED>`
+
+**If `REGISTERED` is empty:**
+- Ask the user via AskUserQuestion:
+
+  ```
+  Where should spec files be stored for this project?
+
+  Project root: <PROJECT_ROOT>
+
+  Options:
+  - docs/specs/ (default — inside the project, version-controlled)
+  - Custom path — absolute (e.g., ~/specs/my-project) or relative to project root
+  ```
+
+- Store the chosen path as `SPEC_ROOT` (strip trailing slash)
+- Register it immediately:
+
+  ```bash
+  mkdir -p ~/.claude-kit
+  REG=$(cat ~/.claude-kit/spec-registry.json 2>/dev/null || echo '{"registrations":{}}')
+  echo "$REG" | jq --arg p "$PROJECT_ROOT" --arg s "$SPEC_ROOT" \
+    '.registrations[$p] = $s' > ~/.claude-kit/spec-registry.json
+  ```
+
+Use `SPEC_ROOT` in place of `docs/specs` for **all** subsequent steps in this workflow.
+
 ## Step 1: Check for existing specs
 
 ```
-Use Glob to check: docs/specs/*/overview.md
-Check if docs/specs/.active exists
+Use Glob to check: <SPEC_ROOT>/*/overview.md
+Check if <SPEC_ROOT>/.active exists
 ```
 
 **If active spec exists:**
-- Read `docs/specs/.active` to get the active spec directory name
-- Read `docs/specs/<active>/overview.md` and show the user a summary
+- Read `<SPEC_ROOT>/.active` to get the active spec directory name
+- Read `<SPEC_ROOT>/<active>/overview.md` and show the user a summary
 - Ask: "An active spec exists (<active>). Would you like to:"
   - **Update current spec**: Proceed to update_workflow with current spec
   - **Start fresh (new spec)**: Proceed to Step 2 to create a new spec
@@ -53,7 +95,7 @@ Generate the directory name as `<name>-<YYYY-MM-DD>` where YYYY-MM-DD is today's
 
 Check uniqueness:
 ```
-Use Glob to check: docs/specs/<generated-name>/
+Use Glob to check: <SPEC_ROOT>/<generated-name>/
 ```
 
 If the directory already exists, output an error and ask for a different name. Do not proceed until you have a unique directory name.
@@ -106,13 +148,13 @@ Each phase should:
 ### 6a: Create directory structure
 
 ```bash
-mkdir -p docs/specs/<name>-<YYYY-MM-DD>/phases
+mkdir -p <SPEC_ROOT>/<name>-<YYYY-MM-DD>/phases
 ```
 
 ### 6b: Create overview.md
 
 ```
-Write docs/specs/<name>-<YYYY-MM-DD>/overview.md following the template from spec-templates.md
+Write <SPEC_ROOT>/<name>-<YYYY-MM-DD>/overview.md following the template from spec-templates.md
 ```
 
 Include:
@@ -132,8 +174,8 @@ Include:
 
 For each phase N, write zero-padded filenames:
 ```
-Write docs/specs/<name>-<YYYY-MM-DD>/phases/phase-01.md
-Write docs/specs/<name>-<YYYY-MM-DD>/phases/phase-02.md
+Write <SPEC_ROOT>/<name>-<YYYY-MM-DD>/phases/phase-01.md
+Write <SPEC_ROOT>/<name>-<YYYY-MM-DD>/phases/phase-02.md
 ... and so on, following the template from spec-templates.md
 ```
 
@@ -141,14 +183,14 @@ Write docs/specs/<name>-<YYYY-MM-DD>/phases/phase-02.md
 
 Create an empty status.log (the hooks will populate it):
 ```bash
-touch docs/specs/<name>-<YYYY-MM-DD>/status.log
+touch <SPEC_ROOT>/<name>-<YYYY-MM-DD>/status.log
 ```
 
 ### 6e: Write .active file
 
-Write the spec directory name to docs/specs/.active:
+Write the spec directory name to <SPEC_ROOT>/.active:
 ```bash
-echo "<name>-<YYYY-MM-DD>" > docs/specs/.active
+echo "<name>-<YYYY-MM-DD>" > <SPEC_ROOT>/.active
 ```
 
 This tells all hooks and agents where the active spec is located.
@@ -184,11 +226,11 @@ Show the user:
 
 When updating an existing spec (user chose "Update current spec" in Step 1):
 
-1. Read `docs/specs/.active` to find the active spec directory
-2. Read current `docs/specs/<active>/overview.md` and all phase files
+1. Read `<SPEC_ROOT>/.active` to find the active spec directory (SPEC_ROOT from Step 0)
+2. Read current `<SPEC_ROOT>/<active>/overview.md` and all phase files
 3. Ask what changed (new requirements, completed work, revised approach)
-4. Update `docs/specs/<active>/overview.md` — add/update requirements, acceptance criteria, architecture decisions
-5. Add, modify, or remove phase files in `docs/specs/<active>/phases/` as needed (maintain zero-padding: phase-01.md, phase-02.md, etc.)
+4. Update `<SPEC_ROOT>/<active>/overview.md` — add/update requirements, acceptance criteria, architecture decisions
+5. Add, modify, or remove phase files in `<SPEC_ROOT>/<active>/phases/` as needed (maintain zero-padding: phase-01.md, phase-02.md, etc.)
 6. Update TaskList items to match (create new tasks, update descriptions)
 7. Do NOT delete status.log — it's an audit trail
 8. Show the user the updated spec summary

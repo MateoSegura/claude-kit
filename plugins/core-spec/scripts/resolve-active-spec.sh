@@ -1,19 +1,29 @@
 #!/usr/bin/env bash
-# resolve-active-spec.sh — Shared helper to resolve the active spec directory.
-# Source this script; do not invoke directly. Sets ACTIVE_PLAN_DIR.
+# resolve-active-spec.sh — Shared helper to resolve active spec directory.
+# Source this script; do not invoke directly.
+# Sets: SPEC_ROOT (root for all specs), ACTIVE_PLAN_DIR (active spec dir, or empty)
+
+# Determine project root (git root or cwd fallback)
+_project_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+
+# Look up configured spec root from ~/.claude-kit/spec-registry.json
+SPEC_ROOT=$(jq -r --arg p "$_project_root" \
+  '.registrations[$p] // empty' \
+  ~/.claude-kit/spec-registry.json 2>/dev/null)
+[ -z "$SPEC_ROOT" ] && SPEC_ROOT="docs/specs"
 
 ACTIVE_PLAN_DIR=""
 
-if [ ! -f "docs/specs/.active" ]; then
+if [ ! -f "${SPEC_ROOT}/.active" ]; then
   return 0 2>/dev/null || exit 0
 fi
 
-_active_name=$(cat "docs/specs/.active" 2>/dev/null)
+_active_name=$(cat "${SPEC_ROOT}/.active" 2>/dev/null)
 if [ -z "$_active_name" ]; then
   return 0 2>/dev/null || exit 0
 fi
 
-ACTIVE_PLAN_DIR="docs/specs/${_active_name}"
+ACTIVE_PLAN_DIR="${SPEC_ROOT}/${_active_name}"
 
 if [ ! -d "$ACTIVE_PLAN_DIR" ]; then
   ACTIVE_PLAN_DIR=""
