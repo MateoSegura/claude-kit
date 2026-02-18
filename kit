@@ -92,7 +92,7 @@ cmd_run() {
         ;;
       -*)
         echo "Unknown flag: $1"
-        echo "Usage: forge run [--yolo|-y] <name>"
+        echo "Usage: kit run [--yolo|-y] <name>"
         exit 1
         ;;
       *)
@@ -103,7 +103,7 @@ cmd_run() {
   done
 
   if [ -z "$agent_name" ]; then
-    echo "Usage: forge run [--yolo|-y] <name>"
+    echo "Usage: kit run [--yolo|-y] <name>"
     exit 1
   fi
 
@@ -242,7 +242,7 @@ cmd_list() {
 }
 
 cmd_validate() {
-  local agent_name="${1:?Usage: forge validate <name>}"
+  local agent_name="${1:?Usage: kit validate <name>}"
   validate_agent_name "$agent_name"
 
   local plugin_dir="$PLUGINS_DIR/$agent_name"
@@ -333,11 +333,11 @@ cmd_validate() {
 }
 
 cmd_update() {
-  echo "Updating forge..."
+  echo "Updating kit..."
   git -C "$INSTALL_DIR" pull --ff-only
   local ver
   ver=$(git -C "$INSTALL_DIR" describe --tags --always 2>/dev/null || git -C "$INSTALL_DIR" rev-parse --short HEAD 2>/dev/null || echo "unknown")
-  echo "forge updated → $ver"
+  echo "kit updated → $ver"
 }
 
 case "${1:-help}" in
@@ -356,7 +356,7 @@ case "${1:-help}" in
     cmd_update
     ;;
   help|--help|-h)
-    echo "Usage: forge <command> [args]"
+    echo "Usage: kit <command> [args]"
     echo ""
     echo "Commands:"
     echo "  run [--yolo] <name>   Launch Claude with the specified plugin(s)"
@@ -373,7 +373,7 @@ case "${1:-help}" in
     ;;
   *)
     echo "Unknown command: $1"
-    echo "Run 'forge help' for usage."
+    echo "Run 'kit help' for usage."
     exit 1
     ;;
 esac
