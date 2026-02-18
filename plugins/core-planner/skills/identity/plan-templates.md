@@ -1,6 +1,6 @@
 # Plan File Templates
 
-Reference templates for the files created by `/system-planner:plan`. These define the canonical format that the context-recovery agent expects.
+Reference templates for the files created by `/core-planner:plan`. These define the canonical format that the context-recovery agent expects.
 
 Named plan directories follow the convention `docs/plans/<name>-<YYYY-MM-DD>/` where:
 - `<name>` must be 2-4 kebab-case words

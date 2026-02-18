@@ -3,7 +3,7 @@ description: "Show current plan status — displays phase progress, recent activ
 allowed-tools: Read, Glob, Grep, TaskList, TaskGet
 ---
 
-# /system-planner:status
+# /core-planner:status
 
 Show the current state of the project plan. Reads from plan files and TaskList to give a complete picture.
 
@@ -11,7 +11,7 @@ Show the current state of the project plan. Reads from plan files and TaskList t
 
 ## Step 1: Determine which plan to show
 
-If the user provided a plan name as an argument (e.g., `/system-planner:status my-plan`), look for it:
+If the user provided a plan name as an argument (e.g., `/core-planner:status my-plan`), look for it:
 ```
 Use Glob to check: docs/plans/<name>*/overview.md
 ```
@@ -25,14 +25,14 @@ Read docs/plans/.active to get the active plan directory name
 **Edge cases:**
 - If `.active` does not exist and no argument was provided, output:
   ```
-  No active plan found. Use /system-planner:plan to create one.
+  No active plan found. Use /core-planner:plan to create one.
   ```
   And stop.
 
 - If `.active` points to a nonexistent directory, output:
   ```
   Warning: .active points to <directory>, but docs/plans/<directory>/ does not exist.
-  Run /system-planner:plan to create a new plan or fix the .active reference.
+  Run /core-planner:plan to create a new plan or fix the .active reference.
   ```
   And stop.
 
@@ -104,7 +104,7 @@ If viewing an inactive plan (not the one in .active), add a note: "(viewing inac
 - **TaskList empty but plan exists**: Plan was created before TaskList integration — show phase files only
 - **Compaction markers in status.log**: Note them as "[context compaction occurred]" in the activity feed
 - **Mismatched phases**: If phase files exist that don't have TaskList items, note the discrepancy
-- **Multiple plans exist**: If Glob finds multiple plans, mention "Use /system-planner:status <name> to view other plans" in the output
-- **.active points to nonexistent directory**: Handled in Step 1 — warn and suggest /system-planner:plan
+- **Multiple plans exist**: If Glob finds multiple plans, mention "Use /core-planner:status <name> to view other plans" in the output
+- **.active points to nonexistent directory**: Handled in Step 1 — warn and suggest /core-planner:plan
 
 </edge_cases>

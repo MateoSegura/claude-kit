@@ -50,7 +50,7 @@ kit validate coding-embedded-zephyr-engineer
 | `coding-embedded-zephyr-grader` | Firmware code review and grading |
 | `system-maker` | Build new domain plugins via guided workflow |
 | `system-updater` | Enhance existing plugins |
-| `system-planner` | Deterministic planning with plan files |
+| `core-planner` | Deterministic planning with plan files |
 
 ## Update
 

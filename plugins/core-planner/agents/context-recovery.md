@@ -22,7 +22,7 @@ You will be invoked by the SessionStart(compact) hook. No explicit input is prov
 
 Read `docs/plans/.active` to find the active plan directory name. If `.active` does not exist, output:
 ```
-No active plan found. Use /system-planner:plan to create one. Plans are stored in docs/plans/.
+No active plan found. Use /core-planner:plan to create one. Plans are stored in docs/plans/.
 ```
 And stop.
 

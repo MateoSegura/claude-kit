@@ -1,6 +1,6 @@
 # Workflow Patterns for Plan Operations
 
-Step-by-step workflows for all major plan operations in the system-planner plugin.
+Step-by-step workflows for all major plan operations in the core-planner plugin.
 
 ## Creating a New Named Plan
 
@@ -276,7 +276,7 @@ To switch from one plan to another (both already exist):
 - To work on a different plan, switch using this workflow first
 
 ### Viewing Inactive Plans
-- To check status of a non-active plan: `/system-planner:status <name>`
+- To check status of a non-active plan: `/core-planner:status <name>`
 - This reads the plan files without switching the active plan
 - Useful for reviewing historical plans or comparing alternatives
 

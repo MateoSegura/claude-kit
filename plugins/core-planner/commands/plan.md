@@ -3,7 +3,7 @@ description: "Create a structured plan for the current project — decomposes wo
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, TaskGet
 ---
 
-# /system-planner:plan
+# /core-planner:plan
 
 Create a structured plan that survives context compaction. All state is written to files in `docs/plans/` so it can be recovered after compaction.
 
@@ -58,7 +58,7 @@ If the directory already exists, output an error and ask for a different name. D
 
 ## Step 3: Gather project goal
 
-If the user provided a goal as an argument to `/system-planner:plan`, use that.
+If the user provided a goal as an argument to `/core-planner:plan`, use that.
 
 Otherwise, ask:
 - "What is the goal of this project/task?" (free text)
@@ -108,7 +108,7 @@ Write docs/plans/<name>-<YYYY-MM-DD>/overview.md following the template from pla
 Include:
 - Title
 - ## Context section (NEW) — right after the title and before ## Goal. Contains:
-  - **Original request:** [the user's prompt/request that triggered /system-planner:plan — verbatim if short, summarized if long]
+  - **Original request:** [the user's prompt/request that triggered /core-planner:plan — verbatim if short, summarized if long]
   - **Conversation state:** [brief summary of conversation context at plan creation time — key files discussed, decisions made, constraints mentioned]
 - Project goal
 - Architecture decisions (even if "none yet" — this section gets updated as decisions are made)
