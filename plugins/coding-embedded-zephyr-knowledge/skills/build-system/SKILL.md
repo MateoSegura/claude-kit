@@ -1,5 +1,5 @@
 ---
-name: build-system
+name: coding-embedded-zephyr-knowledge:build-system
 description: Zephyr build system — west workflow, CMake patterns, sysbuild multi-image builds, workspace topologies, and CI/CD integration
 user-invocable: false
 ---

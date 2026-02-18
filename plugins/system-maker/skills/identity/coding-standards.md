@@ -171,7 +171,7 @@ Use numbered steps for sequential phases.
 
 ```yaml
 ---
-name: skill-name
+name: plugin-name:skill-name
 description: "What knowledge this skill provides"
 user-invocable: true | false
 allowed-tools: Tool1, Tool2, Tool3
@@ -181,7 +181,7 @@ allowed-tools: Tool1, Tool2, Tool3
 ### Critical Rules
 
 **REQUIRED FIELDS:**
-- `name:` — Must match directory name
+- `name:` — Format: `plugin-name:skill-name`. The `skill-name` portion must match the directory name.
 - `description:` — Specific description of the knowledge domain
 
 **USER-INVOCABLE FIELD:**
@@ -429,10 +429,11 @@ Example:
 {
   "name": "plugin-name",
   "description": "One-line description of what this plugin does",
-  "version": "1.0.0",
-  "keywords": ["tag1", "tag2", "tag3"]
+  "version": "1.0.0"
 }
 ```
+
+**CRITICAL**: `plugin.json` must contain ONLY `name`, `description`, and `version`. Extra fields (`role`, `keywords`, `companions`) cause Claude Code to silently fail to load the plugin. Use `ctl.json` for role and companions metadata.
 
 ### Rules
 
@@ -440,7 +441,7 @@ Example:
 - `name` field must match plugin directory name
 - `name` must match regex: `^[a-z]+-[a-z][-a-z]*$` (format: `<type>-<domain>-<tech>-<role>`)
 - `version` uses semantic versioning: `major.minor.patch`
-- `keywords` array for search/discovery
+- **Only 3 fields allowed**: `name`, `description`, `version` — nothing else
 
 ## LSP Configuration (.lsp.json)
 

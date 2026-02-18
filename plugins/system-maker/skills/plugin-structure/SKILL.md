@@ -1,5 +1,5 @@
 ---
-name: plugin-structure
+name: system-maker:plugin-structure
 description: Canonical reference specification for Claude Code plugin file formats, frontmatter fields, hooks schema, and component conventions. Preloaded by Phase 8 implementation agents to ensure correct file generation.
 ---
 
@@ -200,7 +200,7 @@ Skills are knowledge files that get preloaded into agents. They contain referenc
 
 ```yaml
 ---
-name: skill-name
+name: plugin-name:skill-name
 description: What knowledge this skill provides
 ---
 ```

@@ -498,6 +498,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
    AGENT_NAME: <insert AGENT_NAME>
    AGENT_DESCRIPTION: <insert AGENT_DESCRIPTION>
    DOMAIN_MAP: <insert full DOMAIN_MAP>
+   TEAM_MODE: false
 
    Generate 10-20 targeted questions covering scope boundaries, target platforms, coding standards, testing strategy, existing repos, MCP needs, integration requirements, and workflow preferences. Return as JSON per your agent definition.
    ```
@@ -953,7 +954,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
    Writer 1 — identity-writer:
    Task(subagent_type: 'identity-writer', prompt: 'Write identity skill at BUILD_DIR/skills/identity/ with 3 files:
-     SKILL.md (max 500 lines, persona/non-negotiables/methodology, frontmatter: name: identity, user-invocable: false)
+     SKILL.md (max 500 lines, persona/non-negotiables/methodology, frontmatter: name: AGENT_NAME:identity, user-invocable: false)
      coding-standards.md (naming, formatting, language patterns, error handling)
      workflow-patterns.md (step-by-step workflows for 3-5 most common domain tasks)
    Every section must contain domain-specific content — no generic filler.

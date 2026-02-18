@@ -1,5 +1,5 @@
 ---
-name: zephyr-patterns
+name: coding-embedded-zephyr-grader:zephyr-patterns
 description: "25+ Zephyr RTOS correctness patterns organized by category including kernel APIs, threading, ISR safety, devicetree, Kconfig, synchronization, memory management, and error handling with examples and anti-patterns."
 ---
 

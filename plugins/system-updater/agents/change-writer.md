@@ -91,7 +91,7 @@ color: "#hexcolor"
 ### Skill files (`skills/*/SKILL.md`)
 ```yaml
 ---
-name: skill-name
+name: plugin-name:skill-name
 description: "What knowledge this skill provides" # REQUIRED
 user-invocable: true | false
 ---

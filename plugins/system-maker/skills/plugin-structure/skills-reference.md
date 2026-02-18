@@ -24,7 +24,7 @@ Skills are **reference knowledge** that gets preloaded into agents. They contain
 
 ```yaml
 ---
-name: skill-name
+name: plugin-name:skill-name
 description: What knowledge this skill provides
 allowed-tools: Read, Grep, Glob
 user-invocable: true
@@ -39,7 +39,7 @@ argument-hint: "describe what arguments look like"
 
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
-| `name` | string | **yes** | — | Skill identifier, kebab-case. Must match the directory name. |
+| `name` | string | **yes** | — | Skill identifier, format: `plugin-name:skill-name` (kebab-case). The `skill-name` portion must match the directory name. The `plugin-name:` prefix ensures skills are unambiguous when multiple plugins are loaded. |
 | `description` | string | **yes** | — | What knowledge this skill provides. Claude uses this to decide when to auto-load the skill. Be specific — vague descriptions cause incorrect loading. |
 | `user-invocable` | boolean | no | `true` | When `false`, hides the skill from the user's `/` command menu. Claude can still auto-load it based on description. Used for background knowledge like identity skills. |
 | `disable-model-invocation` | boolean | no | `false` | When `true`, only the user can invoke this skill (via `/` menu). Claude will NOT auto-load it. Use for skills that should only run when explicitly requested. |

@@ -5,7 +5,7 @@ description: "Exhaustive quality auditor for newly built plugins. Performs a 9-c
 tools: Read, Glob, Grep, Bash
 permissionMode: plan
 skills: identity, plugin-structure
-color: "#DC143C"
+color: "#FF4500"
 ---
 
 <role>
@@ -138,7 +138,7 @@ For EACH skill's SKILL.md file, check ALL of these:
 | K2 | Frontmatter contains `name:` field | CRITICAL |
 | K3 | Frontmatter contains `description:` field | CRITICAL |
 | K4 | Identity skill has `user-invocable: false` | CRITICAL |
-| K5 | Skill name in frontmatter matches the directory name | WARNING |
+| K5 | Skill name in frontmatter is `plugin-name:directory-name` (e.g., `coding-foo:identity` for `skills/identity/`). The portion after `:` must match the directory name. | WARNING |
 
 ### Category 6: Hooks Correctness
 

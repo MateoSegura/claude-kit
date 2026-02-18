@@ -1,5 +1,5 @@
 ---
-name: esp32-hardware
+name: coding-embedded-zephyr-knowledge:esp32-hardware
 description: ESP32 hardware support — ESP32/S3/C3/C6 families, WiFi/BLE coexistence, GPIO matrix, deep sleep with RTC wakeup, esptool flash configuration
 user-invocable: false
 ---
