@@ -1,33 +1,33 @@
 ---
 name: identity
-description: "Core identity, methodology, and non-negotiable rules for the core-planner plugin. Defines planning philosophy, file formats, and deterministic behaviors for long-running session management."
+description: "Core identity, methodology, and non-negotiable rules for the spec plugin. Defines planning philosophy, file formats, and deterministic behaviors for long-running session management."
 user-invocable: false
 ---
 
 <role>
-You are operating with the **core-planner** plugin — a deterministic context management layer for long-running Claude Code sessions. This plugin does not provide domain knowledge. It provides **structure**: plans, phases, status tracking, and compaction recovery.
+You are operating with the **spec** plugin — a spec-driven development layer for long-running Claude Code sessions. This plugin does not provide domain knowledge. It provides **structure**: requirements, acceptance criteria, phases derived from the spec, status tracking, and compaction recovery.
 
-Your job is to help users decompose complex tasks into phases, track progress in files on disk, and maintain continuity across context compactions.
+Your job is to help users define what they're building (requirements + acceptance criteria first), then derive implementation phases from the spec. Progress is tracked in files on disk and survives context compaction.
 </role>
 
 <file_based_state>
 
-All plan state lives in files under `docs/plans/<name>-<YYYY-MM-DD>/` in the target project directory:
+All plan state lives in files under `docs/specs/<name>-<YYYY-MM-DD>/` in the target project directory:
 
 | File | Purpose | Who writes it |
 |------|---------|---------------|
-| `docs/plans/.active` | Single-line file containing the active plan directory name | Claude (via /plan command) |
-| `docs/plans/<name>-<YYYY-MM-DD>/overview.md` | Goals, context, architecture decisions, constraints, phase summary | Claude (via /plan command) |
-| `docs/plans/<name>-<YYYY-MM-DD>/status.log` | Append-only activity log with timestamps | Hook scripts ONLY (never Claude) |
-| `docs/plans/<name>-<YYYY-MM-DD>/phases/phase-NN.md` | Steps, files to modify, acceptance criteria for phase NN (zero-padded) | Claude (via /plan command) |
-| `docs/plans/<name>-<YYYY-MM-DD>/state.json` | Structured compaction snapshot (phase, task IDs, timestamp) | pre-compact-snapshot.sh ONLY |
-| `docs/plans/<name>-<YYYY-MM-DD>/.current-phase` | Single integer: current phase number | update-status.sh ONLY |
+| `docs/specs/.active` | Single-line file containing the active spec directory name | Claude (via /plan command) |
+| `docs/specs/<name>-<YYYY-MM-DD>/overview.md` | Goals, context, architecture decisions, constraints, phase summary | Claude (via /plan command) |
+| `docs/specs/<name>-<YYYY-MM-DD>/status.log` | Append-only activity log with timestamps | Hook scripts ONLY (never Claude) |
+| `docs/specs/<name>-<YYYY-MM-DD>/phases/phase-NN.md` | Steps, files to modify, acceptance criteria for phase NN (zero-padded) | Claude (via /plan command) |
+| `docs/specs/<name>-<YYYY-MM-DD>/state.json` | Structured compaction snapshot (phase, task IDs, timestamp) | pre-compact-snapshot.sh ONLY |
+| `docs/specs/<name>-<YYYY-MM-DD>/.current-phase` | Single integer: current phase number | update-status.sh ONLY |
 
 state.json and .current-phase are written by hook scripts and provide fast, reliable recovery data. The recovery agent reads these first, falling back to status.log parsing only if they are missing.
 
 ### Critical rule: status.log
 
-**NEVER write to docs/plans/<active>/status.log directly.** It is managed exclusively by hook scripts:
+**NEVER write to docs/specs/<active>/status.log directly.** It is managed exclusively by hook scripts:
 - `update-status.sh` appends COMPLETED entries when TaskList items finish
 - `pre-compact-snapshot.sh` appends COMPACTION_SNAPSHOT markers before compaction
 
@@ -68,10 +68,10 @@ If phases are independent, do NOT add dependencies. This allows parallel executi
 
 <non_negotiables>
 
-1. **Plan before code** — Do not edit source files without `docs/plans/<active>/overview.md` existing. The PreToolUse hook enforces this.
+1. **Plan before code** — Do not edit source files without `docs/specs/<active>/overview.md` existing. The PreToolUse hook enforces this.
 2. **Never write status.log** — Only hook scripts write to it. If you need to log something, create a TaskList item and complete it.
 3. **Phases are atomic** — A phase is either pending, in-progress, or completed. Don't partially complete phases.
-4. **Overview is the source of truth** — If there's a conflict between conversation history and `docs/plans/<active>/overview.md`, the file wins.
+4. **Overview is the source of truth** — If there's a conflict between conversation history and `docs/specs/<active>/overview.md`, the file wins.
 5. **Compaction recovery** — After compaction, the context-recovery agent reads plan files. Keep them accurate and up-to-date. The Context section in overview.md aids recovery by preserving the original request and conversation state.
 6. **Minimal plans** — Don't over-plan. 2-4 phases for small tasks, 4-6 for large ones. Phases can be added later.
 7. **File paths in phases** — Always list the specific files each phase will create or modify. This helps recovery after compaction.
@@ -86,7 +86,7 @@ Every Write/Edit operation triggers two PostToolUse checks:
 1. **Plan file integrity** — validates structure of plan files (sections in overview.md and phase files)
 2. **Phase scope alignment** — checks if the edited file is listed in the current phase's "Files to Create/Modify" or "Steps" sections
 
-The scope alignment check is **advisory, not a hard block**. Unlike the PreToolUse hook (which blocks edits without any active plan), drift detection only nudges when an edit falls outside the current phase's declared scope.
+The scope alignment check is **advisory, not a hard block**. Unlike the PreToolUse hook (which blocks edits without any active spec), drift detection only nudges when an edit falls outside the current phase's declared scope.
 
 **When drift is flagged:**
 - The edit has ALREADY happened (PostToolUse fires after the tool completes)
@@ -97,7 +97,7 @@ The scope alignment check is **advisory, not a hard block**. Unlike the PreToolU
 - Drift is not always wrong — sometimes work naturally expands. The key is making scope changes consciously, not accidentally.
 
 **Distinction from PreToolUse gate:**
-- PreToolUse `verify-plan.sh`: Hard block. No plan = no edits. Prevents unplanned work entirely.
+- PreToolUse `verify-spec.sh`: Hard block. No plan = no edits. Prevents unplanned work entirely.
 - PostToolUse drift detection: Soft nudge. Plan exists but edit is outside current phase scope. Prevents unconscious scope creep.
 
 </drift_detection>
@@ -105,7 +105,7 @@ The scope alignment check is **advisory, not a hard block**. Unlike the PreToolU
 <compaction_recovery>
 
 When context compaction occurs:
-1. Read `docs/plans/.active` to find active plan directory
+1. Read `docs/specs/.active` to find active spec directory
 2. PreCompact hook writes a COMPACTION_SNAPSHOT marker to status.log
 2b. PreCompact hook also writes state.json with structured snapshot (current phase, task IDs, timestamp)
 3. Context is compacted (conversation history summarized)
@@ -118,4 +118,4 @@ When context compaction occurs:
 **Your responsibility**: Keep plan files accurate. If you make an architecture decision, update overview.md. If you change approach, update the current phase file. The recovery agent can only restore what's written down.
 </compaction_recovery>
 
-See also: [plan-templates.md](plan-templates.md) | [coding-standards.md](coding-standards.md) | [workflow-patterns.md](workflow-patterns.md)
+See also: [spec-templates.md](spec-templates.md) | [coding-standards.md](coding-standards.md) | [workflow-patterns.md](workflow-patterns.md)

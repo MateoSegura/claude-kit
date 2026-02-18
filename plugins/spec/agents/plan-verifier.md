@@ -20,13 +20,13 @@ Invoked by the Stop hook. No explicit input — you read from the filesystem and
 
 ### Step 1: Check for plan existence
 
-Read `docs/plans/.active`. If `.active` does not exist, respond `{"ok": true}` immediately — no plan means nothing to verify.
+Read `docs/specs/.active`. If `.active` does not exist, respond `{"ok": true}` immediately — no spec means nothing to verify.
 
-Then check if `docs/plans/<active>/overview.md` exists (where `<active>` is the directory name from `.active`). If overview.md does not exist, respond `{"ok": true}` — the .active reference is stale but there's no active plan to verify.
+Then check if `docs/specs/<active>/overview.md` exists (where `<active>` is the directory name from `.active`). If overview.md does not exist, respond `{"ok": true}` — the .active reference is stale but there's no active spec to verify.
 
 ### Step 2: Read status.log
 
-Read `docs/plans/<active>/status.log`. Note:
+Read `docs/specs/<active>/status.log`. Note:
 - All COMPLETED entries
 - The most recent COMPACTION_SNAPSHOT (if any)
 - Any gaps or anomalies

@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # pre-compact-snapshot.sh — PreCompact hook
-# Appends a COMPACTION_SNAPSHOT marker to active plan's status.log before context compaction.
+# Appends a COMPACTION_SNAPSHOT marker to active spec's status.log before context compaction.
 # This marker helps the context-recovery agent identify the boundary between
 # pre-compaction and post-compaction work.
 
-# Source the shared helper to resolve active plan directory
+# Source the shared helper to resolve active spec directory
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-source "$SCRIPT_DIR/resolve-active-plan.sh"
+source "$SCRIPT_DIR/resolve-active-spec.sh"
 
-# Only write if active plan directory exists
+# Only write if active spec directory exists
 if [ -z "$ACTIVE_PLAN_DIR" ]; then
   exit 0
 fi
@@ -28,8 +28,8 @@ The context-recovery agent will read this file to restore orientation.
 EOF
 
 # Write structured state.json for context-recovery agent
-# Derive active_plan relative path (ACTIVE_PLAN_DIR is already relative like "docs/plans/auth-refactor-2026-02-16")
-ACTIVE_PLAN_REL="${ACTIVE_PLAN_DIR#./}"
+# Derive active_plan relative path (ACTIVE_PLAN_DIR is already relative like "docs/specs/auth-refactor-2026-02-16")
+ACTIVE_SPEC_REL="${ACTIVE_PLAN_DIR#./}"
 
 # Parse the last COMPLETED entry from status.log
 # Format: [TIMESTAMP] COMPLETED (task #ID): Phase NN: Title
@@ -60,14 +60,14 @@ fi
 # Write state.json using jq if available, fall back to printf
 if command -v jq >/dev/null 2>&1; then
   jq -n \
-    --arg active_plan "$ACTIVE_PLAN_REL" \
+    --arg active_spec "$ACTIVE_SPEC_REL" \
     --argjson current_phase "${CURRENT_PHASE:-null}" \
     --arg current_task_id "${CURRENT_TASK_ID:-}" \
     --arg last_completed_task_id "${LAST_COMPLETED_TASK_ID:-}" \
     --argjson last_completed_phase "${LAST_COMPLETED_PHASE:-null}" \
     --arg timestamp "$TIMESTAMP" \
     '{
-      active_plan: $active_plan,
+      active_spec: $active_spec,
       current_phase: $current_phase,
       current_task_id: (if $current_task_id == "" then null else $current_task_id end),
       last_completed_task_id: (if $last_completed_task_id == "" then null else $last_completed_task_id end),
@@ -76,13 +76,13 @@ if command -v jq >/dev/null 2>&1; then
     }' > "$ACTIVE_PLAN_DIR/state.json"
 else
   # Fallback: printf-based JSON generation
-  _ap_val="\"${ACTIVE_PLAN_REL}\""
+  _ap_val="\"${ACTIVE_SPEC_REL}\""
   _cp_val="${CURRENT_PHASE:-null}"
   _ctid_val=$([ -n "$CURRENT_TASK_ID" ] && echo "\"${CURRENT_TASK_ID}\"" || echo "null")
   _lctid_val=$([ -n "$LAST_COMPLETED_TASK_ID" ] && echo "\"${LAST_COMPLETED_TASK_ID}\"" || echo "null")
   _lcp_val="${LAST_COMPLETED_PHASE:-null}"
   _ts_val="\"${TIMESTAMP}\""
-  printf '{\n  "active_plan": %s,\n  "current_phase": %s,\n  "current_task_id": %s,\n  "last_completed_task_id": %s,\n  "last_completed_phase": %s,\n  "timestamp": %s\n}\n' \
+  printf '{\n  "active_spec": %s,\n  "current_phase": %s,\n  "current_task_id": %s,\n  "last_completed_task_id": %s,\n  "last_completed_phase": %s,\n  "timestamp": %s\n}\n' \
     "$_ap_val" "$_cp_val" "$_ctid_val" "$_lctid_val" "$_lcp_val" "$_ts_val" \
     > "$ACTIVE_PLAN_DIR/state.json"
 fi

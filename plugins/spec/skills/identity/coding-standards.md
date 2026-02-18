@@ -1,6 +1,6 @@
 # Plan File Formatting Standards and Conventions
 
-This document defines the canonical format for plan files, naming conventions, and formatting rules enforced by the core-planner plugin.
+This document defines the canonical format for plan files, naming conventions, and formatting rules enforced by the spec plugin.
 
 ## overview.md Required Sections
 
@@ -111,7 +111,7 @@ state.json is a structured compaction snapshot written by `pre-compact-snapshot.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `active_plan` | string | Relative path to the plan directory, e.g., `"docs/plans/auth-refactor-2026-02-16"` |
+| `active_spec` | string | Relative path to the plan directory, e.g., `"docs/specs/auth-refactor-2026-02-16"` |
 | `current_phase` | integer | The phase currently in progress |
 | `current_task_id` | string | TaskList ID of the current or next task |
 | `last_completed_task_id` | string | TaskList ID of the most recently completed task |
@@ -122,7 +122,7 @@ state.json is a structured compaction snapshot written by `pre-compact-snapshot.
 
 ```json
 {
-  "active_plan": "docs/plans/auth-refactor-2026-02-16",
+  "active_spec": "docs/specs/auth-refactor-2026-02-16",
   "current_phase": 3,
   "current_task_id": "task-4",
   "last_completed_task_id": "task-3",
@@ -186,7 +186,7 @@ This consistency enables the context-recovery agent to cross-reference TaskList 
 
 ## Named Plan Directory Conventions
 
-Plans are stored in `docs/plans/<name>-<YYYY-MM-DD>/` where:
+Plans are stored in `docs/specs/<name>-<YYYY-MM-DD>/` where:
 
 ### Name Component
 - 2-4 words in kebab-case
@@ -201,18 +201,18 @@ Plans are stored in `docs/plans/<name>-<YYYY-MM-DD>/` where:
 - Examples: `2026-02-16`, `2026-03-01`, `2025-12-15`
 
 ### Full Examples
-- `docs/plans/api-refactor-2026-02-16/`
-- `docs/plans/user-auth-flow-2026-02-15/`
-- `docs/plans/perf-optimization-2026-02-10/`
+- `docs/specs/api-refactor-2026-02-16/`
+- `docs/specs/user-auth-flow-2026-02-15/`
+- `docs/specs/perf-optimization-2026-02-10/`
 
 ### Active Plan Tracking
-- File: `docs/plans/.active`
+- File: `docs/specs/.active`
 - Content: Single line containing just the directory name (not full path)
 - Example content: `api-refactor-2026-02-16`
 - Updated when switching between plans or creating a new plan
 
 This convention:
-- Keeps all plans organized under a single `docs/plans/` directory
+- Keeps all plans organized under a single `docs/specs/` directory
 - Makes plan age immediately visible from directory name
 - Allows multiple plans to coexist (only one active at a time)
 - Enables historical tracking and archival

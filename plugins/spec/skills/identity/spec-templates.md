@@ -1,8 +1,8 @@
-# Plan File Templates
+# Spec File Templates
 
-Reference templates for the files created by `/core-planner:plan`. These define the canonical format that the context-recovery agent expects.
+Reference templates for the files created by `/spec:new`. These define the canonical format that the context-recovery agent expects.
 
-Named plan directories follow the convention `docs/plans/<name>-<YYYY-MM-DD>/` where:
+Named spec directories follow the convention `docs/specs/<name>-<YYYY-MM-DD>/` where:
 - `<name>` must be 2-4 kebab-case words
 - `<YYYY-MM-DD>` is the creation date
 
@@ -13,9 +13,23 @@ Named plan directories follow the convention `docs/plans/<name>-<YYYY-MM-DD>/` w
 
 ## Context
 
-**Original request:** [the user prompt or request that initiated this plan]
+**Original request:** [the user prompt or request that initiated this spec]
 
-**Conversation state:** [brief summary of relevant context at plan creation time — key files discussed, decisions made, constraints mentioned]
+**Conversation state:** [brief summary of relevant context at spec creation time — key files discussed, decisions made, constraints mentioned]
+
+## Requirements
+
+- **R1**: [Observable behavior or property that must be true when done]
+- **R2**: [Observable behavior or property that must be true when done]
+- **R3**: [Observable behavior or property that must be true when done]
+
+## Acceptance Criteria
+
+High-level checklist proving the spec is satisfied:
+
+- [ ] [R1] [How to verify requirement 1 is met]
+- [ ] [R2] [How to verify requirement 2 is met]
+- [ ] [R3] [How to verify requirement 3 is met]
 
 ## Goal
 [One-paragraph description of what we're building/fixing/changing]
@@ -30,11 +44,11 @@ Named plan directories follow the convention `docs/plans/<name>-<YYYY-MM-DD>/` w
 
 ## Phase Summary
 
-| Phase | Title | Status | Description |
-|-------|-------|--------|-------------|
-| 1 | [Title] | pending | [One-line summary] |
-| 2 | [Title] | pending | [One-line summary] |
-| N | [Title] | pending | [One-line summary] |
+| Phase | Title | Status | Satisfies | Description |
+|-------|-------|--------|-----------|-------------|
+| 1 | [Title] | pending | R1, R2 | [One-line summary] |
+| 2 | [Title] | pending | R2, R3 | [One-line summary] |
+| N | [Title] | pending | R3 | [One-line summary] |
 
 ## Key Files
 - `path/to/file.ext` — [role in the project]
@@ -50,6 +64,9 @@ Phase files use zero-padded naming: `phase-01.md`, `phase-02.md`, etc.
 ## Objective
 [One sentence: what this phase achieves]
 
+## Satisfies
+- R1, R2 (link which requirements this phase addresses)
+
 ## Steps
 1. [ ] [Step description] — `path/to/file`
 2. [ ] [Step description] — `path/to/file`
@@ -60,7 +77,7 @@ Phase files use zero-padded naming: `phase-01.md`, `phase-02.md`, etc.
 - `path/to/existing-file.ext` — [what changes]
 
 ## Acceptance Criteria
-- [ ] [Verifiable condition 1]
+- [ ] [Verifiable condition 1 — traceable to a spec requirement]
 - [ ] [Verifiable condition 2]
 
 ## Dependencies
@@ -70,7 +87,7 @@ Phase files use zero-padded naming: `phase-01.md`, `phase-02.md`, etc.
 
 ## status.log format
 
-The status.log is append-only and written exclusively by hook scripts. Located at `docs/plans/<name>-<YYYY-MM-DD>/status.log`.
+The status.log is append-only and written exclusively by hook scripts. Located at `docs/specs/<name>-<YYYY-MM-DD>/status.log`.
 
 Format:
 
