@@ -38,13 +38,13 @@ fi
 # ── Clone or update ───────────────────────────────────────────────────────────
 
 if [ -d "$KIT_HOME/.git" ]; then
-  info "Updating existing installation at $KIT_HOME ..."
-  git -C "$KIT_HOME" pull --ff-only
+  info "Updating ..."
+  git -C "$KIT_HOME" pull --ff-only -q
   VER=$(git -C "$KIT_HOME" describe --tags --always 2>/dev/null || git -C "$KIT_HOME" rev-parse --short HEAD)
   ok "Updated → $VER"
 else
-  info "Installing to $KIT_HOME ..."
-  git clone "$REPO_URL" "$KIT_HOME"
+  info "Installing ..."
+  git clone "$REPO_URL" "$KIT_HOME" -q
   VER=$(git -C "$KIT_HOME" describe --tags --always 2>/dev/null || git -C "$KIT_HOME" rev-parse --short HEAD)
   ok "Installed → $VER"
 fi
@@ -105,15 +105,26 @@ fi
 
 echo -e "  ${_W}claude-kit${_N}  installed"
 echo ""
-echo -e "  ${_DIM}──────────────────────────────────────────────────${_N}"
+echo -e "  ${_DIM}────────────────────────────────────────────────────────${_N}"
 echo ""
-echo -e "  ${_C}claude-kit setup${_N}                          ${_DIM}configure Claude Code features${_N}"
-echo -e "  ${_C}claude-kit list${_N}                           ${_DIM}browse available kits${_N}"
-echo -e "  ${_C}claude-kit --kit <name>${_N}                   ${_DIM}launch a kit${_N}"
-echo -e "  ${_C}claude-kit --kit <name> --kit core-planner${_N} ${_DIM}combine kits${_N}"
-echo -e "  ${_C}claude-kit --kit <name> --yolo${_N}            ${_DIM}skip permission prompts${_N}"
-echo -e "  ${_C}claude-kit update${_N}                         ${_DIM}pull latest plugins${_N}"
+echo -e "  ${_C}claude-kit setup${_N}"
+echo -e "  ${_DIM}  configure Claude Code features (statusline, etc.)${_N}"
 echo ""
-echo -e "  ${_DIM}──────────────────────────────────────────────────${_N}"
+echo -e "  ${_C}claude-kit list${_N}"
+echo -e "  ${_DIM}  browse available kits${_N}"
+echo ""
+echo -e "  ${_C}claude-kit --kit <name>${_N}"
+echo -e "  ${_DIM}  launch a kit in Claude Code${_N}"
+echo ""
+echo -e "  ${_C}claude-kit --kit <name> --kit core-planner${_N}"
+echo -e "  ${_DIM}  combine multiple kits in one session${_N}"
+echo ""
+echo -e "  ${_C}claude-kit --kit <name> --yolo${_N}"
+echo -e "  ${_DIM}  skip permission prompts${_N}"
+echo ""
+echo -e "  ${_C}claude-kit update${_N}"
+echo -e "  ${_DIM}  pull latest plugins and scripts${_N}"
+echo ""
+echo -e "  ${_DIM}────────────────────────────────────────────────────────${_N}"
 echo -e "  ${_DIM}github.com/MateoSegura/claude-kit${_N}"
 echo ""
