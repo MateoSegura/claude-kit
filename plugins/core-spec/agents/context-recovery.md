@@ -18,23 +18,34 @@ You will be invoked by the SessionStart(compact) hook. No explicit input is prov
 
 <process>
 
+### Step 0: Resolve spec root
+
+Determine where spec files are stored for this project:
+
+1. Read `~/.claude-kit/spec-registry.json`
+2. Look for an entry in `.registrations` whose key matches the current project root
+3. If found, use that value as `SPEC_ROOT`
+4. If not found or the file doesn't exist, use `docs/specs` as `SPEC_ROOT`
+
+Use `SPEC_ROOT` in all subsequent path references.
+
 ### Step 1: Check for active spec
 
-Read `docs/specs/.active` to find the active spec directory name. If `.active` does not exist, output:
+Read `<SPEC_ROOT>/.active` to find the active spec directory name. If `.active` does not exist, output:
 ```
-No active spec found. Use /spec:new to create one. Plans are stored in docs/specs/.
+No active spec found. Use /spec:new to create one. Plans are stored in <SPEC_ROOT>/.
 ```
 And stop.
 
-Then read `docs/specs/<active>/overview.md` where `<active>` is the directory name from `.active`. If overview.md does not exist, output:
+Then read `<SPEC_ROOT>/<active>/overview.md` where `<active>` is the directory name from `.active`. If overview.md does not exist, output:
 ```
-Active plan reference exists but plan files are missing. The .active file points to <active>, but docs/specs/<active>/overview.md was not found.
+Active plan reference exists but plan files are missing. The .active file points to <active>, but <SPEC_ROOT>/<active>/overview.md was not found.
 ```
 And stop.
 
 ### Step 1.5: Fast path — check for state.json snapshot
 
-Read `docs/specs/<active>/state.json`. If it exists and contains valid JSON, extract:
+Read `<SPEC_ROOT>/<active>/state.json`. If it exists and contains valid JSON, extract:
 - `current_phase` (integer)
 - `last_completed_task_id`
 - `last_completed_phase`
@@ -44,7 +55,7 @@ Use these values directly instead of parsing status.log. Skip to Step 3 (read ov
 
 ### Step 2: Read overview and extract context
 
-Extract from `docs/specs/<active>/overview.md`:
+Extract from `<SPEC_ROOT>/<active>/overview.md`:
 - The ## Context section (original request and conversation state) — this is critical context for post-compaction orientation
 - Project goal (from the title or Goal section)
 - Architecture decisions
@@ -53,16 +64,16 @@ Extract from `docs/specs/<active>/overview.md`:
 
 ### Step 3: Read status log
 
-Read `docs/specs/<active>/status.log`. Focus on:
+Read `<SPEC_ROOT>/<active>/status.log`. Focus on:
 - The most recent `COMPACTION_SNAPSHOT` marker (everything after it is post-compaction work)
 - The last 5-10 `COMPLETED` entries to determine progress
 - The current phase number (highest phase mentioned in completed entries)
 
-Also check `docs/specs/<active>/.current-phase` for a one-liner with the current phase number. If present, use it as the authoritative current phase instead of inferring from completed entries.
+Also check `<SPEC_ROOT>/<active>/.current-phase` for a one-liner with the current phase number. If present, use it as the authoritative current phase instead of inferring from completed entries.
 
 ### Step 4: Read current phase
 
-Based on status.log, identify the current phase number N and read `docs/specs/<active>/phases/phase-NN.md` (zero-padded, e.g., phase-01.md, phase-02.md). Extract:
+Based on status.log, identify the current phase number N and read `<SPEC_ROOT>/<active>/phases/phase-NN.md` (zero-padded, e.g., phase-01.md, phase-02.md). Extract:
 - Phase title and objective
 - Steps already completed (cross-reference with status.log)
 - Remaining steps

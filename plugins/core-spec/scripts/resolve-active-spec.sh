@@ -7,9 +7,13 @@
 _project_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 
 # Look up configured spec root from ~/.claude-kit/spec-registry.json
-SPEC_ROOT=$(jq -r --arg p "$_project_root" \
-  '.registrations[$p] // empty' \
-  ~/.claude-kit/spec-registry.json 2>/dev/null)
+if command -v jq >/dev/null 2>&1 && [ -f ~/.claude-kit/spec-registry.json ]; then
+  SPEC_ROOT=$(jq -r --arg p "$_project_root" \
+    '.registrations[$p] // empty' \
+    ~/.claude-kit/spec-registry.json 2>/dev/null) || true
+else
+  SPEC_ROOT=""
+fi
 [ -z "$SPEC_ROOT" ] && SPEC_ROOT="docs/specs"
 
 ACTIVE_PLAN_DIR=""

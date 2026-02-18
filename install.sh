@@ -24,15 +24,47 @@ if ! command -v git &>/dev/null; then
   exit 1
 fi
 
-if ! command -v claude &>/dev/null; then
-  err "Claude Code CLI ('claude') is required but not found."
-  err "Install it from: https://claude.ai/code"
+if ! command -v python3 &>/dev/null; then
+  err "python3 is required but not found (claude-kit CLI is Python)."
+  err "Install Python 3: https://www.python.org/downloads/"
   exit 1
 fi
 
+if ! command -v claude &>/dev/null; then
+  warn "Claude Code CLI ('claude') not found — install it before running kits."
+  warn "Install: https://claude.ai/code"
+fi
+
+# ── Install jq if missing ────────────────────────────────────────────────────
+
+_install_jq() {
+  if command -v apt-get &>/dev/null; then
+    info "Installing jq via apt ..."
+    sudo apt-get update -qq && sudo apt-get install -y -qq jq
+  elif command -v brew &>/dev/null; then
+    info "Installing jq via brew ..."
+    brew install jq
+  elif command -v dnf &>/dev/null; then
+    info "Installing jq via dnf ..."
+    sudo dnf install -y -q jq
+  elif command -v pacman &>/dev/null; then
+    info "Installing jq via pacman ..."
+    sudo pacman -S --noconfirm jq
+  elif command -v apk &>/dev/null; then
+    info "Installing jq via apk ..."
+    sudo apk add -q jq
+  else
+    return 1
+  fi
+}
+
 if ! command -v jq &>/dev/null; then
-  warn "jq is not installed. Alias and companion resolution will be disabled."
-  warn "Install jq: https://jqlang.github.io/jq/download/"
+  if _install_jq 2>/dev/null; then
+    ok "jq installed"
+  else
+    warn "Could not auto-install jq. Plugin hooks will run in degraded mode."
+    warn "Install manually: https://jqlang.github.io/jq/download/"
+  fi
 fi
 
 # ── Clone or update ───────────────────────────────────────────────────────────

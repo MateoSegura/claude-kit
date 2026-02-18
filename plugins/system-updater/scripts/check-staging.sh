@@ -2,7 +2,7 @@
 # Check if any staging directories have uncommitted work before stopping.
 # Called by the Stop hook to warn about potential lost work.
 
-STAGING_DIRS=$(ls -d /tmp/agent-config-update-* 2>/dev/null)
+STAGING_DIRS=$(ls -d /tmp/claude-kit-update-* 2>/dev/null)
 
 if [ -z "$STAGING_DIRS" ]; then
   exit 0

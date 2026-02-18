@@ -13,26 +13,26 @@ All changes happen in an isolated staging copy of the plugin. The live plugin is
 **Copy to Staging (Phase 5 Start)**:
 
 ```bash
-rm -rf /tmp/agent-config-update-PLUGIN_NAME
-cp -r $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME /tmp/agent-config-update-PLUGIN_NAME
+rm -rf /tmp/claude-kit-update-PLUGIN_NAME
+cp -r $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME /tmp/claude-kit-update-PLUGIN_NAME
 ```
 
 **Work on the Staging Copy**:
 
-All change-writer and plugin-reviewer agents operate on `/tmp/agent-config-update-PLUGIN_NAME/` — never the live plugin directory.
+All change-writer and plugin-reviewer agents operate on `/tmp/claude-kit-update-PLUGIN_NAME/` — never the live plugin directory.
 
 **Backup and Replace (Phase 7 Finalization)**:
 
 ```bash
 # Create timestamped backup
-cp -r $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME /tmp/agent-config-backup-PLUGIN_NAME-$(date +%Y%m%d-%H%M%S)
+cp -r $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME /tmp/claude-kit-backup-PLUGIN_NAME-$(date +%Y%m%d-%H%M%S)
 
 # Replace live plugin
 rm -rf $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME
-cp -r /tmp/agent-config-update-PLUGIN_NAME $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME
+cp -r /tmp/claude-kit-update-PLUGIN_NAME $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME
 
 # Clean up staging
-rm -rf /tmp/agent-config-update-PLUGIN_NAME
+rm -rf /tmp/claude-kit-update-PLUGIN_NAME
 ```
 
 ### Why This Pattern
@@ -222,7 +222,7 @@ After implementation, the plugin-reviewer audits the ENTIRE staged plugin (not j
 **Phase 6: Launch plugin-reviewer**:
 
 ```
-Task(subagent_type: "plugin-reviewer", prompt: "Audit the staged plugin at /tmp/agent-config-update-PLUGIN_NAME/...")
+Task(subagent_type: "plugin-reviewer", prompt: "Audit the staged plugin at /tmp/claude-kit-update-PLUGIN_NAME/...")
 ```
 
 The reviewer returns findings categorized by `fix_type`:
@@ -237,7 +237,7 @@ For each `mechanical` finding, use the Edit tool to apply the fix:
 
 ```
 Edit(
-  file_path: "/tmp/agent-config-update-PLUGIN_NAME/agents/code-writer.md",
+  file_path: "/tmp/claude-kit-update-PLUGIN_NAME/agents/code-writer.md",
   old_string: "allowed-tools: Read, Write",
   new_string: "tools: Read, Write"
 )
@@ -393,20 +393,20 @@ Before replacing the live plugin, create a timestamped backup to enable instant 
 **Backup Command (Phase 7)**:
 
 ```bash
-cp -r $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME /tmp/agent-config-backup-PLUGIN_NAME-$(date +%Y%m%d-%H%M%S)
+cp -r $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME /tmp/claude-kit-backup-PLUGIN_NAME-$(date +%Y%m%d-%H%M%S)
 ```
 
 This creates backups like:
 
 ```
-/tmp/agent-config-backup-coding-embedded-zephyr-engineer-20260215-143022/
+/tmp/claude-kit-backup-coding-embedded-zephyr-engineer-20260215-143022/
 ```
 
 **Rollback (if needed)**:
 
 ```bash
 rm -rf $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME
-cp -r /tmp/agent-config-backup-PLUGIN_NAME-20260215-143022 $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME
+cp -r /tmp/claude-kit-backup-PLUGIN_NAME-20260215-143022 $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME
 ```
 
 ### Why This Pattern

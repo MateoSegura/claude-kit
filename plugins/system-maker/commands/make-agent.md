@@ -12,7 +12,7 @@ You are the orchestrator for creating new Claude Code domain-expert plugins. You
 ## Critical Rules — Read Before Doing Anything
 
 1. **Naming convention**: All agent names MUST match the regex `^[a-z]+-[a-z][-a-z]*$`. Format: `<type>-<domain>-<tech>-<role>`. Reject and reformat any name that does not comply. See the naming examples below.
-2. **Build isolation**: ALL files are written to `BUILD_DIR=/tmp/agent-config-build-<AGENT_NAME>/` during creation. NEVER write directly to the plugins directory until Phase 9 finalization.
+2. **Build isolation**: ALL files are written to `BUILD_DIR=/tmp/claude-kit-build-<AGENT_NAME>/` during creation. NEVER write directly to the plugins directory until Phase 9 finalization.
 3. **User's ~/.claude is sacred**: Never read, modify, or reference the user's `~/.claude` directory.
 4. **Output directory**: `$CLAUDE_KIT_OUTPUT_DIR` — this is where finalized plugins are copied (local plugins dir for user installs). When checking for existing plugins or skills, check BOTH `$CLAUDE_KIT_BUNDLED_DIR/` AND `$CLAUDE_KIT_LOCAL_DIR/` — NEVER the `/tmp` build directory.
 5. **Subagent spawning**: You (the orchestrator) CAN spawn subagents via the Task tool and create agent teams via TeamCreate for heavy parallel phases.
@@ -258,18 +258,18 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
    - `AGENT_NAME` — e.g., `coding-embedded-zephyr-engineer`
    - `AGENT_DESCRIPTION` — the user's raw input, verbatim
    - `EXTENSION_SKILLS` — specific platforms/hardware/providers to be added as extension skills (empty if user chose "Keep specific")
-   - `BUILD_DIR` — `/tmp/agent-config-build-<AGENT_NAME>`
+   - `BUILD_DIR` — `/tmp/claude-kit-build-<AGENT_NAME>`
 
 8. Check if the build directory already exists:
 
    ```bash
-   ls -d /tmp/agent-config-build-<AGENT_NAME> 2>/dev/null && echo "EXISTS" || echo "CLEAR"
+   ls -d /tmp/claude-kit-build-<AGENT_NAME> 2>/dev/null && echo "EXISTS" || echo "CLEAR"
    ```
 
 9. If the directory already exists, ask the user via AskUserQuestion:
 
    ```
-   Build directory /tmp/agent-config-build-<AGENT_NAME> already exists from a previous run.
+   Build directory /tmp/claude-kit-build-<AGENT_NAME> already exists from a previous run.
 
    Options:
    - Overwrite (delete and recreate)
@@ -277,12 +277,12 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
    - Abort
    ```
 
-   If "Overwrite": run `rm -rf /tmp/agent-config-build-<AGENT_NAME> && mkdir -p /tmp/agent-config-build-<AGENT_NAME>`
+   If "Overwrite": run `rm -rf /tmp/claude-kit-build-<AGENT_NAME> && mkdir -p /tmp/claude-kit-build-<AGENT_NAME>`
 
 10. If the directory does not exist, create it:
 
    ```bash
-   mkdir -p /tmp/agent-config-build-<AGENT_NAME>
+   mkdir -p /tmp/claude-kit-build-<AGENT_NAME>
    ```
 
 </phase_2>
@@ -341,10 +341,10 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
 2. Create the build directory:
    ```bash
-   mkdir -p /tmp/agent-config-build-<KNOWLEDGE_NAME>/.claude-plugin
-   mkdir -p /tmp/agent-config-build-<KNOWLEDGE_NAME>/skills/identity
-   mkdir -p /tmp/agent-config-build-<KNOWLEDGE_NAME>/hooks
-   mkdir -p /tmp/agent-config-build-<KNOWLEDGE_NAME>/scripts
+   mkdir -p /tmp/claude-kit-build-<KNOWLEDGE_NAME>/.claude-plugin
+   mkdir -p /tmp/claude-kit-build-<KNOWLEDGE_NAME>/skills/identity
+   mkdir -p /tmp/claude-kit-build-<KNOWLEDGE_NAME>/hooks
+   mkdir -p /tmp/claude-kit-build-<KNOWLEDGE_NAME>/scripts
    ```
 
 3. Launch 3 parallel writers (skip agent-writer since knowledge plugins have no agents):
@@ -913,13 +913,13 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 1. Before launching the team, create the directory skeleton in the build directory:
 
    ```bash
-   mkdir -p /tmp/agent-config-build-<AGENT_NAME>/agents
-   mkdir -p /tmp/agent-config-build-<AGENT_NAME>/commands
-   mkdir -p /tmp/agent-config-build-<AGENT_NAME>/scripts
-   mkdir -p /tmp/agent-config-build-<AGENT_NAME>/skills/identity
-   mkdir -p /tmp/agent-config-build-<AGENT_NAME>/.claude-plugin
+   mkdir -p /tmp/claude-kit-build-<AGENT_NAME>/agents
+   mkdir -p /tmp/claude-kit-build-<AGENT_NAME>/commands
+   mkdir -p /tmp/claude-kit-build-<AGENT_NAME>/scripts
+   mkdir -p /tmp/claude-kit-build-<AGENT_NAME>/skills/identity
+   mkdir -p /tmp/claude-kit-build-<AGENT_NAME>/.claude-plugin
    # Plus each skill directory from the approved architecture:
-   mkdir -p /tmp/agent-config-build-<AGENT_NAME>/skills/<skill-name>
+   mkdir -p /tmp/claude-kit-build-<AGENT_NAME>/skills/<skill-name>
    ```
 
 2. Create an implementation team and launch a team-lead that coordinates the 4 writers:
@@ -938,7 +938,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
    AGENT_NAME: <insert AGENT_NAME>
    APPROVED_ARCH: <insert full APPROVED_ARCH JSON>
    USER_ANSWERS: <insert full USER_ANSWERS>
-   BUILD_DIR: /tmp/agent-config-build-<AGENT_NAME>
+   BUILD_DIR: /tmp/claude-kit-build-<AGENT_NAME>
    KNOWLEDGE_MODE: <insert true or false>
    KNOWLEDGE_SKILLS: <insert KNOWLEDGE_SKILLS or 'none'>
 
@@ -980,7 +980,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
    Step 2: Wait for all 4 writers. If any fail, retry that single writer once.
 
    Step 3: Verify the output directory exists and key files are present:
-     find /tmp/agent-config-build-<AGENT_NAME> -type f | sort
+     find /tmp/claude-kit-build-<AGENT_NAME> -type f | sort
 
    Step 4: Send the file manifest back to orchestrator:
      SendMessage(type: 'message', recipient: '<orchestrator-name>',
@@ -1020,12 +1020,12 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
    First check what is in the build directory:
    ```bash
-   find /tmp/agent-config-build-<AGENT_NAME> -type f | sort
+   find /tmp/claude-kit-build-<AGENT_NAME> -type f | sort
    ```
 
    Then write the files using the Write tool:
 
-   **File: `/tmp/agent-config-build-<AGENT_NAME>/.claude-plugin/plugin.json`**
+   **File: `/tmp/claude-kit-build-<AGENT_NAME>/.claude-plugin/plugin.json`**
    ```json
    {
      "name": "<AGENT_NAME>",
@@ -1036,7 +1036,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
    **CRITICAL**: `plugin.json` must contain ONLY `name`, `description`, and `version`. Extra fields (`role`, `companions`, `keywords`) cause Claude Code to silently fail to load the plugin.
 
-   **File: `/tmp/agent-config-build-<AGENT_NAME>/.claude-plugin/ctl.json`** (ALWAYS create this):
+   **File: `/tmp/claude-kit-build-<AGENT_NAME>/.claude-plugin/ctl.json`** (ALWAYS create this):
    ```json
    {
      "role": "<role derived from agent name — e.g., engineer, grader, knowledge>"
@@ -1055,7 +1055,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
 2. **Create .mcp.json** (only if the approved architecture specifies MCP servers that actually exist):
 
-   File: `/tmp/agent-config-build-<AGENT_NAME>/.mcp.json`
+   File: `/tmp/claude-kit-build-<AGENT_NAME>/.mcp.json`
    ```json
    {
      "mcpServers": {
@@ -1074,7 +1074,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
    If the domain uses C/C++ (clangd), Go (gopls), Rust (rust-analyzer), TypeScript (typescript-language-server), Java (jdtls), C# (OmniSharp), or similar typed languages, write the appropriate `.lsp.json`:
 
-   File: `/tmp/agent-config-build-<AGENT_NAME>/.lsp.json`
+   File: `/tmp/claude-kit-build-<AGENT_NAME>/.lsp.json`
 
    Example for a C/C++ domain (Zephyr, embedded):
    ```json
@@ -1121,7 +1121,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 4. **Validate file existence**: Check that every file listed in the approved architecture's component manifest actually exists in the build directory.
 
    ```bash
-   find /tmp/agent-config-build-<AGENT_NAME> -type f | sort
+   find /tmp/claude-kit-build-<AGENT_NAME> -type f | sort
    ```
 
    Compare this listing against the `APPROVED_ARCH` component manifest. For each missing file, record it. If critical files are missing (plugin.json, hooks.json, skills/identity/SKILL.md), report the gap and offer to create them directly.
@@ -1159,7 +1159,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
    re-review to verify, then report the final grade and resolved findings to the orchestrator.
 
    AGENT_NAME: <insert AGENT_NAME>
-   BUILD_DIR: /tmp/agent-config-build-<AGENT_NAME>
+   BUILD_DIR: /tmp/claude-kit-build-<AGENT_NAME>
    APPROVED_ARCH: <insert full APPROVED_ARCH JSON>
 
    Step 1: Launch plugin-reviewer:
@@ -1251,7 +1251,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
    === BUILD COMPLETE: <AGENT_NAME> ===
 
    Files created: <count>
-   Build directory: /tmp/agent-config-build-<AGENT_NAME>
+   Build directory: /tmp/claude-kit-build-<AGENT_NAME>
    Quality grade: <final_grade from Phase 10>
 
    FILE LISTING:
@@ -1279,7 +1279,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
 3. If "Review files": Let the user name files to inspect. Read and display each requested file. After review, re-ask the finalize question.
 
-4. If "Abort": Report that the build directory will be left at `/tmp/agent-config-build-<AGENT_NAME>/` for manual inspection and stop.
+4. If "Abort": Report that the build directory will be left at `/tmp/claude-kit-build-<AGENT_NAME>/` for manual inspection and stop.
 
 5. **On Finalize**:
 
@@ -1304,12 +1304,12 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
    Copy the build to the plugins directory:
    ```bash
-   cp -r /tmp/agent-config-build-<AGENT_NAME> $CLAUDE_KIT_OUTPUT_DIR/<AGENT_NAME>
+   cp -r /tmp/claude-kit-build-<AGENT_NAME> $CLAUDE_KIT_OUTPUT_DIR/<AGENT_NAME>
    ```
 
    Verify the copy succeeded:
    ```bash
-   diff <(cd /tmp/agent-config-build-<AGENT_NAME> && find . -type f | sort) <(cd $CLAUDE_KIT_OUTPUT_DIR/<AGENT_NAME> && find . -type f | sort)
+   diff <(cd /tmp/claude-kit-build-<AGENT_NAME> && find . -type f | sort) <(cd $CLAUDE_KIT_OUTPUT_DIR/<AGENT_NAME> && find . -type f | sort)
    ```
 
 6. **Confirm success** to the user:

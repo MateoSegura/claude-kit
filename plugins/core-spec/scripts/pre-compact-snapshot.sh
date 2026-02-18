@@ -28,7 +28,7 @@ The context-recovery agent will read this file to restore orientation.
 EOF
 
 # Write structured state.json for context-recovery agent
-# Derive active_plan relative path (ACTIVE_PLAN_DIR is already relative like "docs/specs/auth-refactor-2026-02-16")
+# Derive active_plan relative path (ACTIVE_PLAN_DIR is already relative, e.g., "<SPEC_ROOT>/auth-refactor-2026-02-16")
 ACTIVE_SPEC_REL="${ACTIVE_PLAN_DIR#./}"
 
 # Parse the last COMPLETED entry from status.log

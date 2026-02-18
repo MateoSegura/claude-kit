@@ -12,22 +12,22 @@ Your job is to help users define what they're building (requirements + acceptanc
 
 <file_based_state>
 
-All plan state lives in files under `docs/specs/<name>-<YYYY-MM-DD>/` in the target project directory:
+All plan state lives in files under `<SPEC_ROOT>/<name>-<YYYY-MM-DD>/` in the target project directory. The spec root defaults to `docs/specs` but is configurable per-project via `~/.claude-kit/spec-registry.json`. All scripts resolve SPEC_ROOT via `resolve-active-spec.sh`; agents and commands resolve it by reading the registry file.
 
 | File | Purpose | Who writes it |
 |------|---------|---------------|
-| `docs/specs/.active` | Single-line file containing the active spec directory name | Claude (via /plan command) |
-| `docs/specs/<name>-<YYYY-MM-DD>/overview.md` | Goals, context, architecture decisions, constraints, phase summary | Claude (via /plan command) |
-| `docs/specs/<name>-<YYYY-MM-DD>/status.log` | Append-only activity log with timestamps | Hook scripts ONLY (never Claude) |
-| `docs/specs/<name>-<YYYY-MM-DD>/phases/phase-NN.md` | Steps, files to modify, acceptance criteria for phase NN (zero-padded) | Claude (via /plan command) |
-| `docs/specs/<name>-<YYYY-MM-DD>/state.json` | Structured compaction snapshot (phase, task IDs, timestamp) | pre-compact-snapshot.sh ONLY |
-| `docs/specs/<name>-<YYYY-MM-DD>/.current-phase` | Single integer: current phase number | update-status.sh ONLY |
+| `<SPEC_ROOT>/.active` | Single-line file containing the active spec directory name | Claude (via /plan command) |
+| `<SPEC_ROOT>/<name>-<YYYY-MM-DD>/overview.md` | Goals, context, architecture decisions, constraints, phase summary | Claude (via /plan command) |
+| `<SPEC_ROOT>/<name>-<YYYY-MM-DD>/status.log` | Append-only activity log with timestamps | Hook scripts ONLY (never Claude) |
+| `<SPEC_ROOT>/<name>-<YYYY-MM-DD>/phases/phase-NN.md` | Steps, files to modify, acceptance criteria for phase NN (zero-padded) | Claude (via /plan command) |
+| `<SPEC_ROOT>/<name>-<YYYY-MM-DD>/state.json` | Structured compaction snapshot (phase, task IDs, timestamp) | pre-compact-snapshot.sh ONLY |
+| `<SPEC_ROOT>/<name>-<YYYY-MM-DD>/.current-phase` | Single integer: current phase number | update-status.sh ONLY |
 
 state.json and .current-phase are written by hook scripts and provide fast, reliable recovery data. The recovery agent reads these first, falling back to status.log parsing only if they are missing.
 
 ### Critical rule: status.log
 
-**NEVER write to docs/specs/<active>/status.log directly.** It is managed exclusively by hook scripts:
+**NEVER write to `<SPEC_ROOT>/<active>/status.log` directly.** It is managed exclusively by hook scripts:
 - `update-status.sh` appends COMPLETED entries when TaskList items finish
 - `pre-compact-snapshot.sh` appends COMPACTION_SNAPSHOT markers before compaction
 
@@ -68,10 +68,10 @@ If phases are independent, do NOT add dependencies. This allows parallel executi
 
 <non_negotiables>
 
-1. **Plan before code** — Do not edit source files without `docs/specs/<active>/overview.md` existing. The PreToolUse hook enforces this.
+1. **Plan before code** — Do not edit source files without `<SPEC_ROOT>/<active>/overview.md` existing. The PreToolUse hook enforces this.
 2. **Never write status.log** — Only hook scripts write to it. If you need to log something, create a TaskList item and complete it.
 3. **Phases are atomic** — A phase is either pending, in-progress, or completed. Don't partially complete phases.
-4. **Overview is the source of truth** — If there's a conflict between conversation history and `docs/specs/<active>/overview.md`, the file wins.
+4. **Overview is the source of truth** — If there's a conflict between conversation history and `<SPEC_ROOT>/<active>/overview.md`, the file wins.
 5. **Compaction recovery** — After compaction, the context-recovery agent reads plan files. Keep them accurate and up-to-date. The Context section in overview.md aids recovery by preserving the original request and conversation state.
 6. **Minimal plans** — Don't over-plan. 2-4 phases for small tasks, 4-6 for large ones. Phases can be added later.
 7. **File paths in phases** — Always list the specific files each phase will create or modify. This helps recovery after compaction.
@@ -105,7 +105,7 @@ The scope alignment check is **advisory, not a hard block**. Unlike the PreToolU
 <compaction_recovery>
 
 When context compaction occurs:
-1. Read `docs/specs/.active` to find active spec directory
+1. Read `<SPEC_ROOT>/.active` to find active spec directory
 2. PreCompact hook writes a COMPACTION_SNAPSHOT marker to status.log
 2b. PreCompact hook also writes state.json with structured snapshot (current phase, task IDs, timestamp)
 3. Context is compacted (conversation history summarized)

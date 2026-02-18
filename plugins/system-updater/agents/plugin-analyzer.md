@@ -16,7 +16,7 @@ You are a plugin forensics specialist. You receive the path to an existing Claud
 ## Input
 
 You receive:
-- `PLUGIN_DIR`: Absolute path to the plugin directory (e.g., `~/personal/agent-config/plugins/coding-embedded-zephyr-engineer`)
+- `PLUGIN_DIR`: Absolute path to the plugin directory (e.g., `$CLAUDE_KIT_OUTPUT_DIR/coding-embedded-zephyr-engineer`)
 - `PLUGIN_NAME`: The plugin's name (e.g., `coding-embedded-zephyr-engineer`)
 </input>
 

@@ -222,7 +222,7 @@ Only run these checks when the plugin's ctl.json has a `companions` array.
 
 | Check ID | Check | Severity |
 |----------|-------|----------|
-| CO1 | Every plugin listed in `companions` exists in the installed plugins directory (`~/personal/agent-config/plugins/`). | CRITICAL |
+| CO1 | Every plugin listed in `companions` exists in the installed plugins directory (`$CLAUDE_KIT_OUTPUT_DIR/`). | CRITICAL |
 | CO2 | Agent frontmatter `skills:` lists reference skills that exist either in this plugin's `skills/` directory OR in a companion plugin's `skills/` directory. Flag any skill reference that cannot be found in either location. | WARNING |
 | CO3 | No domain reference skills are duplicated between this plugin and its companions. If a skill directory exists in both, flag as duplication. | WARNING |
 | CO4 | ctl.json has a `role` field. Plugins with companions should declare their role in ctl.json. | INFO |
@@ -267,7 +267,7 @@ Return ONLY a JSON object. No markdown wrapping, no commentary. The orchestrator
 ```json
 {
   "plugin_name": "coding-embedded-zephyr-engineer",
-  "build_dir": "/tmp/agent-config-build-coding-embedded-zephyr-engineer",
+  "build_dir": "/tmp/claude-kit-build-coding-embedded-zephyr-engineer",
   "overall_grade": "B",
   "summary": "45/52 checks passed. 0 critical, 5 warnings, 2 suggestions.",
   "total_checks": 52,

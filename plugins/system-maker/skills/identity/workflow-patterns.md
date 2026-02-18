@@ -65,7 +65,7 @@ Key characteristics:
 
 5. **Create staging directory**
    ```bash
-   mkdir -p /tmp/agent-config-build-<AGENT_NAME>
+   mkdir -p /tmp/claude-kit-build-<AGENT_NAME>
    ```
 
 **Error Cases:**
@@ -247,11 +247,11 @@ If "Approve": store as APPROVED_ARCH, proceed to Phase 8.
 
 1. **Create directory skeleton**
    ```bash
-   mkdir -p /tmp/agent-config-build-<name>/agents
-   mkdir -p /tmp/agent-config-build-<name>/commands
-   mkdir -p /tmp/agent-config-build-<name>/scripts
-   mkdir -p /tmp/agent-config-build-<name>/skills/identity
-   mkdir -p /tmp/agent-config-build-<name>/.claude-plugin
+   mkdir -p /tmp/claude-kit-build-<name>/agents
+   mkdir -p /tmp/claude-kit-build-<name>/commands
+   mkdir -p /tmp/claude-kit-build-<name>/scripts
+   mkdir -p /tmp/claude-kit-build-<name>/skills/identity
+   mkdir -p /tmp/claude-kit-build-<name>/.claude-plugin
    # Plus directories for each skill in architecture
    ```
 
@@ -295,7 +295,7 @@ If "Approve": store as APPROVED_ARCH, proceed to Phase 8.
 **Critical Context for All Writers:**
 
 Include in every writer prompt:
-- `BUILD_DIR: /tmp/agent-config-build-<name>`
+- `BUILD_DIR: /tmp/claude-kit-build-<name>`
 - `APPROVED_ARCH: <full architecture JSON>`
 - Reminder: agent files use `tools:`, command files use `allowed-tools:`
 - Reminder: hooks.json uses event-based format
@@ -312,7 +312,7 @@ The orchestrator (make-agent command) generates these files directly — no suba
 
 1. **Verify file tree**
    ```bash
-   find /tmp/agent-config-build-<name> -type f | sort
+   find /tmp/claude-kit-build-<name> -type f | sort
    ```
 
 2. **Generate plugin.json**
@@ -413,12 +413,12 @@ Group findings by `fix_type`:
 **a. Structural fixes** (`fix_type: "structural"`):
 ```bash
 # Missing file
-touch /tmp/agent-config-build-<name>/scripts/validate.sh
-chmod +x /tmp/agent-config-build-<name>/scripts/validate.sh
+touch /tmp/claude-kit-build-<name>/scripts/validate.sh
+chmod +x /tmp/claude-kit-build-<name>/scripts/validate.sh
 echo '#!/bin/bash\n# TODO: Implement validation\nexit 0' > ...
 
 # Missing directory
-mkdir -p /tmp/agent-config-build-<name>/skills/missing-skill
+mkdir -p /tmp/claude-kit-build-<name>/skills/missing-skill
 ```
 
 **b. Mechanical fixes** (`fix_type: "mechanical"`):
@@ -490,7 +490,7 @@ After fixes:
    "=== BUILD COMPLETE ===
     Files: <count>
     Grade: <final grade>
-    Build dir: /tmp/agent-config-build-<name>
+    Build dir: /tmp/claude-kit-build-<name>
     Target: $CLAUDE_KIT_OUTPUT_DIR/<name>/"
    ```
 
@@ -519,12 +519,12 @@ After fixes:
    rm -rf $CLAUDE_KIT_OUTPUT_DIR/<name>
 
    # Copy build
-   cp -r /tmp/agent-config-build-<name> $CLAUDE_KIT_OUTPUT_DIR/<name>
+   cp -r /tmp/claude-kit-build-<name> $CLAUDE_KIT_OUTPUT_DIR/<name>
    ```
 
 6. **Verify copy**
    ```bash
-   diff <(cd /tmp/agent-config-build-<name> && find . -type f | sort) \
+   diff <(cd /tmp/claude-kit-build-<name> && find . -type f | sort) \
         <(cd $CLAUDE_KIT_OUTPUT_DIR/<name> && find . -type f | sort)
    ```
 
@@ -572,7 +572,7 @@ After fixes:
 
 5. **On Abort**:
    - Stop workflow
-   - Report partial build location: `/tmp/agent-config-build-<name>`
+   - Report partial build location: `/tmp/claude-kit-build-<name>`
 
 ### Malformed Output
 
@@ -599,7 +599,7 @@ After fixes:
 **Handled in Phase 2:**
 
 ```bash
-ls -d /tmp/agent-config-build-<name> && echo "EXISTS" || echo "CLEAR"
+ls -d /tmp/claude-kit-build-<name> && echo "EXISTS" || echo "CLEAR"
 ```
 
 If EXISTS:
@@ -741,7 +741,7 @@ This pattern ensures domain knowledge is centralized before role-specific plugin
 **Flow**:
 1. Derive knowledge plugin name: replace role segment with `knowledge`
    - `coding-embedded-zephyr-engineer` → `coding-embedded-zephyr-knowledge`
-2. Check if knowledge plugin exists in `~/personal/agent-config/plugins/`
+2. Check if knowledge plugin exists in `$CLAUDE_KIT_OUTPUT_DIR/`
 3. If exists: set KNOWLEDGE_MODE=true, catalog its skills
 4. If missing: offer to create it first via abbreviated workflow
 

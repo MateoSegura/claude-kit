@@ -17,7 +17,7 @@ You will receive:
 - `AGENT_NAME`: The plugin name (e.g., `coding-embedded-zephyr-engineer`)
 - `APPROVED_ARCH`: The approved unified architecture with agent roster and component manifest
 - `USER_ANSWERS`: User's questionnaire responses
-- `BUILD_DIR`: Path to write files (e.g., `/tmp/agent-config-build-coding-embedded-zephyr-engineer`)
+- `BUILD_DIR`: Path to write files (e.g., `/tmp/claude-kit-build-coding-embedded-zephyr-engineer`)
 </input>
 
 <process>
