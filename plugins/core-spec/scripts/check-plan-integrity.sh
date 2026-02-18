@@ -1,34 +1,37 @@
 #!/usr/bin/env bash
 # check-plan-integrity.sh — PostToolUse hook for Write|Edit
-# Validates plan file structure when docs/specs/ files are written.
+# Validates spec file structure when spec directory files are written.
 # Warns about status.log direct writes.
 
-INPUT=$(cat)
-FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/resolve-active-spec.sh"
 
-# Only care about files under docs/specs/
-if ! echo "$FILE_PATH" | grep -q 'docs/specs/'; then
+INPUT=$(cat)
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
+
+# Only care about files under SPEC_ROOT
+if [ -z "$FILE_PATH" ] || ! echo "$FILE_PATH" | grep -qF "${SPEC_ROOT}/"; then
   exit 0
 fi
 
 # Hard rule: status.log must only be written by hooks
 if echo "$FILE_PATH" | grep -q 'status\.log$'; then
   echo "[spec] WARNING: status.log must only be written by hook scripts, not directly."
-  echo "[spec] This may indicate a non-negotiable rule violation."
   exit 0
 fi
 
 # overview.md — check required sections
 if echo "$FILE_PATH" | grep -q 'overview\.md$'; then
   missing=""
-  for section in "## Context" "## Requirements" "## Acceptance Criteria" "## Goal" "## Architecture Decisions" "## Constraints" "## Phase Summary" "## Key Files"; do
+  for section in "## Context" "## Requirements" "## Acceptance Criteria" "## Goal" \
+                 "## Architecture Decisions" "## Constraints" "## Phase Summary" "## Key Files"; do
     if ! grep -q "$section" "$FILE_PATH" 2>/dev/null; then
       missing="$missing $section,"
     fi
   done
   if [ -n "$missing" ]; then
-    echo "[spec] overview.md missing sections:$missing"
-    echo "[spec] The context-recovery agent requires these sections to restore state after compaction."
+    echo "[spec] Note: overview.md is missing sections:${missing%,}"
+    echo "[spec] Add them before compaction — the recovery agent needs these sections."
   fi
 fi
 
@@ -41,7 +44,7 @@ if echo "$FILE_PATH" | grep -qE 'phases/phase-[0-9]+\.md$'; then
     fi
   done
   if [ -n "$missing" ]; then
-    echo "[spec] Phase file missing sections:$missing"
+    echo "[spec] Note: phase file is missing sections:${missing%,}"
   fi
 fi
 
