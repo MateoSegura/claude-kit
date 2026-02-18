@@ -11,28 +11,28 @@ if [ -z "$FILE_PATH" ]; then
 fi
 
 # Plan files are always in scope
-if echo "$FILE_PATH" | grep -q 'docs/plans/'; then
+if echo "$FILE_PATH" | grep -q 'docs/specs/'; then
   exit 0
 fi
 
-# No active plan — nothing to check against
-if [ ! -f docs/plans/.active ]; then
+# No active spec — nothing to check against
+if [ ! -f docs/specs/.active ]; then
   exit 0
 fi
 
-ACTIVE=$(cat docs/plans/.active 2>/dev/null)
+ACTIVE=$(cat docs/specs/.active 2>/dev/null)
 if [ -z "$ACTIVE" ]; then
   exit 0
 fi
 
 # Find current phase number
-PHASE_NUM_FILE="docs/plans/$ACTIVE/.current-phase"
+PHASE_NUM_FILE="docs/specs/$ACTIVE/.current-phase"
 if [ -f "$PHASE_NUM_FILE" ]; then
   PHASE_NUM=$(cat "$PHASE_NUM_FILE" | tr -d '[:space:]')
 else
   # Infer from the lowest phase file with uncompleted steps
   PHASE_NUM=""
-  for f in "docs/plans/$ACTIVE/phases"/phase-*.md; do
+  for f in "docs/specs/$ACTIVE/phases"/phase-*.md; do
     [ -f "$f" ] || continue
     if grep -q '\- \[ \]' "$f" 2>/dev/null; then
       PHASE_NUM=$(basename "$f" | grep -o '[0-9]\+' | head -1 | sed 's/^0*//')
@@ -45,7 +45,7 @@ if [ -z "$PHASE_NUM" ]; then
   exit 0
 fi
 
-PHASE_FILE=$(printf "docs/plans/%s/phases/phase-%02d.md" "$ACTIVE" "$PHASE_NUM")
+PHASE_FILE=$(printf "docs/specs/%s/phases/phase-%02d.md" "$ACTIVE" "$PHASE_NUM")
 if [ ! -f "$PHASE_FILE" ]; then
   exit 0
 fi
@@ -60,10 +60,10 @@ fi
 TARGETS=$(grep -A30 "## Files to Create/Modify" "$PHASE_FILE" 2>/dev/null \
   | grep '^\s*[-*]' | head -8 | sed 's/^\s*[-*]\s*//' | tr '\n' ', ' | sed 's/, $//')
 
-echo "[core-planner] Drift: '$FILE_PATH' is not in Phase ${PHASE_NUM}'s declared scope."
+echo "[spec] Drift: '$FILE_PATH' is not in Phase ${PHASE_NUM}'s declared scope."
 if [ -n "$TARGETS" ]; then
-  echo "[core-planner] Phase ${PHASE_NUM} targets: $TARGETS"
+  echo "[spec] Phase ${PHASE_NUM} targets: $TARGETS"
 fi
-echo "[core-planner] If intentional: update the phase file to include this file, or acknowledge the scope change."
+echo "[spec] If intentional: update the phase file to include this file, or acknowledge the scope change."
 
 exit 0

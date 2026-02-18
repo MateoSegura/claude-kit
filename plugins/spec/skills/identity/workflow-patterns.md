@@ -1,6 +1,6 @@
 # Workflow Patterns for Plan Operations
 
-Step-by-step workflows for all major plan operations in the core-planner plugin.
+Step-by-step workflows for all major plan operations in the spec plugin.
 
 ## Creating a New Named Plan
 
@@ -24,7 +24,7 @@ When the user requests a new plan or the `/plan` command is invoked:
 - Example: If name is `api-refactor` and date is 2026-02-16, directory is `api-refactor-2026-02-16`
 
 ### Step 4: Check Uniqueness
-- Check if `docs/plans/<name>-<YYYY-MM-DD>/` already exists
+- Check if `docs/specs/<name>-<YYYY-MM-DD>/` already exists
 - If it exists, ask the user if they want to:
   - Update the existing plan
   - Choose a different name
@@ -32,11 +32,11 @@ When the user requests a new plan or the `/plan` command is invoked:
 
 ### Step 5: Create Directory Structure
 ```bash
-mkdir -p docs/plans/<name>-<YYYY-MM-DD>/phases
+mkdir -p docs/specs/<name>-<YYYY-MM-DD>/phases
 ```
 
 ### Step 6: Write overview.md
-- Create `docs/plans/<name>-<YYYY-MM-DD>/overview.md`
+- Create `docs/specs/<name>-<YYYY-MM-DD>/overview.md`
 - Include ALL required sections (see coding-standards.md)
 - **Context section is critical**: Capture the original user request and current conversation state
 - Example Context section:
@@ -49,22 +49,22 @@ mkdir -p docs/plans/<name>-<YYYY-MM-DD>/phases
   ```
 
 ### Step 7: Write Phase Files
-- For each phase (1 to N), create `docs/plans/<name>-<YYYY-MM-DD>/phases/phase-NN.md`
+- For each phase (1 to N), create `docs/specs/<name>-<YYYY-MM-DD>/phases/phase-NN.md`
 - Use zero-padded numbering: `phase-01.md`, `phase-02.md`, etc.
 - Include all required sections: Objective, Steps, Files to Create/Modify, Acceptance Criteria, Dependencies
 - Reference specific file paths in the "Files to Create/Modify" section
 
 ### Step 8: Initialize status.log
 ```bash
-touch docs/plans/<name>-<YYYY-MM-DD>/status.log
+touch docs/specs/<name>-<YYYY-MM-DD>/status.log
 ```
 - Create empty file (hook scripts will populate it)
 - NEVER write initial content to status.log manually
 
 ### Step 9: Set Active Plan
-- Write the directory name (just `<name>-<YYYY-MM-DD>`, not full path) to `docs/plans/.active`
+- Write the directory name (just `<name>-<YYYY-MM-DD>`, not full path) to `docs/specs/.active`
 - Example content of `.active`: `api-refactor-2026-02-16`
-- This marks the plan as the current active plan
+- This marks the plan as the current active spec
 
 ### Step 10: Create TaskList Items
 - For each phase, create a TaskList item:
@@ -76,15 +76,15 @@ touch docs/plans/<name>-<YYYY-MM-DD>/status.log
 
 ## Updating an Existing Plan
 
-When modifying an active plan's goals, phases, or constraints:
+When modifying an active spec's goals, phases, or constraints:
 
 ### Step 1: Read Active Plan Identifier
-- Read `docs/plans/.active` to get the current plan directory name
+- Read `docs/specs/.active` to get the current plan directory name
 - Example: `api-refactor-2026-02-16`
 
 ### Step 2: Read Current Plan State
-- Read `docs/plans/<active>/overview.md`
-- Read all phase files: `docs/plans/<active>/phases/phase-*.md`
+- Read `docs/specs/<active>/overview.md`
+- Read all phase files: `docs/specs/<active>/phases/phase-*.md`
 - Read status.log to see what has been completed
 - Query TaskList to see current task statuses
 
@@ -110,17 +110,17 @@ When modifying an active plan's goals, phases, or constraints:
 When a SessionStart(compact) event fires, the context-recovery agent follows this workflow:
 
 ### Step 1: Read Active Plan Identifier
-- Read `docs/plans/.active` to determine which plan is currently active
+- Read `docs/specs/.active` to determine which plan is currently active
 - Example result: `api-refactor-2026-02-16`
-- If `.active` does not exist, there is no active plan — inform the user
+- If `.active` does not exist, there is no active spec — inform the user
 
 ### Step 2: Read Overview
-- Read `docs/plans/<active>/overview.md`
+- Read `docs/specs/<active>/overview.md`
 - Extract: Goal, Architecture Decisions, Constraints, Phase Summary table, Key Files
 - **Read Context section**: This captures the original request and conversation state at plan creation, essential for understanding the plan's origins
 
 ### Step 3: Read status.log from Most Recent Snapshot
-- Read `docs/plans/<active>/status.log`
+- Read `docs/specs/<active>/status.log`
 - Find the most recent `COMPACTION_SNAPSHOT` marker
 - Parse all COMPLETED entries after that marker
 - Build list of completed phases with timestamps
@@ -128,7 +128,7 @@ When a SessionStart(compact) event fires, the context-recovery agent follows thi
 ### Step 4: Read Current Phase File
 - Identify the current phase from the Phase Summary table in overview.md
 - Look for the first phase with `status: in_progress` or `status: pending`
-- Read `docs/plans/<active>/phases/phase-NN.md` for that phase
+- Read `docs/specs/<active>/phases/phase-NN.md` for that phase
 - Extract: Objective, Steps, Files, Acceptance Criteria
 
 ### Step 5: Check TaskList
@@ -258,26 +258,26 @@ To switch from one plan to another (both already exist):
 ### Step 1: Identify Target Plan
 - User specifies plan name or date
 - Resolve to full directory name (e.g., `user-auth-flow-2026-02-15`)
-- Verify the plan directory exists under `docs/plans/`
+- Verify the plan directory exists under `docs/specs/`
 
 ### Step 2: Update .active File
-- Write the target plan directory name to `docs/plans/.active`
-- Example: Write `user-auth-flow-2026-02-15` to `docs/plans/.active`
+- Write the target plan directory name to `docs/specs/.active`
+- Example: Write `user-auth-flow-2026-02-15` to `docs/specs/.active`
 - This is a single-line file with just the directory name
 
 ### Step 3: Verify Switch
-- Read the new active plan's overview.md
+- Read the new active spec's overview.md
 - Inform the user of the switch
 - Summarize the new plan's goal, current phase, and status
 
 ### Important: Only One Active Plan
 - The `.active` file can only contain one plan directory name
-- All plan operations (status logging, recovery, updates) use the active plan
+- All spec operations (status logging, recovery, updates) use the active spec
 - To work on a different plan, switch using this workflow first
 
 ### Viewing Inactive Plans
-- To check status of a non-active plan: `/core-planner:status <name>`
-- This reads the plan files without switching the active plan
+- To check status of a inactive spec: `/spec:status <name>`
+- This reads the plan files without switching the active spec
 - Useful for reviewing historical plans or comparing alternatives
 
 ## Handling Drift Warnings
@@ -311,7 +311,7 @@ If the edited file is listed in a LATER phase's scope:
 4. If phases are independent, consider switching focus with a TaskUpdate
 
 ### Option D: Plan File Edits (Always In Scope)
-Edits to files under docs/plans/ never trigger drift warnings — plan maintenance is always in scope regardless of which phase is active.
+Edits to files under docs/specs/ never trigger drift warnings — plan maintenance is always in scope regardless of which phase is active.
 
 ### When to Suppress Concern
 Drift warnings are expected and harmless in these situations:
