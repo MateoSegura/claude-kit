@@ -1,5 +1,5 @@
 ---
-name: review
+name: coding-embedded-zephyr-engineer:review
 description: "Review Zephyr firmware for MISRA compliance, anti-patterns, and architecture"
 allowed-tools: Read, Glob, Grep, Bash, Task
 user-invocable: true
