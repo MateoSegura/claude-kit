@@ -14,3 +14,4 @@ Thumbs.db
 
 # User-created plugins (installed by user, not shipped with claude-kit)
 local/
+__pycache__/
