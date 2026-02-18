@@ -1,525 +1,695 @@
-#!/bin/bash
-set -euo pipefail
+#!/usr/bin/env python3
+"""claude-kit — Claude Code plugin manager"""
 
-# Resolve INSTALL_DIR even when invoked via symlink
-_SOURCE="${BASH_SOURCE[0]}"
-while [ -L "$_SOURCE" ]; do
-  _DIR="$(cd "$(dirname "$_SOURCE")" && pwd)"
-  _SOURCE="$(readlink "$_SOURCE")"
-  [[ "$_SOURCE" != /* ]] && _SOURCE="$_DIR/$_SOURCE"
-done
-INSTALL_DIR="$(cd "$(dirname "$_SOURCE")" && pwd)"
+import sys
+import os
+import json
+import subprocess
+import shutil
+import pathlib
+import difflib
+from datetime import datetime
 
-PLUGINS_DIR="$INSTALL_DIR/plugins"
-LOCAL_DIR="$INSTALL_DIR/local/plugins"
-CONFIG_FILE="$INSTALL_DIR/config.json"
-INSTALLED_MARKER="$INSTALL_DIR/.installed"
+# ── Constants ────────────────────────────────────────────────────────────────
 
-# Mode detection: user install (.installed present) vs dev checkout
-if [ -f "$INSTALLED_MARKER" ]; then
-  CK_MODE="user"
-  CK_OUTPUT_DIR="$LOCAL_DIR"
-else
-  CK_MODE="dev"
-  CK_OUTPUT_DIR="$PLUGINS_DIR"
-fi
+INSTALL_DIR      = pathlib.Path(os.path.realpath(__file__)).parent
+PLUGINS_DIR      = INSTALL_DIR / "plugins"
+LOCAL_DIR        = INSTALL_DIR / "local" / "plugins"
+CONFIG_FILE      = INSTALL_DIR / "config.json"
+INSTALLED_MARKER = INSTALL_DIR / ".installed"
+MANIFEST_FILE    = INSTALL_DIR / "local" / "setup-manifest.json"
+BACKUP_DIR       = INSTALL_DIR / "local" / "backups"
 
-KNOWN_TYPES="coding system"
+CK_MODE       = "user" if INSTALLED_MARKER.exists() else "dev"
+CK_OUTPUT_DIR = LOCAL_DIR if CK_MODE == "user" else PLUGINS_DIR
 
-resolve_alias() {
-  local name="$1"
-  if [[ -f "$CONFIG_FILE" ]] && command -v jq &>/dev/null; then
-    local plugins
-    plugins=$(jq -r --arg n "$name" '.aliases[$n].plugins // empty | .[]' "$CONFIG_FILE" 2>/dev/null)
-    if [[ -n "$plugins" ]]; then
-      echo "$plugins"
-      return 0
-    fi
-  fi
-  return 1
-}
+# ── Colors ───────────────────────────────────────────────────────────────────
 
-resolve_prefix() {
-  local prefix="$1"
-  local found=false
-  for d in "$PLUGINS_DIR/$prefix"-*/ "$LOCAL_DIR/$prefix"-*/; do
-    if [[ -d "$d" ]]; then
-      found=true
-      basename "$d"
-    fi
-  done
-  $found
-}
+class C:
+    R   = '\033[0;31m'
+    G   = '\033[0;32m'
+    Y   = '\033[0;33m'
+    CY  = '\033[0;36m'
+    W   = '\033[1;37m'
+    DIM = '\033[2m'
+    N   = '\033[0m'
 
-resolve_companions() {
-  local plugin_dir="$1"
-  local ctljson="$plugin_dir/.claude-plugin/ctl.json"
-  if [[ -f "$ctljson" ]] && command -v jq &>/dev/null; then
-    jq -r '.companions // empty | .[]' "$ctljson" 2>/dev/null
-  fi
-}
+def col(color: str, text: str) -> str:
+    return f"{color}{text}{C.N}"
 
-# Expand a single kit name into a deduplicated list of plugin names (with companions).
-# Appends results to the global all_plugins array.
-expand_kit() {
-  local kit_name="$1"
+def p(text: str = "") -> None:
+    print(text)
 
-  local -a plugin_names=()
-  local resolved
-  if resolved=$(resolve_alias "$kit_name"); then
-    while IFS= read -r p; do [[ -n "$p" ]] && plugin_names+=("$p"); done <<< "$resolved"
-  elif resolved=$(resolve_prefix "$kit_name"); then
-    while IFS= read -r p; do [[ -n "$p" ]] && plugin_names+=("$p"); done <<< "$resolved"
-  else
-    plugin_names=("$kit_name")
-  fi
+# ── Config ───────────────────────────────────────────────────────────────────
 
-  for pname in "${plugin_names[@]}"; do
-    # Search bundled first, then local
-    local pdir="$PLUGINS_DIR/$pname"
-    if [ ! -d "$pdir" ]; then
-      pdir="$LOCAL_DIR/$pname"
-    fi
-    if [ ! -d "$pdir" ]; then
-      echo "Error: Kit '$pname' not found in $PLUGINS_DIR/ or $LOCAL_DIR/" >&2
-      echo "" >&2
-      cmd_list >&2
-      exit 1
-    fi
+def load_config() -> dict:
+    if CONFIG_FILE.exists():
+        try:
+            return json.loads(CONFIG_FILE.read_text())
+        except json.JSONDecodeError:
+            pass
+    return {}
 
-    # Companions first
-    local companions
-    companions=$(resolve_companions "$pdir")
-    if [[ -n "$companions" ]]; then
-      while IFS= read -r comp; do
-        if [[ -n "$comp" ]]; then
-          local comp_dir="$PLUGINS_DIR/$comp"
-          [ ! -d "$comp_dir" ] && comp_dir="$LOCAL_DIR/$comp"
-          if [ ! -d "$comp_dir" ]; then
-            echo "Warning: Companion '$comp' (required by '$pname') not found." >&2
-          else
-            local already=false
-            for existing in "${all_plugins[@]+"${all_plugins[@]}"}"; do
-              [[ "$existing" == "$comp" ]] && already=true && break
-            done
-            [[ "$already" == "false" ]] && all_plugins+=("$comp")
-          fi
-        fi
-      done <<< "$companions"
-    fi
+# ── Plugin helpers ────────────────────────────────────────────────────────────
 
-    # Plugin itself
-    local already=false
-    for existing in "${all_plugins[@]+"${all_plugins[@]}"}"; do
-      [[ "$existing" == "$pname" ]] && already=true && break
-    done
-    [[ "$already" == "false" ]] && all_plugins+=("$pname")
-  done
-}
+def plugin_version(plugin_dir: pathlib.Path) -> str:
+    pjson = plugin_dir / ".claude-plugin" / "plugin.json"
+    if not pjson.exists():
+        return "?"
+    try:
+        return json.loads(pjson.read_text()).get("version", "?")
+    except Exception:
+        return "?"
 
-cmd_run() {
-  local -a kit_names=()
-  local skip_permissions=false
-  local model="opus"
+def find_plugin_dir(name: str):
+    for base in [PLUGINS_DIR, LOCAL_DIR]:
+        d = base / name
+        if d.is_dir():
+            return d
+    return None
 
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-      --kit|-k)
-        [[ -z "${2:-}" ]] && { echo "Error: --kit requires a name"; exit 1; }
-        kit_names+=("$2")
-        shift 2
-        ;;
-      --model|-m)
-        [[ -z "${2:-}" ]] && { echo "Error: --model requires a value"; exit 1; }
-        model="$2"
-        shift 2
-        ;;
-      --dangerously-skip-permissions|--yolo|-y)
-        skip_permissions=true
-        shift
-        ;;
-      -*)
-        echo "Unknown flag: $1"
-        echo "Run 'claude-kit help' for usage."
-        exit 1
-        ;;
-      *)
-        # Bare positional arg treated as a kit name (convenience)
-        kit_names+=("$1")
-        shift
-        ;;
-    esac
-  done
+def resolve_alias(name: str):
+    aliases = load_config().get("aliases", {})
+    if name in aliases:
+        return aliases[name].get("plugins", [])
+    return None
 
-  if [[ ${#kit_names[@]} -eq 0 ]]; then
-    echo "Error: Specify at least one kit with --kit <name>"
-    echo ""
-    cmd_list
-    exit 1
-  fi
+def resolve_prefix(prefix: str) -> list:
+    results = []
+    for base in [PLUGINS_DIR, LOCAL_DIR]:
+        if base.exists():
+            for d in sorted(base.iterdir()):
+                if d.is_dir() and d.name.startswith(prefix + "-"):
+                    results.append(d.name)
+    return results
 
-  local -a all_plugins=()
-  for kit_name in "${kit_names[@]}"; do
-    expand_kit "$kit_name"
-  done
+def resolve_companions(plugin_dir: pathlib.Path) -> list:
+    ctl = plugin_dir / ".claude-plugin" / "ctl.json"
+    if not ctl.exists():
+        return []
+    try:
+        return json.loads(ctl.read_text()).get("companions", [])
+    except Exception:
+        return []
 
-  export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+def expand_kit(kit_name: str, seen: set) -> list:
+    """Expand a kit name into deduplicated plugin names, companions first."""
+    alias_result = resolve_alias(kit_name)
+    if alias_result is not None:
+        plugin_names = alias_result
+    else:
+        prefix_result = resolve_prefix(kit_name)
+        plugin_names = prefix_result if prefix_result else [kit_name]
 
-  # Expose kit layout to agents so system-maker/updater know where to install
-  export CLAUDE_KIT_HOME="$INSTALL_DIR"
-  export CLAUDE_KIT_BUNDLED_DIR="$PLUGINS_DIR"
-  export CLAUDE_KIT_LOCAL_DIR="$LOCAL_DIR"
-  export CLAUDE_KIT_OUTPUT_DIR="$CK_OUTPUT_DIR"
-  export CLAUDE_KIT_MODE="$CK_MODE"
+    result = []
+    for pname in plugin_names:
+        pdir = find_plugin_dir(pname)
+        if pdir is None:
+            print(f"Error: Kit '{pname}' not found in {PLUGINS_DIR}/ or {LOCAL_DIR}/",
+                  file=sys.stderr)
+            p()
+            cmd_list()
+            sys.exit(1)
 
-  # Ensure local/plugins directory exists
-  mkdir -p "$LOCAL_DIR"
+        for comp in resolve_companions(pdir):
+            if comp not in seen:
+                comp_dir = find_plugin_dir(comp)
+                if comp_dir is None:
+                    print(f"Warning: Companion '{comp}' (required by '{pname}') not found.",
+                          file=sys.stderr)
+                else:
+                    seen.add(comp)
+                    result.append(comp)
 
-  local -a claude_args=()
+        if pname not in seen:
+            seen.add(pname)
+            result.append(pname)
 
-  for p in "${all_plugins[@]}"; do
-    if [ -d "$PLUGINS_DIR/$p" ]; then
-      claude_args+=(--plugin-dir "$PLUGINS_DIR/$p")
-    else
-      claude_args+=(--plugin-dir "$LOCAL_DIR/$p")
-    fi
-  done
+    return result
 
-  claude_args+=(--model "$model")
+# ── cmd_run ───────────────────────────────────────────────────────────────────
 
-  if [ "$skip_permissions" = true ]; then
-    claude_args+=(--dangerously-skip-permissions)
-    echo "Warning: Running with --dangerously-skip-permissions"
-  fi
+def cmd_run(args: list) -> None:
+    kit_names = []
+    model = "opus"
+    skip_permissions = False
 
-  if [[ ${#all_plugins[@]} -gt 1 ]]; then
-    echo "Loading: ${all_plugins[*]}"
-  fi
+    i = 0
+    while i < len(args):
+        a = args[i]
+        if a in ("--kit", "-k"):
+            i += 1
+            if i >= len(args):
+                print("Error: --kit requires a name"); sys.exit(1)
+            kit_names.append(args[i])
+        elif a in ("--model", "-m"):
+            i += 1
+            if i >= len(args):
+                print("Error: --model requires a value"); sys.exit(1)
+            model = args[i]
+        elif a in ("--dangerously-skip-permissions", "--yolo", "-y"):
+            skip_permissions = True
+        elif a.startswith("-"):
+            print(f"Unknown flag: {a}")
+            print("Run 'claude-kit help' for usage.")
+            sys.exit(1)
+        else:
+            kit_names.append(a)
+        i += 1
 
-  # Launch from the user's current directory so their CLAUDE.md loads naturally.
-  exec claude "${claude_args[@]}"
-}
+    if not kit_names:
+        print("Error: Specify at least one kit with --kit <name>")
+        p()
+        cmd_list()
+        sys.exit(1)
 
-cmd_list() {
-  echo "Bundled kits:"
-  if [ -d "$PLUGINS_DIR" ]; then
-    ls -1 "$PLUGINS_DIR/" 2>/dev/null | while read -r name; do
-      [ -d "$PLUGINS_DIR/$name" ] && echo "  $name"
-    done
-  else
-    echo "  (none)"
-  fi
+    seen: set = set()
+    all_plugins: list = []
+    for name in kit_names:
+        all_plugins.extend(expand_kit(name, seen))
 
-  echo ""
-  echo "Local kits:"
-  if [ -d "$LOCAL_DIR" ]; then
-    local found_local=false
-    ls -1 "$LOCAL_DIR/" 2>/dev/null | while read -r name; do
-      [ -d "$LOCAL_DIR/$name" ] && { echo "  $name"; found_local=true; }
-    done
-    $found_local || echo "  (none — run 'claude-kit --kit system-maker' to create one)"
-  else
-    echo "  (none — run 'claude-kit --kit system-maker' to create one)"
-  fi
+    os.environ["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] = "1"
+    os.environ["CLAUDE_KIT_HOME"]        = str(INSTALL_DIR)
+    os.environ["CLAUDE_KIT_BUNDLED_DIR"] = str(PLUGINS_DIR)
+    os.environ["CLAUDE_KIT_LOCAL_DIR"]   = str(LOCAL_DIR)
+    os.environ["CLAUDE_KIT_OUTPUT_DIR"]  = str(CK_OUTPUT_DIR)
+    os.environ["CLAUDE_KIT_MODE"]        = CK_MODE
 
-  if [ -d "$PLUGINS_DIR" ]; then
-    local -A seen_prefixes=()
-    local -a team_lines=()
-    for d in "$PLUGINS_DIR"/*/; do
-      [[ ! -d "$d" ]] && continue
-      local name; name=$(basename "$d")
-      local prefix="${name%-*}"
-      if [[ -n "$prefix" && "$prefix" != "$name" && -z "${seen_prefixes[$prefix]+x}" ]]; then
-        local count=0
-        for _ in "$PLUGINS_DIR/$prefix"-*/; do count=$((count + 1)); done
-        if [[ $count -ge 2 ]]; then
-          local members
-          members=$(for m in "$PLUGINS_DIR/$prefix"-*/; do printf "%s" "$(basename "$m"),"; done)
-          team_lines+=("  $prefix → [${members%,}]")
-        fi
-        seen_prefixes[$prefix]=1
-      fi
-    done
-    if [[ ${#team_lines[@]} -gt 0 ]]; then
-      echo ""
-      echo "Shortcuts (loads full group):"
-      printf '%s\n' "${team_lines[@]}"
-    fi
-  fi
+    LOCAL_DIR.mkdir(parents=True, exist_ok=True)
 
-  if [[ -f "$CONFIG_FILE" ]] && command -v jq &>/dev/null; then
-    local aliases
-    aliases=$(jq -r '.aliases // empty | keys[]' "$CONFIG_FILE" 2>/dev/null)
-    if [[ -n "$aliases" ]]; then
-      echo ""
-      echo "Aliases:"
-      while IFS= read -r alias_name; do
-        local desc plugins_list
-        desc=$(jq -r --arg n "$alias_name" '.aliases[$n].description // "no description"' "$CONFIG_FILE" 2>/dev/null)
-        plugins_list=$(jq -r --arg n "$alias_name" '.aliases[$n].plugins | join(", ")' "$CONFIG_FILE" 2>/dev/null)
-        echo "  $alias_name → [$plugins_list] ($desc)"
-      done <<< "$aliases"
-    fi
-  fi
-}
+    claude_args = ["claude"]
+    for pname in all_plugins:
+        pdir = find_plugin_dir(pname)
+        claude_args.extend(["--plugin-dir", str(pdir)])
+    claude_args.extend(["--model", model])
 
-cmd_validate() {
-  local name="${1:?Usage: claude-kit validate <name>}"
-  local plugin_dir="$PLUGINS_DIR/$name"
-  [ ! -d "$plugin_dir" ] && plugin_dir="$LOCAL_DIR/$name"
-  local errors=0
+    if skip_permissions:
+        claude_args.append("--dangerously-skip-permissions")
+        print("Warning: Running with --dangerously-skip-permissions")
 
-  [ ! -d "$plugin_dir" ] && { echo "Error: '$name' not found in $PLUGINS_DIR/ or $LOCAL_DIR/"; exit 1; }
+    if len(all_plugins) > 1:
+        print(f"Loading: {', '.join(all_plugins)}")
 
-  echo "Validating: $name"
-  echo ""
+    os.execvp("claude", claude_args)
 
-  if [ -f "$plugin_dir/.claude-plugin/plugin.json" ]; then
-    echo "  [OK] .claude-plugin/plugin.json exists"
-    command -v jq &>/dev/null && ! jq empty "$plugin_dir/.claude-plugin/plugin.json" 2>/dev/null && {
-      echo "  [FAIL] plugin.json is not valid JSON"; errors=$((errors + 1))
+# ── cmd_list ──────────────────────────────────────────────────────────────────
+
+def cmd_list() -> None:
+    p(col(C.W, "Bundled kits:"))
+    if PLUGINS_DIR.exists():
+        kits = [d for d in sorted(PLUGINS_DIR.iterdir()) if d.is_dir()]
+        for d in kits:
+            p(f"  {d.name}")
+        if not kits:
+            p("  (none)")
+    else:
+        p("  (none)")
+
+    p()
+    p(col(C.W, "Local kits:"))
+    if LOCAL_DIR.exists():
+        local_kits = [d for d in sorted(LOCAL_DIR.iterdir()) if d.is_dir()]
+        if local_kits:
+            for d in local_kits:
+                p(f"  {d.name}")
+        else:
+            p("  (none — run 'claude-kit --kit system-maker' to create one)")
+    else:
+        p("  (none — run 'claude-kit --kit system-maker' to create one)")
+
+    # Shortcuts: group plugins sharing a prefix (2+)
+    if PLUGINS_DIR.exists():
+        prefix_map: dict = {}
+        for d in sorted(PLUGINS_DIR.iterdir()):
+            if not d.is_dir():
+                continue
+            parts = d.name.split("-")
+            if len(parts) > 1:
+                prefix = "-".join(parts[:-1])
+                prefix_map.setdefault(prefix, []).append(d.name)
+
+        shortcuts = {k: v for k, v in prefix_map.items() if len(v) >= 2}
+        if shortcuts:
+            p()
+            p(col(C.W, "Shortcuts (loads full group):"))
+            for prefix, members in sorted(shortcuts.items()):
+                p(f"  {prefix} → [{', '.join(sorted(members))}]")
+
+    # Aliases from config.json
+    aliases = load_config().get("aliases", {})
+    if aliases:
+        p()
+        p(col(C.W, "Aliases:"))
+        for alias_name, alias_data in sorted(aliases.items()):
+            desc = alias_data.get("description", "no description")
+            plugins_list = ", ".join(alias_data.get("plugins", []))
+            p(f"  {alias_name} → [{plugins_list}] ({desc})")
+
+# ── cmd_update ────────────────────────────────────────────────────────────────
+
+def _git(args: list) -> str:
+    return subprocess.run(
+        ["git", "-C", str(INSTALL_DIR)] + args,
+        capture_output=True, text=True
+    ).stdout.strip()
+
+def cmd_update() -> None:
+    p()
+    p(f"  {col(C.W, 'claude-kit update')}")
+    p(f"  {col(C.DIM, '─' * 40)}")
+    p()
+
+    old_versions: dict = {}
+    if PLUGINS_DIR.exists():
+        for d in sorted(PLUGINS_DIR.iterdir()):
+            if d.is_dir():
+                old_versions[d.name] = plugin_version(d)
+
+    old_ref = _git(["rev-parse", "--short", "HEAD"]) or "?"
+
+    p(f"  {col(C.CY, 'Pulling from origin...')}")
+    p()
+
+    result = subprocess.run(
+        ["git", "-C", str(INSTALL_DIR), "pull", "--ff-only"],
+        capture_output=True, text=True
+    )
+
+    if result.returncode != 0:
+        p(f"  {col(C.R, '✗ Pull failed')}")
+        p()
+        for line in (result.stdout + result.stderr).splitlines():
+            p(f"    {line}")
+        p()
+        sys.exit(1)
+
+    new_ref = (_git(["describe", "--tags", "--always"])
+               or _git(["rev-parse", "--short", "HEAD"])
+               or "?")
+
+    if "Already up to date" in (result.stdout + result.stderr):
+        p(f"  {col(C.G, '✓ Already up to date')}  {col(C.DIM, f'({new_ref})')}")
+        p()
+        return
+
+    n_commits = _git(["rev-list", f"{old_ref}..HEAD", "--count"]) or "?"
+    commit_word = "commit" if n_commits == "1" else "commits"
+    p(f"  {col(C.G, '✓ Updated to')} {col(C.W, new_ref)}  {col(C.DIM, f'({n_commits} new {commit_word})')}")
+    p()
+
+    new_versions: dict = {}
+    if PLUGINS_DIR.exists():
+        for d in sorted(PLUGINS_DIR.iterdir()):
+            if d.is_dir():
+                new_versions[d.name] = plugin_version(d)
+
+    all_names = set(old_versions) | set(new_versions)
+    max_len = max((len(n) for n in all_names), default=0)
+
+    p(f"  {col(C.W, 'Plugin versions:')}")
+    p()
+
+    shown: set = set()
+    for name in sorted(new_versions):
+        ov = old_versions.get(name)
+        nv = new_versions[name]
+        pad = " " * (max_len - len(name))
+        if ov is None:
+            p(f"    {col(C.G, '+')} {col(C.W, name)}{pad}  {col(C.G, nv)}  {col(C.DIM, '(new)')}")
+        elif ov != nv:
+            p(f"    {col(C.Y, '↑')} {col(C.W, name)}{pad}  {col(C.Y, f'{ov} → {nv}')}")
+        else:
+            p(f"    {col(C.DIM, f'  {name}{pad}  {nv}')}")
+        shown.add(name)
+
+    for name in sorted(old_versions):
+        if name not in shown:
+            pad = " " * (max_len - len(name))
+            p(f"    {col(C.R, '-')} {name}{pad}  {col(C.R, '(removed)')}")
+
+    # Auto-update statusline script if installed
+    sl_dest = pathlib.Path.home() / ".claude" / "statusline-command.sh"
+    sl_src  = INSTALL_DIR / "scripts" / "statusline-command.sh"
+    if sl_dest.exists() and sl_src.exists():
+        if sl_src.read_bytes() != sl_dest.read_bytes():
+            shutil.copy2(sl_src, sl_dest)
+            p()
+            p(f"  {col(C.W, 'Scripts:')}")
+            p()
+            p(f"    {col(C.Y, '↑')} {col(C.W, 'statusline-command.sh')}  {col(C.Y, 'updated')}")
+
+    p()
+    p(f"  {col(C.G, 'Done.')}")
+    p()
+
+# ── cmd_validate ──────────────────────────────────────────────────────────────
+
+def cmd_validate(args: list) -> None:
+    if not args:
+        print("Usage: claude-kit validate <name>")
+        sys.exit(1)
+
+    name = args[0]
+    plugin_dir = find_plugin_dir(name)
+    if plugin_dir is None:
+        print(f"Error: '{name}' not found in {PLUGINS_DIR}/ or {LOCAL_DIR}/")
+        sys.exit(1)
+
+    print(f"Validating: {name}")
+    p()
+    errors = 0
+
+    pjson = plugin_dir / ".claude-plugin" / "plugin.json"
+    if pjson.exists():
+        print("  [OK] .claude-plugin/plugin.json exists")
+        try:
+            json.loads(pjson.read_text())
+        except json.JSONDecodeError:
+            print("  [FAIL] plugin.json is not valid JSON")
+            errors += 1
+    else:
+        print("  [FAIL] .claude-plugin/plugin.json MISSING (required)")
+        errors += 1
+
+    for dirname in ["commands", "agents", "skills", "hooks"]:
+        d = plugin_dir / dirname
+        if d.exists():
+            count = sum(1 for _ in d.rglob("*") if _.is_file())
+            print(f"  [OK] {dirname}/ ({count} files)")
+        else:
+            print(f"  [--] {dirname}/ (optional)")
+
+    hooks_json = plugin_dir / "hooks" / "hooks.json"
+    if hooks_json.exists():
+        try:
+            data = json.loads(hooks_json.read_text())
+            hooks = data.get("hooks", data)
+            if isinstance(hooks, dict):
+                print("  [OK] hooks/hooks.json uses event-based keys")
+            elif isinstance(hooks, list):
+                print("  [WARN] hooks/hooks.json needs event-based keys")
+                errors += 1
+        except json.JSONDecodeError:
+            print("  [FAIL] hooks/hooks.json invalid JSON")
+            errors += 1
+
+    ctl_json = plugin_dir / ".claude-plugin" / "ctl.json"
+    if ctl_json.exists():
+        try:
+            data = json.loads(ctl_json.read_text())
+            for comp in data.get("companions", []):
+                if find_plugin_dir(comp):
+                    print(f"  [OK] companion '{comp}' exists")
+                else:
+                    print(f"  [FAIL] companion '{comp}' NOT FOUND")
+                    errors += 1
+        except json.JSONDecodeError:
+            print("  [FAIL] ctl.json invalid JSON")
+            errors += 1
+
+    p()
+    if errors == 0:
+        print("Validation passed.")
+    else:
+        print(f"{errors} issue(s) found.")
+        sys.exit(1)
+
+# ── Manifest helpers ──────────────────────────────────────────────────────────
+
+def _read_manifest():
+    if not MANIFEST_FILE.exists():
+        return None
+    try:
+        return json.loads(MANIFEST_FILE.read_text())
+    except Exception:
+        return None
+
+def _write_manifest(manifest: dict) -> None:
+    MANIFEST_FILE.parent.mkdir(parents=True, exist_ok=True)
+    MANIFEST_FILE.write_text(json.dumps(manifest, indent=2) + "\n")
+
+# ── cmd_setup ─────────────────────────────────────────────────────────────────
+
+def cmd_setup(args: list) -> None:
+    CLAUDE_DIR      = pathlib.Path.home() / ".claude"
+    SETTINGS_FILE   = CLAUDE_DIR / "settings.json"
+    STATUSLINE_DEST = CLAUDE_DIR / "statusline-command.sh"
+    STATUSLINE_SRC  = INSTALL_DIR / "scripts" / "statusline-command.sh"
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    CLAUDE_DIR.mkdir(parents=True, exist_ok=True)
+
+    manifest = _read_manifest() or {
+        "version": "1",
+        "backups": {},
+        "files_added": [],
+        "settings_keys": {},
     }
-  else
-    echo "  [FAIL] .claude-plugin/plugin.json MISSING (required)"; errors=$((errors + 1))
-  fi
+    manifest["timestamp"] = timestamp
+    manifest["kit_ref"] = _git(["rev-parse", "--short", "HEAD"]) or "?"
 
-  for dir in commands agents skills hooks; do
-    if [ -d "$plugin_dir/$dir" ]; then
-      local count; count=$(find "$plugin_dir/$dir" -type f | wc -l)
-      echo "  [OK] $dir/ ($count files)"
-    else
-      echo "  [--] $dir/ (optional)"
-    fi
-  done
+    p()
+    p(f"  {col(C.W, 'claude-kit setup')}")
+    p(f"  {col(C.DIM, '─' * 40)}")
+    p()
 
-  if [ -f "$plugin_dir/hooks/hooks.json" ] && command -v jq &>/dev/null; then
-    if ! jq empty "$plugin_dir/hooks/hooks.json" 2>/dev/null; then
-      echo "  [FAIL] hooks/hooks.json invalid JSON"; errors=$((errors + 1))
-    else
-      local type; type=$(jq -r '.hooks | type' "$plugin_dir/hooks/hooks.json" 2>/dev/null)
-      [[ "$type" == "object" ]] && echo "  [OK] hooks/hooks.json uses event-based keys"
-      [[ "$type" == "array" ]]  && { echo "  [WARN] hooks/hooks.json needs event-based keys"; errors=$((errors + 1)); }
-    fi
-  fi
+    # ── Statusline ─────────────────────────────────────────────────────────────
 
-  local ctl_json="$plugin_dir/.claude-plugin/ctl.json"
-  if command -v jq &>/dev/null && [ -f "$ctl_json" ]; then
-    local companions
-    companions=$(jq -r '.companions // empty | .[]' "$ctl_json" 2>/dev/null)
-    if [[ -n "$companions" ]]; then
-      while IFS= read -r comp; do
-        [[ -z "$comp" ]] && continue
-        if [ -d "$PLUGINS_DIR/$comp" ]; then
-          echo "  [OK] companion '$comp' exists"
-        else
-          echo "  [FAIL] companion '$comp' NOT FOUND"; errors=$((errors + 1))
-        fi
-      done <<< "$companions"
-    fi
-  fi
+    p(f"  {col(C.W, 'Status line')}  {col(C.DIM, 'ctx %, tokens, model in Claude Code footer')}")
+    p()
 
-  echo ""
-  [ "$errors" -eq 0 ] && echo "Validation passed." || { echo "$errors issue(s) found."; exit 1; }
-}
+    skip_statusline = False
 
-cmd_update() {
-  local R='\033[0;31m' G='\033[0;32m' Y='\033[0;33m'
-  local C='\033[0;36m' W='\033[1;37m' DIM='\033[2m' N='\033[0m'
+    if SETTINGS_FILE.exists():
+        try:
+            settings = json.loads(SETTINGS_FILE.read_text())
+            existing_cmd = settings.get("statusLine", {}).get("command", "")
+            expected_cmd = f"bash {STATUSLINE_DEST}"
+            if existing_cmd and existing_cmd != expected_cmd:
+                p(f"  {col(C.Y, '!')} Existing statusLine detected:")
+                p(f"      {col(C.DIM, existing_cmd)}")
+                p()
+                p(f"    {col(C.W, '[o]')} overwrite  {col(C.W, '[s]')} skip  {col(C.DIM, '(default: o)')}")
+                choice = input("    Choice: ").strip().lower() or "o"
+                if choice == "s":
+                    skip_statusline = True
+                    p(f"  {col(C.DIM, 'Skipped.')}")
+                else:
+                    p(f"  {col(C.Y, 'Overwriting — backup created.')}")
+                p()
+        except Exception:
+            pass
 
-  # Read version field from a plugin.json (no jq required)
-  _ck_version() {
-    local f="$1/.claude-plugin/plugin.json"
-    [ -f "$f" ] || echo "?"
-    grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$f" 2>/dev/null \
-      | grep -o '"[^"]*"$' | tr -d '"' || echo "?"
-  }
+    if not skip_statusline:
+        # Backup settings.json before first touch
+        if SETTINGS_FILE.exists() and str(SETTINGS_FILE) not in manifest["backups"]:
+            backup_path = BACKUP_DIR / f"settings.json.{timestamp}"
+            shutil.copy2(SETTINGS_FILE, backup_path)
+            manifest["backups"][str(SETTINGS_FILE)] = str(backup_path)
+            p(f"  {col(C.DIM, f'Backed up settings.json → {backup_path.name}')}")
 
-  echo ""
-  echo -e "${W}claude-kit update${N}"
-  echo -e "${DIM}────────────────────────────────────────${N}"
-  echo ""
+        # Install script
+        shutil.copy2(STATUSLINE_SRC, STATUSLINE_DEST)
+        STATUSLINE_DEST.chmod(0o755)
+        if str(STATUSLINE_DEST) not in manifest["files_added"]:
+            manifest["files_added"].append(str(STATUSLINE_DEST))
 
-  # Snapshot plugin versions before pull
-  declare -A _old=()
-  if [ -d "$PLUGINS_DIR" ]; then
-    for _d in "$PLUGINS_DIR"/*/; do
-      [ -d "$_d" ] || continue
-      local _n; _n=$(basename "$_d")
-      _old["$_n"]=$(_ck_version "$_d")
-    done
-  fi
+        # Update settings.json
+        try:
+            settings = json.loads(SETTINGS_FILE.read_text()) if SETTINGS_FILE.exists() else {}
+        except Exception:
+            settings = {}
 
-  local old_ref
-  old_ref=$(git -C "$INSTALL_DIR" rev-parse --short HEAD 2>/dev/null || echo "?")
+        settings["statusLine"] = {"type": "command", "command": f"bash {STATUSLINE_DEST}"}
+        SETTINGS_FILE.write_text(json.dumps(settings, indent=2) + "\n")
 
-  echo -e "  ${C}Pulling from origin...${N}"
-  echo ""
+        keys = manifest["settings_keys"].setdefault(str(SETTINGS_FILE), [])
+        if "statusLine" not in keys:
+            keys.append("statusLine")
 
-  local pull_out pull_rc
-  pull_out=$(git -C "$INSTALL_DIR" pull --ff-only 2>&1) || pull_rc=$?
+        p(f"  {col(C.G, '✓')} Status line installed")
+        p()
 
-  if [ "${pull_rc:-0}" -ne 0 ]; then
-    echo -e "  ${R}✗ Pull failed${N}"
-    echo ""
-    echo "$pull_out" | sed 's/^/    /'
-    echo ""
-    exit 1
-  fi
+    _write_manifest(manifest)
 
-  local new_ref
-  new_ref=$(git -C "$INSTALL_DIR" describe --tags --always 2>/dev/null \
-    || git -C "$INSTALL_DIR" rev-parse --short HEAD 2>/dev/null || echo "?")
+    p(f"  {col(C.DIM, '─' * 40)}")
+    p(f"  {col(C.G, 'Setup complete.')}")
+    p()
+    p(f"  Undo anytime:  {col(C.CY, 'claude-kit restore')}")
+    p()
 
-  if echo "$pull_out" | grep -q "Already up to date"; then
-    echo -e "  ${G}✓ Already up to date${N}  ${DIM}($new_ref)${N}"
-    echo ""
-    return 0
-  fi
+# ── cmd_restore ───────────────────────────────────────────────────────────────
 
-  local n_commits
-  n_commits=$(git -C "$INSTALL_DIR" rev-list "${old_ref}..HEAD" --count 2>/dev/null || echo "?")
-  local commit_word; [ "$n_commits" = "1" ] && commit_word="commit" || commit_word="commits"
+def cmd_restore(args: list) -> None:
+    manifest = _read_manifest()
+    if not manifest:
+        p()
+        p(f"  {col(C.Y, 'No setup manifest found.')} Nothing to restore.")
+        p()
+        return
 
-  echo -e "  ${G}✓ Updated to ${W}$new_ref${N}  ${DIM}($n_commits new $commit_word)${N}"
-  echo ""
+    p()
+    p(f"  {col(C.W, 'claude-kit restore')}")
+    p(f"  {col(C.DIM, '─' * 40)}")
+    p()
 
-  # Compute column width for alignment
-  local max_len=0
-  for _n in "${!_old[@]}"; do
-    [ ${#_n} -gt $max_len ] && max_len=${#_n}
-  done
-  if [ -d "$PLUGINS_DIR" ]; then
-    for _d in "$PLUGINS_DIR"/*/; do
-      local _n; _n=$(basename "$_d")
-      [ ${#_n} -gt $max_len ] && max_len=${#_n}
-    done
-  fi
+    backups       = manifest.get("backups", {})
+    files_added   = manifest.get("files_added", [])
+    settings_keys = manifest.get("settings_keys", {})
 
-  echo -e "  ${W}Plugin versions:${N}"
-  echo ""
+    if not backups and not files_added:
+        p(f"  {col(C.DIM, 'Nothing to restore.')}")
+        p()
+        return
 
-  declare -A _shown=()
+    if backups:
+        p(f"  {col(C.W, 'Will restore:')}")
+        p()
+        for orig, bak in backups.items():
+            orig_path = pathlib.Path(orig)
+            bak_path  = pathlib.Path(bak)
+            keys = settings_keys.get(orig, [])
+            keys_str = f"  {col(C.DIM, '(keys: ' + ', '.join(keys) + ')')}" if keys else ""
+            p(f"    {col(C.CY, orig_path.name)}{keys_str}")
 
-  if [ -d "$PLUGINS_DIR" ]; then
-    for _d in "$PLUGINS_DIR"/*/; do
-      [ -d "$_d" ] || continue
-      local _n _nv _ov _pad
-      _n=$(basename "$_d")
-      _nv=$(_ck_version "$_d")
-      _ov="${_old[$_n]:-}"
-      _pad=$(printf '%*s' $((max_len - ${#_n})) '')
+            # Diff: current vs what we'll restore
+            if bak_path.exists() and orig_path.exists():
+                try:
+                    cur_lines = orig_path.read_text().splitlines(keepends=True)
+                    bak_lines = bak_path.read_text().splitlines(keepends=True)
+                    diff = list(difflib.unified_diff(
+                        cur_lines, bak_lines,
+                        fromfile="current", tofile="backup", n=2
+                    ))
+                    if diff:
+                        p(f"    {col(C.DIM, 'Diff (current → backup):')}")
+                        for line in diff[:24]:
+                            line = line.rstrip("\n")
+                            if line.startswith("+") and not line.startswith("+++"):
+                                p(f"      {col(C.G, line)}")
+                            elif line.startswith("-") and not line.startswith("---"):
+                                p(f"      {col(C.R, line)}")
+                            else:
+                                p(f"      {col(C.DIM, line)}")
+                        if len(diff) > 24:
+                            p(f"      {col(C.DIM, f'… {len(diff)-24} more lines')}")
+                except Exception:
+                    pass
+            p()
 
-      if [ -z "$_ov" ]; then
-        echo -e "    ${G}+${N} ${W}$_n${N}$_pad  ${G}$_nv${N}  ${DIM}(new)${N}"
-      elif [ "$_ov" != "$_nv" ]; then
-        echo -e "    ${Y}↑${N} ${W}$_n${N}$_pad  ${Y}$_ov → $_nv${N}"
-      else
-        echo -e "    ${DIM}  $_n$_pad  $_nv${N}"
-      fi
-      _shown["$_n"]=1
-    done
-  fi
+    if files_added:
+        p(f"  {col(C.W, 'Will remove:')}")
+        p()
+        for f in files_added:
+            p(f"    {col(C.R, '-')} {f}")
+        p()
 
-  # Plugins removed by the pull
-  for _n in "${!_old[@]}"; do
-    [ -n "${_shown[$_n]:-}" ] && continue
-    local _pad; _pad=$(printf '%*s' $((max_len - ${#_n})) '')
-    echo -e "    ${R}-${N} $_n$_pad  ${R}(removed)${N}"
-  done
+    confirm = input(f"  {col(C.W, 'Proceed?')} [Y/n] ").strip().lower() or "y"
+    if confirm not in ("y", "yes"):
+        p()
+        p(f"  {col(C.DIM, 'Aborted.')}")
+        p()
+        return
 
-  # Statusline script — auto-update if installed
-  local sl_dest="$HOME/.claude/statusline-command.sh"
-  local sl_src="$INSTALL_DIR/scripts/statusline-command.sh"
-  if [ -f "$sl_dest" ] && [ -f "$sl_src" ]; then
-    if ! diff -q "$sl_src" "$sl_dest" &>/dev/null; then
-      cp "$sl_src" "$sl_dest"
-      echo ""
-      echo -e "  ${W}Scripts:${N}"
-      echo ""
-      echo -e "    ${Y}↑${N} ${W}statusline-command.sh${N}  ${Y}updated${N}"
-    fi
-  fi
+    p()
 
-  echo ""
-  echo -e "  ${G}Done.${N}"
-  echo ""
-}
+    for orig, bak in backups.items():
+        orig_path = pathlib.Path(orig)
+        bak_path  = pathlib.Path(bak)
+        if bak_path.exists():
+            shutil.copy2(bak_path, orig_path)
+            p(f"  {col(C.G, '✓')} Restored {orig_path.name}")
+        else:
+            p(f"  {col(C.Y, '!')} Backup not found: {bak_path.name} — skipped")
 
-cmd_uninstall() {
-  local bin_link="$HOME/.local/bin/claude-kit"
+    for f in files_added:
+        fp = pathlib.Path(f)
+        if fp.exists():
+            fp.unlink()
+            p(f"  {col(C.G, '✓')} Removed {fp.name}")
 
-  echo "This will remove:"
-  echo "  $INSTALL_DIR  (plugins and CLI)"
-  echo "  $bin_link  (symlink)"
-  echo ""
-  read -r -p "Continue? [y/N] " confirm
-  [[ "$confirm" != [yY] ]] && { echo "Aborted."; exit 0; }
+    MANIFEST_FILE.unlink(missing_ok=True)
 
-  [ -L "$bin_link" ] && rm -f "$bin_link" && echo "Removed $bin_link"
-  rm -rf "$INSTALL_DIR" && echo "Removed $INSTALL_DIR"
+    p()
+    p(f"  {col(C.G, 'Restore complete.')} All setup changes reverted.")
+    p()
 
-  echo ""
-  echo "claude-kit uninstalled."
-  echo "You can remove the PATH line from your shell rc file manually if desired."
-}
+# ── cmd_uninstall ─────────────────────────────────────────────────────────────
 
-# ── Dispatch ──────────────────────────────────────────────────────────────────
+def cmd_uninstall() -> None:
+    bin_link = pathlib.Path.home() / ".local" / "bin" / "claude-kit"
+    print("This will remove:")
+    print(f"  {INSTALL_DIR}  (plugins and CLI)")
+    print(f"  {bin_link}  (symlink)")
+    p()
+    confirm = input("Continue? [y/N] ").strip().lower()
+    if confirm not in ("y", "yes"):
+        print("Aborted.")
+        sys.exit(0)
+    if bin_link.is_symlink():
+        bin_link.unlink()
+        print(f"Removed {bin_link}")
+    shutil.rmtree(INSTALL_DIR)
+    print(f"Removed {INSTALL_DIR}")
+    p()
+    print("claude-kit uninstalled.")
+    print("Remove the PATH line from your shell rc file if desired.")
 
-case "${1:-help}" in
-  list)
-    cmd_list
-    ;;
-  update)
-    cmd_update
-    ;;
-  uninstall)
-    cmd_uninstall
-    ;;
-  validate)
-    shift; cmd_validate "$@"
-    ;;
-  help|--help|-h)
-    cat <<'EOF'
-Usage:
-  claude-kit --kit <name> [--kit <name>...] [options]
-  claude-kit list
-  claude-kit update
-  claude-kit validate <name>
-  claude-kit uninstall
+# ── cmd_help ──────────────────────────────────────────────────────────────────
 
-Options:
-  --kit, -k <name>                  Kit to load (repeatable)
-  --model, -m <model>               Claude model (default: opus)
-  --dangerously-skip-permissions    Skip all permission prompts
-  --yolo, -y                        Alias for --dangerously-skip-permissions
+def cmd_help() -> None:
+    W, CY, DIM = C.W, C.CY, C.DIM
+    print(f"""
+  {W}claude-kit{C.N}  Claude Code plugin manager
 
-Examples:
-  claude-kit --kit coding-embedded-zephyr
-  claude-kit --kit coding-embedded-zephyr --kit core-planner
-  claude-kit --kit coding-embedded-zephyr --model sonnet --yolo
+  {DIM}Launch:{C.N}
+    {CY}claude-kit --kit <name>{C.N}
+    {CY}claude-kit --kit <name> --kit core-planner{C.N}   {DIM}combine kits{C.N}
+    {CY}claude-kit --kit <name> --yolo{C.N}               {DIM}skip permission prompts{C.N}
+    {CY}claude-kit --kit <name> --model sonnet{C.N}       {DIM}choose model  (default: opus){C.N}
 
-Kit shortcuts load full groups:
-  coding-embedded-zephyr  →  engineer + grader + knowledge (companions auto-loaded)
+  {DIM}Commands:{C.N}
+    {CY}claude-kit setup{C.N}      install Claude Code features with backup
+    {CY}claude-kit restore{C.N}    undo setup — restores original files with diff preview
+    {CY}claude-kit list{C.N}       show available kits (bundled + local)
+    {CY}claude-kit update{C.N}     pull latest plugins, show version changes
+    {CY}claude-kit validate{C.N}   check a kit's structure
+    {CY}claude-kit uninstall{C.N}  remove claude-kit and the CLI symlink
+""")
 
-Commands:
-  list      Show all available kits (bundled + local)
-  update    Pull latest bundled plugins, show version changes with colored diff
-  validate  Check a kit's plugin structure for correctness
-  uninstall Remove claude-kit and the CLI symlink
+# ── dispatch ──────────────────────────────────────────────────────────────────
 
-EOF
-    ;;
-  --kit|-k|--model|-m|--dangerously-skip-permissions|--yolo|-y)
-    # Flags at top level → implicit run
-    cmd_run "$@"
-    ;;
-  -*)
-    echo "Unknown flag: $1"
-    echo "Run 'claude-kit help' for usage."
-    exit 1
-    ;;
-  *)
-    # Bare positional → implicit run with kit name
-    cmd_run "$@"
-    ;;
-esac
+def main() -> None:
+    args = sys.argv[1:]
+
+    if not args or args[0] in ("help", "--help", "-h"):
+        cmd_help()
+        return
+
+    cmd  = args[0]
+    rest = args[1:]
+
+    dispatch = {
+        "list":      lambda: cmd_list(),
+        "update":    lambda: cmd_update(),
+        "setup":     lambda: cmd_setup(rest),
+        "restore":   lambda: cmd_restore(rest),
+        "validate":  lambda: cmd_validate(rest),
+        "uninstall": lambda: cmd_uninstall(),
+    }
+
+    if cmd in dispatch:
+        dispatch[cmd]()
+    elif cmd in ("--kit", "-k", "--model", "-m",
+                 "--dangerously-skip-permissions", "--yolo", "-y"):
+        cmd_run(args)
+    elif cmd.startswith("-"):
+        print(f"Unknown flag: {cmd}")
+        print("Run 'claude-kit help' for usage.")
+        sys.exit(1)
+    else:
+        cmd_run(args)
+
+if __name__ == "__main__":
+    main()

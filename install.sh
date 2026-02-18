@@ -88,44 +88,6 @@ case "$(basename "${SHELL:-bash}")" in
   *)     add_to_rc "$HOME/.bashrc"; add_to_rc "$HOME/.profile" ;;
 esac
 
-# ── Statusline (optional) ─────────────────────────────────────────────────────
-
-CLAUDE_SETTINGS="$HOME/.claude/settings.json"
-STATUSLINE_SCRIPT="$HOME/.claude/statusline-command.sh"
-STATUSLINE_SRC="$KIT_HOME/scripts/statusline-command.sh"
-
-echo ""
-read -r -p "$(echo -e "${_B}[claude-kit]${_N} Install Claude Code status line (shows ctx %, tokens, model)? [Y/n] ")" _sl_ans
-_sl_ans="${_sl_ans:-Y}"
-
-if [[ "$_sl_ans" =~ ^[Yy] ]]; then
-  cp "$STATUSLINE_SRC" "$STATUSLINE_SCRIPT"
-  chmod +x "$STATUSLINE_SCRIPT"
-
-  # Wire settings.json — create if missing, update statusLine key if present
-  if [ ! -f "$CLAUDE_SETTINGS" ]; then
-    mkdir -p "$(dirname "$CLAUDE_SETTINGS")"
-    echo '{"statusLine":{"type":"command","command":"bash '"$STATUSLINE_SCRIPT"'"}}' > "$CLAUDE_SETTINGS"
-  elif command -v python3 &>/dev/null; then
-    python3 - "$CLAUDE_SETTINGS" "$STATUSLINE_SCRIPT" <<'PYEOF'
-import sys, json
-path, script = sys.argv[1], sys.argv[2]
-with open(path) as f:
-    data = json.load(f)
-data["statusLine"] = {"type": "command", "command": f"bash {script}"}
-with open(path, "w") as f:
-    json.dump(data, f, indent=2)
-    f.write("\n")
-PYEOF
-  else
-    warn "python3 not found — manually add to $CLAUDE_SETTINGS:"
-    warn '  "statusLine": {"type": "command", "command": "bash '"$STATUSLINE_SCRIPT"'"}'
-  fi
-  ok "Status line installed."
-else
-  info "Skipped status line install."
-fi
-
 # ── Done ──────────────────────────────────────────────────────────────────────
 
 _W='\033[1;37m'
@@ -133,35 +95,25 @@ _C='\033[0;36m'
 _DIM='\033[2m'
 
 echo ""
-echo -e "${_G}  ┌─────────────────────────────────────────────┐${_N}"
-echo -e "${_G}  │        claude-kit installed successfully     │${_N}"
-echo -e "${_G}  └─────────────────────────────────────────────┘${_N}"
-echo ""
 
 # PATH notice if needed
 if ! command -v claude-kit &>/dev/null 2>&1; then
-  echo -e "  ${_Y}Note:${_N} claude-kit isn't on your PATH yet."
-  echo -e "  Run this, then open a new terminal:"
-  echo ""
+  echo -e "  ${_Y}Note:${_N} Restart your shell or run:"
   echo -e "    ${_C}export PATH=\"\$HOME/.local/bin:\$PATH\"${_N}"
   echo ""
 fi
 
-echo -e "  ${_W}Quick start${_N}"
+echo -e "  ${_W}claude-kit${_N}  installed"
 echo ""
-echo -e "  ${_DIM}1.${_N} See what kits are available"
-echo -e "     ${_C}claude-kit list${_N}"
+echo -e "  ${_DIM}──────────────────────────────────────────────────${_N}"
 echo ""
-echo -e "  ${_DIM}2.${_N} Launch a kit  ${_DIM}(opens Claude Code with that plugin loaded)${_N}"
-echo -e "     ${_C}claude-kit --kit <name>${_N}"
-echo -e "     ${_C}claude-kit --kit <name> --yolo${_N}   ${_DIM}# skip permission prompts${_N}"
+echo -e "  ${_C}claude-kit setup${_N}                          ${_DIM}configure Claude Code features${_N}"
+echo -e "  ${_C}claude-kit list${_N}                           ${_DIM}browse available kits${_N}"
+echo -e "  ${_C}claude-kit --kit <name>${_N}                   ${_DIM}launch a kit${_N}"
+echo -e "  ${_C}claude-kit --kit <name> --kit core-planner${_N} ${_DIM}combine kits${_N}"
+echo -e "  ${_C}claude-kit --kit <name> --yolo${_N}            ${_DIM}skip permission prompts${_N}"
+echo -e "  ${_C}claude-kit update${_N}                         ${_DIM}pull latest plugins${_N}"
 echo ""
-echo -e "  ${_DIM}3.${_N} Build your own kit  ${_DIM}(AI-guided agent creator)${_N}"
-echo -e "     ${_C}claude-kit --kit system-maker${_N}"
-echo ""
-echo -e "  ${_DIM}4.${_N} Stay up to date"
-echo -e "     ${_C}claude-kit update${_N}"
-echo ""
-echo -e "  ${_DIM}────────────────────────────────────────────────${_N}"
-echo -e "  ${_DIM}Docs & source: github.com/MateoSegura/claude-kit${_N}"
+echo -e "  ${_DIM}──────────────────────────────────────────────────${_N}"
+echo -e "  ${_DIM}github.com/MateoSegura/claude-kit${_N}"
 echo ""
