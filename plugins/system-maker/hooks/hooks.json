@@ -19,6 +19,10 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin-file.sh",
             "description": "Validate plugin file frontmatter conventions (agents use tools:, commands use allowed-tools:)"
+          },
+          {
+            "type": "prompt",
+            "prompt": "A plugin file was just written or edited. Check the tool result for the file path. If the file matches agents/*.md, commands/*.md, or skills/*/*.md: verify it has real substantive content — not just headers, TODOs, or placeholder text. If fewer than 20 lines of actual content exist, respond: WARN: <filename> appears to be a skeleton with insufficient content. Otherwise respond with a single word: ok"
           }
         ]
       }
