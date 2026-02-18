@@ -18,15 +18,26 @@ Invoked by the Stop hook. No explicit input — you read from the filesystem and
 
 <process>
 
+### Step 0: Resolve spec root
+
+Determine where spec files are stored for this project:
+
+1. Read `~/.claude-kit/spec-registry.json`
+2. Look for an entry in `.registrations` whose key matches the current project root
+3. If found, use that value as `SPEC_ROOT`
+4. If not found or the file doesn't exist, use `docs/specs` as `SPEC_ROOT`
+
+Use `SPEC_ROOT` in all subsequent path references.
+
 ### Step 1: Check for plan existence
 
-Read `docs/specs/.active`. If `.active` does not exist, respond `{"ok": true}` immediately — no spec means nothing to verify.
+Read `<SPEC_ROOT>/.active`. If `.active` does not exist, respond `{"ok": true}` immediately — no spec means nothing to verify.
 
-Then check if `docs/specs/<active>/overview.md` exists (where `<active>` is the directory name from `.active`). If overview.md does not exist, respond `{"ok": true}` — the .active reference is stale but there's no active spec to verify.
+Then check if `<SPEC_ROOT>/<active>/overview.md` exists (where `<active>` is the directory name from `.active`). If overview.md does not exist, respond `{"ok": true}` — the .active reference is stale but there's no active spec to verify.
 
 ### Step 2: Read status.log
 
-Read `docs/specs/<active>/status.log`. Note:
+Read `<SPEC_ROOT>/<active>/status.log`. Note:
 - All COMPLETED entries
 - The most recent COMPACTION_SNAPSHOT (if any)
 - Any gaps or anomalies

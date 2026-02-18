@@ -19,6 +19,18 @@ The overview.md file MUST contain these sections in order:
   - `**Conversation state:**` — Brief summary of relevant context: key files discussed, decisions made, constraints mentioned
 - Purpose: Aids context recovery after compaction by preserving the starting conditions
 
+### Requirements (H2)
+- Numbered list of observable behaviors or properties that must be true when done
+- Format: `- **R1**: [description]`
+- Each requirement should be specific and verifiable
+- Requirements are the "what" — they describe outcomes, not implementation steps
+
+### Acceptance Criteria (H2)
+- High-level checklist proving the spec is satisfied
+- Format: `- [ ] [R1] [How to verify requirement is met]`
+- Each criterion should be traceable to a specific requirement
+- These are the verification conditions for the whole spec
+
 ### Goal (H2)
 - One-paragraph description of what we're building, fixing, or changing
 - Should be specific and measurable

@@ -19,7 +19,7 @@ You receive:
 - `PLUGIN_NAME`: The plugin being updated (e.g., `coding-embedded-zephyr-engineer`)
 - `PLUGIN_ANALYSIS`: Full JSON analysis from the plugin-analyzer agent
 - `USER_REQUEST`: The user's description of what they want to add or change
-- `INSTALL_DIR`: `~/personal/agent-config`
+- `INSTALL_DIR`: `$CLAUDE_KIT_HOME`
 - `COMPANIONS`: Object from plugin analysis — has_companions, companion_names, companion_skills (may be empty)
 </input>
 
