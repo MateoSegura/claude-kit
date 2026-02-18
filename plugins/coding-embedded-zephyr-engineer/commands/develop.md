@@ -1,5 +1,5 @@
 ---
-name: develop
+name: coding-embedded-zephyr-engineer:develop
 description: "Zephyr firmware development — write, build, flash, debug, test"
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash, WebSearch, WebFetch, Task
 user-invocable: true
