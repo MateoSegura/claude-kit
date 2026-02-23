@@ -5,6 +5,11 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.0.6] - 2026-02-23
+
+### Added
+- Pretty launch header when starting kits — plugins are grouped by team prefix with role names listed per line, kit/plugin counts shown, and consistent color styling throughout
+
 ## [0.0.5] - 2026-02-23
 
 ### Fixed
