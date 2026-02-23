@@ -4,6 +4,11 @@ These rules apply when Claude is working in the claude-kit repository itself —
 editing plugins, scripts, workflows, or tooling. They do NOT apply to the
 plugins that claude-kit distributes.
 
+Additional behavioral rules are loaded from `.claude/rules/`:
+- `git-workflow.md` — branching, commits, PRs, releases
+
+---
+
 ## Plugin File Schema — Critical
 
 `plugin.json` is parsed by Claude Code's plugin loader. Only these fields are
@@ -57,30 +62,17 @@ enforces this at CI time.
 Before committing a plugin change, run Tier 1 validation locally:
 
 ```bash
-# Single plugin
-claude-kit validate <plugin-name>
-
-# All plugins
-claude-kit validate --all
-
-# Only files changed since last commit
-claude-kit validate --changed
+claude-kit validate --changed   # only what changed
+claude-kit validate --all       # all plugins
+claude-kit validate <name>      # one plugin
 ```
 
 Or use the `/validate-all` command for combined Tier 1 + semantic review.
 
-## Version Bumps and Releases
-
-- **Version bumps:** use `/bump-plugin` — never edit `plugin.json` version or
-  CHANGELOG manually.
-- **Releases:** use `/release` — it runs preflight checks, finalizes CHANGELOG,
-  commits, tags, and asks before pushing.
-
 ## Plugin Creation and Enhancement
 
 - **New plugin:** `claude-kit --kit system-maker` → `/system-maker:make-agent`
-- **Enhance existing:** `claude-kit --kit system-updater` →
-  `/system-updater:update-agent`
+- **Enhance existing:** `claude-kit --kit system-updater` → `/system-updater:update-agent`
 
 ## Plugin Version Strategy
 
@@ -90,5 +82,4 @@ Or use the `/validate-all` command for combined Tier 1 + semantic review.
 | minor | New agent, command, or skill added |
 | major | Breaking change — renamed command, removed agent, changed skill API |
 
-Repo tag version is determined by the highest-severity plugin bump in the
-release draft.
+Repo tag version is determined by the highest-severity plugin bump in the release draft.
