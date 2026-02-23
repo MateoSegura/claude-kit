@@ -1,0 +1,62 @@
+name: weekly-full-audit
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"  # every Monday 09:00 UTC
+  workflow_dispatch:
+
+jobs:
+  full-audit:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tier 1 — all plugins (strict)
+        id: tier1
+        run: python3 scripts/validate-plugins.py --all --strict --json | tee /tmp/weekly-t1.json
+        continue-on-error: true
+
+      - name: Claude full-suite review
+        id: claude
+        run: |
+          unset CLAUDECODE
+          PROMPT="Run /system-maker:validate on ALL plugins in plugins/. Read every plugin directory. Output structured markdown with PASS/FAIL per plugin, then an aggregate cross-coherence assessment: are companion relationships appropriate? Are there contradictory conventions across plugins in the same team (e.g. zephyr-engineer vs zephyr-tester)?"
+          echo "$PROMPT" | claude -p \
+            --plugin-dir "${GITHUB_WORKSPACE}/plugins/system-maker" \
+            > /tmp/weekly-claude.md 2>&1
+          cat /tmp/weekly-claude.md
+        continue-on-error: true
+
+      - name: Create issue on failure
+        if: steps.tier1.outcome == 'failure' || steps.claude.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let t1Body = '';
+            let claudeBody = '';
+            try { t1Body = fs.readFileSync('/tmp/weekly-t1.json', 'utf8'); } catch {}
+            try { claudeBody = fs.readFileSync('/tmp/weekly-claude.md', 'utf8'); } catch {}
+
+            const today = new Date().toISOString().split('T')[0];
+            const title = `Weekly audit failure — ${today}`;
+
+            // Check for existing open issue to avoid duplicates
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'audit-failure',
+            });
+            const existing = issues.find(i => i.title.startsWith('Weekly audit failure'));
+            if (existing) {
+              console.log(`Existing issue #${existing.number} found — skipping creation.`);
+              return;
+            }
+
+            await github.rest.issues.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              title,
+              labels: ['audit-failure'],
+              body: `## Weekly Plugin Audit Failure\n\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\n` +
+                `### Tier 1 Results\n\`\`\`json\n${t1Body}\n\`\`\`\n\n` +
+                `### Semantic Review\n${claudeBody}`,
+            });
