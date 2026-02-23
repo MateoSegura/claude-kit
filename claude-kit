@@ -391,74 +391,27 @@ def cmd_version() -> None:
 # ── cmd_validate ──────────────────────────────────────────────────────────────
 
 def cmd_validate(args: list) -> None:
-    if not args:
-        print("Usage: claude-kit validate <name>")
+    validator = INSTALL_DIR / "scripts" / "validate-plugins.py"
+    if not validator.exists():
+        print(f"Error: validator not found at {validator}")
         sys.exit(1)
 
-    name = args[0]
-    plugin_dir = find_plugin_dir(name)
-    if plugin_dir is None:
-        print(f"Error: '{name}' not found in {PLUGINS_DIR}/ or {LOCAL_DIR}/")
-        sys.exit(1)
-
-    print(f"Validating: {name}")
-    p()
-    errors = 0
-
-    pjson = plugin_dir / ".claude-plugin" / "plugin.json"
-    if pjson.exists():
-        print("  [OK] .claude-plugin/plugin.json exists")
-        try:
-            json.loads(pjson.read_text())
-        except json.JSONDecodeError:
-            print("  [FAIL] plugin.json is not valid JSON")
-            errors += 1
+    if not args or args[0] == "--all":
+        script_args = ["--all"]
+    elif args[0] == "--changed":
+        script_args = ["--changed"]
+    elif not args[0].startswith("-"):
+        script_args = ["--plugin", args[0]]
     else:
-        print("  [FAIL] .claude-plugin/plugin.json MISSING (required)")
-        errors += 1
-
-    for dirname in ["commands", "agents", "skills", "hooks"]:
-        d = plugin_dir / dirname
-        if d.exists():
-            count = sum(1 for _ in d.rglob("*") if _.is_file())
-            print(f"  [OK] {dirname}/ ({count} files)")
-        else:
-            print(f"  [--] {dirname}/ (optional)")
-
-    hooks_json = plugin_dir / "hooks" / "hooks.json"
-    if hooks_json.exists():
-        try:
-            data = json.loads(hooks_json.read_text())
-            hooks = data.get("hooks", data)
-            if isinstance(hooks, dict):
-                print("  [OK] hooks/hooks.json uses event-based keys")
-            elif isinstance(hooks, list):
-                print("  [WARN] hooks/hooks.json needs event-based keys")
-                errors += 1
-        except json.JSONDecodeError:
-            print("  [FAIL] hooks/hooks.json invalid JSON")
-            errors += 1
-
-    ctl_json = plugin_dir / ".claude-plugin" / "ctl.json"
-    if ctl_json.exists():
-        try:
-            data = json.loads(ctl_json.read_text())
-            for comp in data.get("companions", []):
-                if find_plugin_dir(comp):
-                    print(f"  [OK] companion '{comp}' exists")
-                else:
-                    print(f"  [FAIL] companion '{comp}' NOT FOUND")
-                    errors += 1
-        except json.JSONDecodeError:
-            print("  [FAIL] ctl.json invalid JSON")
-            errors += 1
-
-    p()
-    if errors == 0:
-        print("Validation passed.")
-    else:
-        print(f"{errors} issue(s) found.")
+        print("Usage: claude-kit validate [<name> | --all | --changed]")
         sys.exit(1)
+
+    extra = [a for a in args[1:] if a.startswith("--")]
+    result = subprocess.run(
+        [sys.executable, str(validator)] + script_args + extra,
+        cwd=str(INSTALL_DIR),
+    )
+    sys.exit(result.returncode)
 
 # ── Manifest helpers ──────────────────────────────────────────────────────────
 
@@ -767,7 +720,7 @@ def cmd_help() -> None:
     {CY}claude-kit list{C.N}       show available kits (bundled + local)
     {CY}claude-kit update{C.N}     pull latest plugins, show version changes
     {CY}claude-kit version{C.N}    show current version and check for updates
-    {CY}claude-kit validate{C.N}   check a kit's structure
+    {CY}claude-kit validate [<name> | --all | --changed]{C.N}   check plugin structure
     {CY}claude-kit uninstall{C.N}  remove claude-kit and the CLI symlink
 """)
 

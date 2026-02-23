@@ -1,0 +1,17 @@
+name: fast-validate
+
+on:
+  push:
+    branches: ["**"]
+    tags-ignore: ["**"]
+
+jobs:
+  fast-validate:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Tier 1 — changed plugins
+        run: python3 scripts/validate-plugins.py --changed --json

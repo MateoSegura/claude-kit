@@ -2,6 +2,18 @@
 
 All notable changes to claude-kit will be documented in this file.
 
+## [Unreleased]
+### Plugins Changed
+<!-- Use /bump-plugin to add entries here -->
+
+### Tooling Added
+- **validate-plugins.py** — Tier 1 structural validator (JSON syntax, field names, companion existence, hook script references)
+- **system-maker:validate** — Semantic Tier 2-4 plugin reviewer command
+- **CI workflows** — push.yml (fast check), pr.yml (Tier 1 + Claude review), weekly.yml (full audit), release.yml (gate + GitHub Release)
+- **.claude/CLAUDE.md** — Repo-level rules for working in claude-kit
+- **.claude/commands/** — `/validate-all`, `/bump-plugin`, `/release` developer commands
+- **docs/plugin-spec.md** — Human-readable plugin specification
+
 ## [0.0.0] - 2026-02-22
 
 ### Added
