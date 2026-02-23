@@ -1,13 +1,8 @@
-# claude-kit Repository Rules
+# Plugin Conventions — claude-kit
 
-These rules apply when Claude is working in the claude-kit repository itself —
+These rules apply when working in the claude-kit repository itself —
 editing plugins, scripts, workflows, or tooling. They do NOT apply to the
 plugins that claude-kit distributes.
-
-Additional behavioral rules are loaded from `.claude/rules/`:
-- `git-workflow.md` — branching, commits, PRs, releases
-
----
 
 ## Plugin File Schema — Critical
 
