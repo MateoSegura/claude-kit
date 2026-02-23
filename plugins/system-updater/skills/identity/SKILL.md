@@ -71,7 +71,13 @@ Copy the plugin to staging, spawn change-writer subagent(s) to implement changes
 Launch plugin-reviewer to audit the entire staged plugin, apply mechanical fixes directly, re-spawn change-writer for content fixes, present results.
 
 ### Phase 7: Finalization
-Show diff, get final approval, create backup, replace live plugin, validate, clean up staging.
+Before replacing the live plugin:
+- Regenerate `README.md` for the staged plugin to reflect all changes made during the update:
+  - Re-read `description:` from each `agents/*.md` frontmatter
+  - Re-read the first heading/paragraph from each `commands/*.md`
+  - For knowledge plugins: re-read `name:` from each `skills/*/SKILL.md`
+  - Rewrite `README.md` in the staged directory to match current state
+Then: show diff (including README changes), get final approval, create timestamped backup, replace live plugin, validate, clean up staging.
 
 For detailed workflow instructions and error recovery patterns, see [workflow-patterns.md](workflow-patterns.md).
 </workflow>

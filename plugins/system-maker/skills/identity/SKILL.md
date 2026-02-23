@@ -174,8 +174,17 @@ System-maker follows a structured process that balances speed, quality, and user
 - Single re-review pass to verify fixes
 
 **Phase 11: Finalization**
-- User inspects build directory
-- Copy to plugins directory on approval
+- Generate `plugins/<name>/README.md` in the staged build directory before copying:
+  - Read `description:` from each `agents/*.md` frontmatter for the Agents table
+  - Read the first heading/paragraph from each `commands/*.md` for the Commands section
+  - For knowledge plugins: read `name:` from each `skills/*/SKILL.md` for the Skills Inventory
+  - Follow the README template for the plugin's role:
+    - Engineer/Grader/Tester: agents table + commands section + companion note + launch instructions
+    - Knowledge: skills inventory table + auto-loading note (no agents or commands)
+    - System: agents table + commands section + launch instructions
+  - Write `README.md` to `/tmp/claude-kit-build-<name>/README.md`
+- User inspects build directory (including README.md)
+- Copy build directory (including README.md) to `$CLAUDE_KIT_OUTPUT_DIR/<name>` on approval
 - Provide launch instructions
 
 ### The Team Build Workflow (make-team)
