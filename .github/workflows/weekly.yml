@@ -19,6 +19,7 @@ jobs:
       - name: Claude full-suite review
         id: claude
         run: |
+          unset CLAUDECODE
           claude --print \
             --plugin-dir plugins/system-maker \
             "Run /system-maker:validate on ALL plugins in plugins/. Read every plugin directory. Output structured markdown with PASS/FAIL per plugin, then an aggregate cross-coherence assessment: are companion relationships appropriate? Are there contradictory conventions across plugins in the same team (e.g. zephyr-engineer vs zephyr-tester)?" \

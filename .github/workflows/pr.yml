@@ -80,6 +80,8 @@ jobs:
       - name: Claude Tier 2-4 review
         if: steps.changed.outputs.list != ''
         run: |
+          # Unset CLAUDECODE so claude --print can run even from within a Claude Code session
+          unset CLAUDECODE
           claude --print \
             --plugin-dir plugins/system-maker \
             "Run /system-maker:validate on these plugins: ${{ steps.changed.outputs.list }}. Read the files directly from the repository. Output structured markdown with PASS/FAIL per plugin." \
