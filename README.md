@@ -111,37 +111,43 @@ Knowledge ──► Engineer
 
 ### Zephyr RTOS Team
 
+Four plugins covering the full development lifecycle for Zephyr RTOS embedded firmware. The knowledge plugin is auto-loaded as a companion by the other three, injecting kernel APIs, devicetree syntax, hardware targets, and design patterns into their agent context.
+
 ```bash
 claude-kit --kit coding-embedded-zephyr  # loads all four
 ```
 
-| Plugin | Role | What it does |
-|--------|------|-------------|
-| `coding-embedded-zephyr-knowledge` | Knowledge | Shared domain reference: kernel APIs, devicetree/Kconfig syntax, build system (west/sysbuild), Nordic/STM32/NXP/ESP32 hardware, networking, security, serialization. Auto-loaded by engineer and tester. |
-| `coding-embedded-zephyr-engineer` | Engineer | Firmware development specialist. Agents: firmware-engineer, devicetree-specialist, build-debug-analyst, code-reviewer, test-engineer. Hooks enforce sysbuild usage, block destructive commands, validate DTS overlays and Kconfig, run async builds. |
-| `coding-embedded-zephyr-grader` | Grader | Blind quantitative code review across 9 weighted dimensions (correctness, resource usage, style, Zephyr patterns, compilability, completeness, architecture, static analysis, testing). Agents run a full tool pipeline. |
-| `coding-embedded-zephyr-tester` | Tester | Test engineering: ztest unit tests, Twister test runner, FFF mocking, gcov/lcov coverage, CI infrastructure. Agents: unit-test-writer, integration-test-writer, coverage-analyzer, test-runner, mock-specialist, test-reviewer. |
+| Plugin | Role | README |
+|--------|------|--------|
+| `coding-embedded-zephyr-knowledge` | Knowledge | [→ README](plugins/coding-embedded-zephyr-knowledge/README.md) |
+| `coding-embedded-zephyr-engineer` | Engineer | [→ README](plugins/coding-embedded-zephyr-engineer/README.md) |
+| `coding-embedded-zephyr-grader` | Grader | [→ README](plugins/coding-embedded-zephyr-grader/README.md) |
+| `coding-embedded-zephyr-tester` | Tester | [→ README](plugins/coding-embedded-zephyr-tester/README.md) |
 
 ### Svelte Frontend Team
+
+Four plugins for Svelte 5 / SvelteKit development. The knowledge plugin is auto-loaded as a companion, providing runes reference, SvelteKit patterns, CSS architecture, accessibility standards, and hardware communication (USB/BLE/LAN/audio/MIDI) to all role plugins.
 
 ```bash
 claude-kit --kit coding-frontend-svelte  # loads all four
 ```
 
-| Plugin | Role | What it does |
-|--------|------|-------------|
-| `coding-frontend-svelte-knowledge` | Knowledge | Shared reference: Svelte 5 runes, SvelteKit patterns, CSS architecture, accessibility, hardware communication (USB/BLE/LAN/audio), Tauri desktop targets. Auto-loaded by engineer and tester. |
-| `coding-frontend-svelte-engineer` | Engineer | Svelte 5 / SvelteKit specialist. Agents: component-writer, feature-builder, scaffold-writer, style-engineer, performance-analyst. Hooks enforce Svelte 5 rune patterns, block deprecated Svelte 4 syntax in real-time. |
-| `coding-frontend-svelte-grader` | Grader | Blind code review across 8 dimensions (component quality, TypeScript, state management, styling, testing, accessibility, performance, UX). |
-| `coding-frontend-svelte-tester` | Tester | Testing specialist: Vitest, vitest-browser-svelte component testing, Playwright E2E, axe accessibility audits. Agents cover unit, component, E2E, and coverage analysis. |
+| Plugin | Role | README |
+|--------|------|--------|
+| `coding-frontend-svelte-knowledge` | Knowledge | [→ README](plugins/coding-frontend-svelte-knowledge/README.md) |
+| `coding-frontend-svelte-engineer` | Engineer | [→ README](plugins/coding-frontend-svelte-engineer/README.md) |
+| `coding-frontend-svelte-grader` | Grader | [→ README](plugins/coding-frontend-svelte-grader/README.md) |
+| `coding-frontend-svelte-tester` | Tester | [→ README](plugins/coding-frontend-svelte-tester/README.md) |
 
 ### System Plugins
 
-| Plugin | What it does |
-|--------|-------------|
-| `core-spec` | Spec-driven development for long-running sessions — write the spec first, derive implementation phases from it, track progress via file-based state, recover full context after compaction through hooks and agents |
-| `system-maker` | Build new domain plugins via a guided 11-phase workflow with parallel subagent execution. Includes the `/system-maker:validate` semantic reviewer. |
-| `system-updater` | Enhance existing plugins via a structured 6-phase workflow with surgical change planning — reads current state, plans changes, implements with reviewer verification |
+Meta-plugins for building and maintaining the plugin ecosystem itself.
+
+| Plugin | What it does | README |
+|--------|-------------|--------|
+| `core-spec` | Spec-driven development for long-running sessions — write the spec first, track phases, and recover context after compaction | [→ README](plugins/core-spec/README.md) |
+| `system-maker` | Build new domain plugins via a guided 11-phase workflow with parallel subagent execution | [→ README](plugins/system-maker/README.md) |
+| `system-updater` | Enhance existing plugins via a structured 7-phase workflow with staging-based safety and deep review | [→ README](plugins/system-updater/README.md) |
 
 ---
 
