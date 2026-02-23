@@ -81,7 +81,7 @@ _kit_version() {
 
 if [ -d "$KIT_HOME/.git" ]; then
   info "Updating ..."
-  git -C "$KIT_HOME" fetch --tags -q origin
+  git -C "$KIT_HOME" fetch --tags --force -q origin
   git -C "$KIT_HOME" pull --ff-only -q
   ok "Updated → $(_kit_version)"
 else
