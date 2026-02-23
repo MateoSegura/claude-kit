@@ -5,6 +5,11 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.0.3] - 2026-02-23
+
+### Added
+- `.claude/rules/git-workflow.md` — modular rule file teaching Claude the branch → PR → CI → merge → release convention for this repo; loaded automatically by Claude Code alongside `CLAUDE.md`
+
 ## [0.0.2] - 2026-02-23
 
 ### Fixed
