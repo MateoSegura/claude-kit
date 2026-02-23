@@ -5,6 +5,21 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.0.16] - 2026-02-23
+
+### Fixed
+- `pr-autofix.yml` — replaced job-level `if:` condition with a `gate` job
+  that always completes; `autofix` job depends on gate output; eliminates
+  the 0-job workflow_run failure that flooded notifications on every
+  successful `fast-validate` run on `main`
+- `nightly.yml` — added `if: github.ref == 'refs/heads/main'` guard so the
+  job does not run spuriously when the workflow file first appears on feature
+  branches; moved inline Python heredocs to external scripts
+- `scripts/build-autofix-prompt.py` — external script for pr-autofix prompt
+  (eliminates heredoc-inside-`run:` YAML parsing failures)
+- `scripts/build-nightly-prompt.py` — external script for nightly review
+  prompt
+
 ## [0.0.15] - 2026-02-23
 
 ### Added
