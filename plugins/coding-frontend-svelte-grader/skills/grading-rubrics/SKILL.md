@@ -147,7 +147,33 @@ Key pass criteria:
 
 Load `dimension-rubrics.md` for the complete per-criterion scoring table.
 
+## Conditional Dimension 9: Desktop/Hardware Integration (Weight: 10%, replaces UX Patterns weight)
+
+**Applies when:** The project uses Tauri 2 or Electron AND communicates with hardware devices (USB, BLE, serial, LAN, audio, MIDI). If the project is web-only, skip this dimension entirely and keep UX Patterns at 10%.
+
+**When active:** Reduce UX Patterns weight to 5% and allocate the remaining 5% to this dimension (total: 10%).
+
+**What to evaluate:** Tauri IPC correctness, Rust command safety, hardware state management, device lifecycle handling, error recovery, cross-platform compatibility, permission handling.
+
+Key pass criteria:
+- Tauri commands use `Arc<Mutex<>>` or `Arc<RwLock<>>` for shared device state -- critical violation if raw state
+- Device handles properly cleaned up on disconnect/unmount -- major violation per leak
+- Error types use `thiserror` with meaningful messages, not `unwrap()` or `panic!()` in commands
+- Browser guard (`if (browser)` or `onMount`) around all `@tauri-apps/api` imports -- critical violation if missing
+- Event listeners cleaned up in `$effect` returns or `onDestroy` -- major violation per leak
+- Cross-platform permissions documented (udev rules, Info.plist entries, Windows driver notes)
+- Reconnection logic with backoff for connection-oriented protocols (BLE, TCP)
+- Streaming data uses Tauri events, not polling `invoke` -- major violation for polling pattern
+
+| Severity | Trigger |
+|----------|---------|
+| Critical | Raw `unwrap()` in Tauri commands, missing browser guards for Tauri API imports, unsynchronized shared device state |
+| Major | No disconnect handling, no reconnection logic, event listener leaks, polling instead of events |
+| Minor | Missing cross-platform permission docs, no timeout on device operations, hardcoded device addresses |
+
+Load `dimension-rubrics.md` for the complete per-criterion scoring table with code examples.
+
 ## Additional Resources
 
-- **[dimension-rubrics.md](dimension-rubrics.md)** — Complete scoring criteria for all 8 dimensions with specific pass/fail criteria, code examples, and finding examples. Load when scoring a specific dimension.
+- **[dimension-rubrics.md](dimension-rubrics.md)** — Complete scoring criteria for all 8+1 dimensions with specific pass/fail criteria, code examples, and finding examples. Load when scoring a specific dimension.
 - **[severity-definitions.md](severity-definitions.md)** — Severity level definitions (critical/major/minor/info), deduction rules, critical failure override logic, and N/A dimension handling. Load when classifying a finding's severity.

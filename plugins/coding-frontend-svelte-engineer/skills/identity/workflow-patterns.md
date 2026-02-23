@@ -273,3 +273,67 @@ mkdir -p src/routes/(dashboard)/analytics
 2. Navigate to the route in the browser -- verify SSR and CSR both work.
 3. Check that the route appears correctly in the layout hierarchy.
 4. Verify the route is code-split (check network tab for separate chunk).
+
+---
+
+## 6. Desktop App Feature Workflow (Tauri 2)
+
+Use when: building a feature that requires native hardware access (USB, BLE, serial, LAN, audio, MIDI) in a Tauri 2 desktop application.
+
+### Step 1: Identify the Hardware Interface
+
+1. Determine the communication protocol: USB (bulk/HID), BLE (GATT), serial (UART), LAN (TCP/UDP/mDNS), audio (capture/playback), MIDI (note/CC/SysEx).
+2. Choose the Rust crate: `nusb` (USB), `btleplug` (BLE), `serialport`/`tokio-serial` (serial), `tokio::net` + `mdns-sd` (LAN), `cpal` (audio), `midir` (MIDI).
+3. Decide the IPC pattern: synchronous `invoke` for one-shot commands, Tauri events for streaming data.
+
+### Step 2: Implement the Rust Backend
+
+1. Create a Rust module under `src-tauri/src/` for the hardware domain (e.g., `src-tauri/src/ble.rs`).
+2. Define Tauri commands with `#[tauri::command]`:
+   - Device discovery/enumeration command
+   - Connect/disconnect commands
+   - Read/write/subscribe commands
+3. Wrap device handles in `tauri::State<Arc<Mutex<DeviceHandle>>>` for thread-safe shared access.
+4. Use `tauri::Emitter` to push streaming data (sensor telemetry, BLE notifications, audio buffers) to the frontend via events.
+5. Implement proper error types with `thiserror` — return `Result<T, String>` from commands (Tauri serializes errors as strings).
+6. Register commands in `src-tauri/src/main.rs` with `.invoke_handler(tauri::generate_handler![...])`.
+
+### Step 3: Build the Svelte Frontend
+
+1. Create a `.svelte.ts` rune store for device state management:
+   ```typescript
+   // src/lib/stores/device.svelte.ts
+   let devices = $state<Device[]>([]);
+   let connected = $state<Device | null>(null);
+   let status = $state<'idle' | 'scanning' | 'connecting' | 'connected' | 'error'>('idle');
+   ```
+2. Import `@tauri-apps/api/core` (for `invoke`) and `@tauri-apps/api/event` (for `listen`) inside `browser` guards or `onMount`.
+3. Build UI components for device listing, connection status, and data visualization.
+4. Use `$effect` with cleanup for event listeners:
+   ```typescript
+   $effect(() => {
+     const unlisten = listen('sensor-data', (event) => { /* update state */ });
+     return () => { unlisten.then(fn => fn()); };
+   });
+   ```
+
+### Step 4: Handle Cross-Platform Permissions
+
+1. **Linux**: Create udev rules for USB/serial device access. Document in README.
+2. **macOS**: Add `Info.plist` entries for Bluetooth (`NSBluetoothAlwaysUsageDescription`), microphone, camera as needed. Add local network permission description for LAN.
+3. **Windows**: Handle driver requirements (WinUSB for raw USB, signed drivers for serial).
+4. Configure Tauri capabilities in `src-tauri/capabilities/` for required permissions.
+
+### Step 5: Add Error Handling and Reconnection
+
+1. Implement disconnect detection (device removal, link loss, timeout).
+2. Add automatic reconnection with exponential backoff.
+3. Show connection status in the UI with clear user feedback (connecting spinner, error messages, retry buttons).
+4. Handle permission denial gracefully — show instructions for granting access.
+
+### Step 6: Verify
+
+1. Test on each target platform (Linux, macOS, Windows) for platform-specific quirks.
+2. Verify device hot-plug: connect/disconnect/reconnect while the app is running.
+3. Verify error states: device not found, permission denied, device busy, communication timeout.
+4. Check that background event listeners are cleaned up when components unmount.
