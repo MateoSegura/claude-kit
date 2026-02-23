@@ -1,0 +1,59 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/restrict-writes.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-dangerous-commands.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Validate this grading report output: $ARGUMENTS. Check that: 1) All dimension scores are in the range 0-100 or explicitly marked N/A with justification, 2) Each finding includes a code example as evidence and a fix suggestion, 3) Severity levels are one of: critical, major, minor, info, 4) No production code was written directly into submission source files — fix suggestions appear only as examples inside the report content. Respond {\"ok\": true} or {\"ok\": false, \"reason\": \"...\"}.",
+            "model": "haiku"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/run-svelte-check.sh",
+            "async": true,
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Before the grading session ends, verify completeness: 1) All 8 grading dimensions have been scored or explicitly marked N/A with written justification — dimensions are: component quality, state management, styling/CSS, accessibility, performance, TypeScript usage, testing quality, UX patterns, 2) A weighted composite aggregate score has been computed from the dimension scores, 3) A final grading report has been generated with executive summary, dimension scorecards, findings with evidence, and fix suggestions. Context: $ARGUMENTS. Respond {\"ok\": true} or {\"ok\": false, \"reason\": \"Missing: list what is incomplete or absent\"}.",
+            "model": "haiku"
+          }
+        ]
+      }
+    ]
+  }
+}

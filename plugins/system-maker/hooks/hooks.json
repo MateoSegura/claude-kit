@@ -22,7 +22,7 @@
           },
           {
             "type": "prompt",
-            "prompt": "A plugin file was just written or edited. Check the tool result for the file path. If the file matches agents/*.md, commands/*.md, or skills/*/*.md: verify it has real substantive content — not just headers, TODOs, or placeholder text. If fewer than 20 lines of actual content exist, respond: WARN: <filename> appears to be a skeleton with insufficient content. Otherwise respond with a single word: ok"
+            "prompt": "A file was just written or edited. Check the tool result for the file path. ONLY check files inside a plugin build directory (/tmp/claude-kit-build-*/) whose path contains agents/*.md, commands/*.md, or skills/*/*.md. For ALL other files (specs, docs, phases, configs, scripts, any file not matching those three plugin subdirectory patterns) respond with a single word: ok. For matching plugin files: verify real substantive content exists — not just headers, TODOs, or placeholder text. If fewer than 20 lines of actual content, respond: WARN: <filename> appears to be a skeleton with insufficient content. Otherwise respond: ok"
           }
         ]
       }
