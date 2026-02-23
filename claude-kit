@@ -635,24 +635,90 @@ def cmd_restore(args: list) -> None:
 
 # ── cmd_uninstall ─────────────────────────────────────────────────────────────
 
+def _remove_rc_lines(marker: str = "# claude-kit") -> list:
+    """Remove the claude-kit PATH block from shell rc files. Returns cleaned files."""
+    home = pathlib.Path.home()
+    rc_files = [home / ".bashrc", home / ".zshrc", home / ".profile"]
+    cleaned = []
+
+    for rc in rc_files:
+        if not rc.exists():
+            continue
+        try:
+            lines = rc.read_text().splitlines(keepends=True)
+            new_lines = []
+            skip_next = False
+            changed = False
+            for i, line in enumerate(lines):
+                if marker in line:
+                    # Skip this comment line and the PATH line after it
+                    skip_next = True
+                    changed = True
+                    # Also skip a blank line before the comment if present
+                    if new_lines and new_lines[-1].strip() == "":
+                        new_lines.pop()
+                    continue
+                if skip_next:
+                    skip_next = False
+                    if "local/bin" in line:
+                        continue  # skip the PATH export line
+                    else:
+                        new_lines.append(line)  # wasn't the expected line, keep it
+                else:
+                    new_lines.append(line)
+
+            if changed:
+                rc.write_text("".join(new_lines))
+                cleaned.append(rc.name)
+        except Exception:
+            pass
+
+    return cleaned
+
 def cmd_uninstall() -> None:
     bin_link = pathlib.Path.home() / ".local" / "bin" / "claude-kit"
-    print("This will remove:")
-    print(f"  {INSTALL_DIR}  (plugins and CLI)")
-    print(f"  {bin_link}  (symlink)")
+
     p()
-    confirm = input("Continue? [y/N] ").strip().lower()
+    p(f"  {col(C.W, 'claude-kit uninstall')}")
+    p(f"  {col(C.DIM, chr(0x2500) * 40)}")
+    p()
+    p(f"  This will remove:")
+    p(f"    {col(C.R, chr(0x2022))} {INSTALL_DIR}  {col(C.DIM, '(plugins and CLI)')}")
+    p(f"    {col(C.R, chr(0x2022))} {bin_link}  {col(C.DIM, '(symlink)')}")
+    p(f"    {col(C.R, chr(0x2022))} PATH entries in shell rc files  {col(C.DIM, '(~/.bashrc, ~/.zshrc)')}")
+    p()
+
+    confirm = input(f"  {col(C.W, 'Continue?')} [y/N] ").strip().lower()
     if confirm not in ("y", "yes"):
-        print("Aborted.")
+        p(f"  {col(C.DIM, 'Aborted.')}")
+        p()
         sys.exit(0)
+
+    p()
+
+    # 1. Remove PATH lines from rc files
+    cleaned = _remove_rc_lines()
+    for rc_name in cleaned:
+        p(f"  {col(C.G, chr(0x2713))} Cleaned PATH entry from {rc_name}")
+
+    # 2. Remove symlink
     if bin_link.is_symlink():
         bin_link.unlink()
-        print(f"Removed {bin_link}")
+        p(f"  {col(C.G, chr(0x2713))} Removed {bin_link}")
+
+    # 3. Remove install directory
     shutil.rmtree(INSTALL_DIR)
-    print(f"Removed {INSTALL_DIR}")
+    p(f"  {col(C.G, chr(0x2713))} Removed {INSTALL_DIR}")
+
     p()
-    print("claude-kit uninstalled.")
-    print("Remove the PATH line from your shell rc file if desired.")
+    p(f"  {col(C.G, 'claude-kit uninstalled.')}")
+    p()
+    p(f"  {col(C.Y, 'IMPORTANT:')} Reload your shell to clear the cached command:")
+    p(f"    {col(C.CY, 'exec $SHELL')}")
+    p()
+    p(f"  Or close and reopen your terminal.")
+    p(f"  Until then, your shell may still try the old path.")
+    p()
 
 # ── cmd_help ──────────────────────────────────────────────────────────────────
 
