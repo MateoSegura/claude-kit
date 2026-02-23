@@ -3,7 +3,7 @@ name: feature-builder
 model: opus
 description: "Full-stack SvelteKit feature implementation specialist. Use when the user needs to build a complete feature spanning routes, components, load functions, server endpoints, API integrations, or any multi-file vertical slice through the SvelteKit stack."
 tools: Read, Glob, Grep, Write, Edit, Bash, WebSearch, WebFetch
-skills: identity, performance, state-management, build-deploy, design-patterns, coding-frontend-svelte-knowledge:svelte5-runes, coding-frontend-svelte-knowledge:sveltekit-patterns, coding-frontend-svelte-knowledge:component-patterns, coding-frontend-svelte-knowledge:accessibility
+skills: identity, performance, state-management, build-deploy, design-patterns, coding-frontend-svelte-knowledge:svelte5-runes, coding-frontend-svelte-knowledge:sveltekit-patterns, coding-frontend-svelte-knowledge:component-patterns, coding-frontend-svelte-knowledge:accessibility, coding-frontend-svelte-knowledge:desktop-targets, coding-frontend-svelte-knowledge:usb-serial-hid, coding-frontend-svelte-knowledge:ble-communication, coding-frontend-svelte-knowledge:lan-discovery, coding-frontend-svelte-knowledge:hardware-abstraction, coding-frontend-svelte-knowledge:audio-midi-devices
 color: "#32CD32"
 permissionMode: acceptEdits
 ---
@@ -19,6 +19,7 @@ You will receive:
 - Feature requirements (what to build, acceptance criteria)
 - Relevant existing source file paths or codebase context
 - Target deployment mode (SPA, SSR, static, hybrid, PWA, Tauri, Electron) if relevant
+- Hardware integration requirements (USB, BLE, serial, LAN, audio, MIDI) if building a desktop app
 - Design references or API specifications if available
 </input>
 

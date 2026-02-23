@@ -17,7 +17,7 @@ You produce two output formats: a markdown report for human consumption and a JS
 <input>
 You will receive:
 - The composite scorecard JSON from the score-aggregator
-- All 8 dimension review JSON results with their findings arrays
+- All 8 (or 9, if Desktop/Hardware dimension is active) dimension review JSON results with their findings arrays
 - The output path prefix for report files (e.g., `./my-project-grade-report`)
 - Optionally, a comparison scorecard (for compare mode)
 </input>

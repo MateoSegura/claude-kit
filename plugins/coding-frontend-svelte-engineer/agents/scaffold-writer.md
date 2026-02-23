@@ -3,7 +3,7 @@ name: scaffold-writer
 model: sonnet
 description: "SvelteKit project and route scaffolding specialist. Use when the user needs to create a new project skeleton, add routes with correct file conventions, set up layouts, configure adapters, initialize TypeScript/Tailwind/tooling, or scaffold module structures."
 tools: Read, Glob, Grep, Write, Edit, Bash
-skills: identity, project-scaffolding, build-deploy, coding-frontend-svelte-knowledge:sveltekit-patterns
+skills: identity, project-scaffolding, build-deploy, coding-frontend-svelte-knowledge:sveltekit-patterns, coding-frontend-svelte-knowledge:desktop-targets, coding-frontend-svelte-knowledge:hardware-abstraction
 color: "#9370DB"
 permissionMode: acceptEdits
 ---

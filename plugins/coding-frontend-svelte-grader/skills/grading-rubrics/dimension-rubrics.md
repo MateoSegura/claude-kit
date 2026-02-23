@@ -528,3 +528,136 @@ it('increments count', () => {
 </form>
 {#if error}<p>{error}</p>{/if}
 ```
+
+---
+
+## Conditional Dimension 9: Desktop/Hardware Integration (Weight: 10% when active)
+
+**Activation rule:** This dimension applies when the project contains `src-tauri/` or `electron.config.*` AND imports from `@tauri-apps/api`, `nusb`, `btleplug`, `serialport`, `cpal`, `midir`, or similar hardware crates. If the project is web-only, mark this dimension N/A and skip it.
+
+**Start score: 100. Apply deductions per finding below.**
+
+### Scoring Criteria
+
+| Criterion | Pass Evidence | Fail Evidence | Severity |
+|-----------|---------------|---------------|----------|
+| Tauri commands return `Result<T, String>` | All `#[tauri::command]` return Result types | `unwrap()` or `panic!()` in command body | Critical |
+| Shared device state uses `Arc<Mutex<>>` | `State<Arc<Mutex<DeviceHandle>>>` in Tauri state | Raw mutable state or `RefCell` in multi-threaded context | Critical |
+| Browser guard on Tauri API imports | `if (browser)` check or `onMount` wrapper | Top-level `import { invoke } from '@tauri-apps/api/core'` without guard | Critical |
+| Event listener cleanup | `$effect` returns unlisten function | `listen()` without cleanup in component | Major |
+| Disconnect handling | Explicit disconnect/cleanup on device removal | No handling for unexpected disconnection | Major |
+| Reconnection with backoff | Exponential backoff retry logic present | Immediate retry loop or no reconnection | Major |
+| Streaming via events not polling | `emit()`/`listen()` for continuous data | `setInterval` + `invoke()` polling pattern | Major |
+| Error types with thiserror | `#[derive(thiserror::Error)]` on custom errors | String error messages without structure | Minor |
+| Cross-platform permission docs | README or comments describe udev/Info.plist/Windows setup | No platform-specific permission guidance | Minor |
+| Device timeout configuration | Configurable timeout on I/O operations | No timeout (indefinite blocking possible) | Minor |
+| Device state UI feedback | Connection status indicator, loading states during discovery | No visual feedback for device operations | Minor |
+
+### Passing Pattern (Tauri + BLE)
+
+```rust
+// src-tauri/src/ble.rs — Properly structured Tauri BLE commands
+use btleplug::api::{Central, Manager, Peripheral, ScanFilter};
+use btleplug::platform;
+use std::sync::Arc;
+use tauri::State;
+use tokio::sync::Mutex;
+
+#[derive(thiserror::Error, Debug)]
+pub enum BleError {
+    #[error("BLE adapter not found")]
+    NoAdapter,
+    #[error("Device not found: {0}")]
+    DeviceNotFound(String),
+    #[error("Connection failed: {0}")]
+    ConnectionFailed(String),
+}
+
+pub struct BleState {
+    pub adapter: Arc<Mutex<Option<platform::Adapter>>>,
+}
+
+#[tauri::command]
+pub async fn scan_devices(
+    state: State<'_, BleState>,
+) -> Result<Vec<DeviceInfo>, String> {
+    let adapter = state.adapter.lock().await;
+    let adapter = adapter.as_ref().ok_or("BLE not initialized")?;
+    adapter.start_scan(ScanFilter::default())
+        .await
+        .map_err(|e| e.to_string())?;
+    // ... collect and return discovered devices
+    Ok(vec![])
+}
+```
+
+```svelte
+<!-- Good: Browser-guarded Tauri imports with event cleanup -->
+<script lang="ts">
+  import { browser } from '$app/environment';
+
+  let devices = $state<Device[]>([]);
+  let scanning = $state(false);
+
+  async function startScan() {
+    if (!browser) return;
+    scanning = true;
+    const { invoke } = await import('@tauri-apps/api/core');
+    try {
+      devices = await invoke<Device[]>('scan_devices');
+    } catch (err) {
+      console.error('Scan failed:', err);
+    } finally {
+      scanning = false;
+    }
+  }
+
+  $effect(() => {
+    if (!browser) return;
+    let cancelled = false;
+    import('@tauri-apps/api/event').then(({ listen }) => {
+      if (cancelled) return;
+      listen<SensorData>('sensor-data', (event) => {
+        // update reactive state
+      }).then(unlisten => {
+        if (cancelled) unlisten();
+        else cleanupRef = unlisten;
+      });
+    });
+    return () => { cancelled = true; cleanupRef?.(); };
+  });
+</script>
+```
+
+### Failing Pattern
+
+```rust
+// BAD: Panics in Tauri command, no error type
+#[tauri::command]
+fn read_sensor() -> Vec<u8> {
+    let port = serialport::new("/dev/ttyUSB0", 115200)
+        .open()
+        .unwrap();  // CRITICAL: panic in command crashes the app
+    let mut buf = vec![0u8; 256];
+    port.read(&mut buf).unwrap();  // CRITICAL: another unwrap
+    buf
+}
+```
+
+```svelte
+<!-- BAD: No browser guard, no event cleanup, polling pattern -->
+<script lang="ts">
+  import { invoke } from '@tauri-apps/api/core';  // CRITICAL: breaks SSR
+  import { listen } from '@tauri-apps/api/event';
+  import { onMount } from 'svelte';
+
+  let data = $state<number[]>([]);
+
+  onMount(() => {
+    listen('data', (e) => { data = e.payload; });  // MAJOR: no cleanup
+    setInterval(async () => {
+      data = await invoke('poll_sensor');  // MAJOR: polling instead of events
+    }, 100);
+  });
+</script>
+```
