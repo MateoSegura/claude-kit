@@ -89,9 +89,9 @@ Write the markdown report to the specified output path. The report structure fol
 | 2 | State Management | 65 | 15% | D | PASS | 12 |
 | 8 | UX Patterns | 69 | 10% | D | PASS | 7 |
 | 1 | Component Quality | 72 | 15% | C | PASS | 8 |
-| 5 | Performance | 74 | 12.5% | C | PASS | 5 |
+| 5 | Performance | 74 | 15% | C | PASS | 5 |
 | 3 | Styling/CSS | 78 | 10% | C | PASS | 6 |
-| 6 | TypeScript Usage | 81 | 12.5% | B | PASS | 7 |
+| 6 | TypeScript Usage | 81 | 10% | B | PASS | 7 |
 
 ## Top 10 Priority Fixes
 

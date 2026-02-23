@@ -8,6 +8,11 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/enforce-sysbuild.sh",
             "description": "Enforce sysbuild usage for MCUboot integration"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-dangerous-commands.sh",
+            "description": "Block destructive shell commands targeting critical paths"
           }
         ]
       }

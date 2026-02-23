@@ -5,7 +5,7 @@ description: "Collects code metrics (cyclomatic complexity, NLOC, comment densit
 tools: Read, Glob, Grep, Bash
 skills: identity, grading-rubrics, tool-pipeline
 color: "#20B2AA"
-permissionMode: bypassPermissions
+permissionMode: default
 ---
 
 <role>

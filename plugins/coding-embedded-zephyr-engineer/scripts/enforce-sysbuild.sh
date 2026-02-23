@@ -33,7 +33,7 @@ if echo "$COMMAND" | grep -qE '(twister|samples/|tests/|native_sim|native_posix)
   exit 0
 fi
 
-# Warn about missing sysbuild
-echo "WARNING: west build command without --sysbuild flag and no sysbuild.conf found. For production firmware, consider enabling sysbuild to integrate MCUboot from day one. Add --sysbuild flag or create sysbuild.conf. Legitimate test builds can ignore this warning." >&2
+# Block non-sysbuild production builds
+echo "BLOCKED: west build without --sysbuild flag and no sysbuild.conf found. Production firmware must use sysbuild to integrate MCUboot from day one. Add --sysbuild flag or create sysbuild.conf. If this is a test build, use twister or target native_sim/native_posix." >&2
 
-exit 0
+exit 2

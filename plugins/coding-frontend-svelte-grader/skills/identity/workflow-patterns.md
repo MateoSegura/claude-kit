@@ -100,11 +100,11 @@ The score-aggregator receives all 8 dimension outputs and computes the final com
    - Accessibility dimension score is 0
    - TypeScript dimension score is 0
    - Three or more dimensions score below 40
-   - Composite score is below 70
+   - Composite score is below 65
 
-6. **Per-Dimension Pass/Fail**: Each dimension passes if its score >= 70, fails otherwise. N/A dimensions are excluded.
+6. **Per-Dimension Pass/Fail**: Each dimension passes if its score meets its per-dimension threshold (see aggregation-rules.md), fails otherwise. N/A dimensions are excluded.
 
-7. **Overall Determination**: PASS if composite >= 70 AND no critical failure overrides triggered. FAIL otherwise.
+7. **Overall Determination**: PASS if composite >= 65 AND no critical failure overrides triggered. FAIL otherwise.
 
 #### Aggregation Output Format
 

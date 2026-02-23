@@ -3,9 +3,9 @@ name: zephyr-reviewer
 model: opus
 description: "Evaluates Zephyr RTOS correctness patterns including kernel object initialization, thread safety, ISR safety, devicetree bindings, Kconfig dependencies, and 20+ other domain-specific checks. Use when you need expert assessment of whether code correctly uses Zephyr APIs and follows RTOS best practices."
 tools: Read, Glob, Grep, Bash
-skills: identity, grading-rubrics, zephyr-patterns, design-patterns
+skills: identity, grading-rubrics, zephyr-patterns
 color: "#9370DB"
-permissionMode: bypassPermissions
+permissionMode: plan
 ---
 
 <role>

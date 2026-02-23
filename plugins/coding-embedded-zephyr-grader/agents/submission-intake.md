@@ -5,7 +5,7 @@ description: "Validates Zephyr submission directory structure, strips identifyin
 tools: Read, Glob, Grep, Bash
 skills: identity, grading-rubrics
 color: "#DAA520"
-permissionMode: bypassPermissions
+permissionMode: plan
 ---
 
 <role>

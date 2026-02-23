@@ -132,22 +132,31 @@ A dimension receives an automatic score of 0 (not N/A) when:
 
 ### Per-Dimension Pass/Fail
 
-| Score | Result |
-|-------|--------|
-| >= 70 | PASS |
-| < 70 | FAIL |
-| N/A | Excluded (neither pass nor fail) |
+Each dimension has its own pass threshold (see aggregation-rules.md for the full table):
+
+| Dimension | Pass Threshold |
+|-----------|---------------|
+| Component Quality | >= 60 |
+| State Management | >= 60 |
+| Styling/CSS | >= 55 |
+| Accessibility | >= 70 |
+| Performance | >= 60 |
+| TypeScript Usage | >= 60 |
+| Testing Quality | >= 50 |
+| UX Patterns | >= 55 |
+
+N/A dimensions are excluded (neither pass nor fail).
 
 ### Overall Pass/Fail
 
 The overall result is **PASS** if ALL of the following are true:
 
-1. Composite weighted score >= 70
+1. Composite weighted score >= 65
 2. No critical failure override is triggered
 
 The overall result is **FAIL** if ANY of the following are true:
 
-1. Composite weighted score < 70
+1. Composite weighted score < 65
 2. Any critical failure override is triggered
 
 ### Critical Failure Overrides
@@ -170,8 +179,8 @@ These conditions force an overall FAIL regardless of composite score:
 | State Management | 15.0% |
 | Styling/CSS | 10.0% |
 | Accessibility | 15.0% |
-| Performance | 12.5% |
-| TypeScript Usage | 12.5% |
+| Performance | 15.0% |
+| TypeScript Usage | 10.0% |
 | Testing Quality | 10.0% |
 | UX Patterns | 10.0% |
 | **Total** | **100.0%** |

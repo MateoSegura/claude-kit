@@ -23,6 +23,7 @@ You are the orchestrator for creating new Claude Code domain-expert plugins. You
 10. **Agent frontmatter**: Agent `.md` files use `tools:` (not `allowed-tools:`) in their frontmatter. Command `.md` files use `allowed-tools:`. Mixing these up causes silent failures.
 11. **No duplicate plugins**: Before creating a new plugin, ALWAYS check both `$CLAUDE_KIT_BUNDLED_DIR/` and `$CLAUDE_KIT_LOCAL_DIR/` for existing plugins. If one exists, recommend the user run `claude-kit --kit system-updater` to enhance it. Only create a new plugin if the user explicitly confirms after seeing the overlap.
 12. **No CLAUDE.md in plugins**: Plugins do NOT read their own CLAUDE.md file. Do NOT create a CLAUDE.md inside plugins. Use skills (especially the identity skill) for all plugin-level context.
+13. **Context compaction safety**: NEVER use `run_in_background: true` for agents whose results are needed to proceed. Always run critical workflow agents (reviewers, analyzers, architects) in **foreground mode** (the default). Background agent IDs are lost during context compaction, making their results permanently unrecoverable. This applies to ALL phases — domain analysis, architecture, implementation, and especially reviews.
 
 </critical_rules>
 
@@ -1077,13 +1078,17 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
    File: `/tmp/claude-kit-build-<AGENT_NAME>/.lsp.json`
 
+   **CRITICAL**: The `.lsp.json` format uses **server binary names** as top-level keys (NOT language names, NOT wrapped in an `"lsp"` object). Each server entry MUST include `extensionToLanguage` mapping.
+
    Example for a C/C++ domain (Zephyr, embedded):
    ```json
    {
-     "lsp": {
-       "c": {
-         "command": "clangd",
-         "args": ["--background-index", "--compile-commands-dir=build"]
+     "clangd": {
+       "command": "clangd",
+       "args": ["--background-index", "--compile-commands-dir=build"],
+       "extensionToLanguage": {
+         ".c": "c",
+         ".h": "c"
        }
      }
    }
@@ -1092,10 +1097,11 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
    Example for a Go domain:
    ```json
    {
-     "lsp": {
-       "go": {
-         "command": "gopls",
-         "args": ["serve"]
+     "gopls": {
+       "command": "gopls",
+       "args": ["serve"],
+       "extensionToLanguage": {
+         ".go": "go"
        }
      }
    }
@@ -1104,14 +1110,21 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
    Example for a multi-language domain (TypeScript + Python):
    ```json
    {
-     "lsp": {
-       "typescript": {
-         "command": "typescript-language-server",
-         "args": ["--stdio"]
-       },
-       "python": {
-         "command": "pylsp",
-         "args": []
+     "typescript-language-server": {
+       "command": "typescript-language-server",
+       "args": ["--stdio"],
+       "extensionToLanguage": {
+         ".ts": "typescript",
+         ".tsx": "typescript",
+         ".js": "javascript",
+         ".jsx": "javascript"
+       }
+     },
+     "pylsp": {
+       "command": "pylsp",
+       "args": [],
+       "extensionToLanguage": {
+         ".py": "python"
        }
      }
    }
@@ -1138,71 +1151,46 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
 <phase_10>
 
-## Phase 10: Deep Review & Fix (TEAM — review-team)
+## Phase 10: Deep Review & Fix (SEQUENTIAL FOREGROUND)
 
 **Duration**: Medium-Slow (1-2 review passes + targeted fixes — expect 60-180 seconds)
 
-**Why a team**: The full review cycle (reviewer output, fix analysis, writer re-runs, re-review) generates substantial internal traffic. A review-team handles all of this and returns only the final grade + resolved findings.
+**IMPORTANT — no teams or background agents**: This phase runs ALL agents in foreground mode. Background agent IDs are lost during context compaction, making results unrecoverable. The orchestrator drives the review-fix cycle directly.
 
 ### Steps
 
-1. Create a review team and launch a team-lead that runs the full review-fix cycle:
+1. **Run the plugin-reviewer directly** as a foreground Task (NOT background, NOT in a team):
 
    ```
-   TeamCreate("review")
-
    Task(
-     subagent_type: "general-purpose",
-     team_name: "review",
-     name: "team-lead",
+     subagent_type: "plugin-reviewer",
+     description: "Review plugin build quality",
      prompt: "
-   You are the review team lead. Run a comprehensive review of the plugin build, apply all fixes,
-   re-review to verify, then report the final grade and resolved findings to the orchestrator.
-
    AGENT_NAME: <insert AGENT_NAME>
    BUILD_DIR: /tmp/claude-kit-build-<AGENT_NAME>
    APPROVED_ARCH: <insert full APPROVED_ARCH JSON>
 
-   Step 1: Launch plugin-reviewer:
-   Task(subagent_type: 'plugin-reviewer', prompt: 'AGENT_NAME: <name> BUILD_DIR: <dir> APPROVED_ARCH: <arch>
-     Read every file. Run every check in your 50+ point checklist. Grade harshly.
-     Return findings as JSON with overall_grade, findings array, passed_checks count.')
-
-   Wait for reviewer. Extract overall_grade, findings, passed_checks.
-
-   Step 2: If grade is A with 0 critical/warning findings: skip to Step 4.
-
-   Step 3: Apply fixes in order:
-   a. Mechanical fixes (fix_type: 'mechanical'): Use Edit tool directly for frontmatter corrections,
-      field name swaps (allowed-tools→tools in agents), missing identity in skills lists, JSON issues.
-   b. Structural fixes (fix_type: 'structural'): Create missing files/directories.
-   c. Content fixes (fix_type: 'content'): Re-spawn the appropriate writer with targeted fix prompt
-      (identity-writer for identity skill, skill-writer for skills, agent-writer for agents, hook-writer for hooks).
-      Launch content fix writers in PARALLEL where they target different files.
-
-   Then re-run plugin-reviewer once (Step 1 again) to verify fixes.
-
-   Step 4: Send final results to orchestrator:
-   SendMessage(type: 'message', recipient: '<orchestrator-name>',
-     content: JSON.stringify({
-       initial_grade: '<initial_grade>',
-       final_grade: '<final_grade>',
-       mechanical_fixes: <count>,
-       content_fixes: <count>,
-       remaining_issues: [<list of unresolved findings with severity>]
-     }),
-     summary: 'Review complete: grade <final_grade>')
-     "
+   Read every file. Run every check in your 50+ point checklist. Grade harshly.
+   Return findings as JSON with overall_grade, findings array, passed_checks count.
+   "
    )
    ```
 
-2. Wait for the review team-lead's SendMessage.
+2. **Parse the review report.** Extract `overall_grade`, `findings`, and `passed_checks` from the reviewer's response.
 
-3. Parse the review result from the team message.
+3. **If grade is A with 0 critical/warning findings**: Skip to Step 6.
 
-4. Clean up: `TeamDelete()`.
+4. **Apply fixes directly** (the orchestrator does this, not a team-lead):
 
-5. **Present the review summary** to the user:
+   a. **Mechanical fixes** (`fix_type: "mechanical"`): Use the Edit tool directly for frontmatter corrections, field name swaps (`allowed-tools:` → `tools:` in agents), missing `identity` in skills lists, JSON issues.
+
+   b. **Structural fixes** (`fix_type: "structural"`): Create missing files/directories using Write.
+
+   c. **Content fixes** (`fix_type: "content"`): Re-spawn the appropriate writer as a **foreground** Task with a targeted fix prompt. Launch content fix writers in PARALLEL where they target different files — but always foreground, never background.
+
+5. **Re-run the plugin-reviewer once** (Step 1 again) to verify fixes. Only ONE re-review is allowed.
+
+6. **Present the review summary** to the user:
 
    ```
    === QUALITY REVIEW: <AGENT_NAME> ===
@@ -1394,7 +1382,7 @@ Handled in Phase 11, Step 5.
 | 7 | User Approval | 0 | — | Fast |
 | 8 | Implementation | 4 (identity/skill/agent/hook writers) | Yes | Slow |
 | 9 | Assembly | 0 | — | Fast |
-| 10 | Deep Review & Fix | 1-2 (plugin-reviewer) + 0-4 (writer re-runs) | Sequential | Medium-Slow |
+| 10 | Deep Review & Fix | 1-2 (plugin-reviewer) + 0-4 (writer re-runs) | Sequential, FOREGROUND ONLY | Medium-Slow |
 | 11 | Finalization | 0 | — | Fast |
 
 Architecture strategy options (user chooses in Phase 5):

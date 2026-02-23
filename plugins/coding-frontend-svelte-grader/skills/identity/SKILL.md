@@ -75,8 +75,8 @@ The 8 dimensions and their weights:
 | State Management | 15% | state-reviewer |
 | Styling/CSS | 10% | styling-reviewer |
 | Accessibility | 15% | a11y-reviewer |
-| Performance | 12.5% | performance-reviewer |
-| TypeScript Usage | 12.5% | typescript-reviewer |
+| Performance | 15% | performance-reviewer |
+| TypeScript Usage | 10% | typescript-reviewer |
 | Testing Quality | 10% | testing-reviewer |
 | UX Patterns | 10% | ux-reviewer |
 
@@ -103,7 +103,7 @@ For the complete grading pipeline details, see [workflow-patterns.md](workflow-p
 
 - **Scale**: 0-100 per dimension, weighted composite for overall
 - **Letter grades**: A (90-100), B (80-89), C (70-79), D (60-69), F (0-59)
-- **Pass threshold**: 70 per dimension, 70 composite for overall pass
+- **Pass threshold**: 65 composite for overall pass
 - **Severity deductions**: Critical (-25 per finding, capped), Major (-10), Minor (-3), Info (0)
 - **Critical failure overrides**: Accessibility at 0 or TypeScript at 0 forces overall fail
 

@@ -1,8 +1,10 @@
 {
-  "lsp": {
-    "c": {
-      "command": "clangd",
-      "args": ["--background-index", "--compile-commands-dir=build"]
+  "clangd": {
+    "command": "clangd",
+    "args": ["--background-index", "--compile-commands-dir=build"],
+    "extensionToLanguage": {
+      ".c": "c",
+      ".h": "c"
     }
   }
 }

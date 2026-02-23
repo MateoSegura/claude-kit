@@ -28,6 +28,7 @@ You guide the user through a structured workflow, spawning the SAME specialized 
 13. **Agent frontmatter**: Agent `.md` files use `tools:` (not `allowed-tools:`). Command `.md` files use `allowed-tools:`. Mixing these causes silent failures.
 14. **No duplicate plugins**: Before building, check both plugin directories for existing plugins. Offer to enhance via system-updater instead of overwriting.
 15. **No CLAUDE.md in plugins**: Use the identity skill pattern instead.
+16. **Context compaction safety**: NEVER use `run_in_background: true` for agents whose results are needed to proceed. For multi-plugin reviews, process plugins **SEQUENTIALLY** with foreground Task calls — never launch all reviews as background agents or parallel teams. Background agent IDs are lost during context compaction, making results permanently unrecoverable. This applies to ALL phases.
 
 </critical_rules>
 
@@ -731,77 +732,60 @@ Proceeding to Phase 9 (Batched Review).
 
 <phase_9>
 
-## Phase 9: Batched Review (TEAMS — 3 plugins per batch)
+## Phase 9: Sequential Review (ONE PLUGIN AT A TIME — FOREGROUND)
 
-**Duration**: Medium-Slow (expect 60-180 seconds per batch)
+**Duration**: Medium-Slow (expect 60-120 seconds per plugin, sequential)
+
+**IMPORTANT — no teams, no background agents**: Reviews are processed ONE PLUGIN AT A TIME in foreground mode. This is slower than parallel batch reviews but prevents data loss during context compaction. Background agent IDs are lost when context compacts, making parallel review results unrecoverable.
 
 ### Steps
 
-1. Split `PLUGIN_NAMES` into batches of 3 (same batching as Phase 7).
+1. Initialize a results collector: `REVIEW_RESULTS = {}`.
 
-2. For each batch:
+2. **For each plugin** in `PLUGIN_NAMES`, sequentially:
 
-   a. **Launch review teams** — one team per plugin in the batch, ALL in a single response:
+   a. **Report progress**: `Reviewing plugin <current>/<total>: <PLUGIN_NAME>`
 
-      For each plugin in the batch:
+   b. **Run the plugin-reviewer directly** as a foreground Task:
 
       ```
-      TeamCreate("review-<role>")
-
       Task(
-        subagent_type: "general-purpose",
-        team_name: "review-<role>",
-        name: "team-lead",
+        subagent_type: "plugin-reviewer",
+        description: "Review <role> plugin",
         prompt: "
-      You are the review team lead for <BASE_NAME>-<role>.
-      Run a comprehensive review, apply fixes, re-review, then report results.
-
       AGENT_NAME: <BASE_NAME>-<role>
       BUILD_DIR: /tmp/claude-kit-build-<BASE_NAME>-<role>
       APPROVED_ARCH: <APPROVED_ARCH[role] JSON>
 
-      Step 1: Launch plugin-reviewer:
-      Task(subagent_type: 'plugin-reviewer', prompt: 'AGENT_NAME: <name> BUILD_DIR: <dir> APPROVED_ARCH: <arch>
-        Read every file. Run every check. Grade harshly.')
-
-      Wait for reviewer. Extract grade, findings.
-
-      Step 2: If grade is A with 0 critical/warning findings: skip to Step 4.
-
-      Step 3: Apply fixes:
-      a. Mechanical fixes: Use Edit tool for frontmatter, field names, JSON.
-      b. Structural fixes: Create missing files/dirs.
-      c. Content fixes: Re-spawn targeted writer(s) in parallel.
-      Then re-run plugin-reviewer once.
-
-      Step 4: Send results to orchestrator:
-      SendMessage(type: 'message', recipient: '<orchestrator-name>',
-        content: JSON.stringify({
-          plugin: '<AGENT_NAME>',
-          initial_grade: '<grade>',
-          final_grade: '<grade>',
-          fixes_applied: <count>,
-          remaining: [<issues>]
-        }),
-        summary: '<role> review: grade <grade>')
-        "
+      Read every file. Run every check in your 50+ point checklist. Grade harshly.
+      Return findings as JSON with overall_grade, findings array, passed_checks count.
+      "
       )
       ```
 
-   b. **Wait for ALL review teams** in the batch to complete.
+   c. **Parse the review report.** Extract `overall_grade`, `findings`, and `passed_checks`.
 
-   c. **Clean up batch teams**: `TeamDelete()` for each team.
+   d. **If grade is A with 0 critical/warning findings**: Store result, move to next plugin.
 
-   d. **Report batch results**:
+   e. **Apply fixes directly** (the orchestrator does this):
+
+      - **Mechanical fixes** (`fix_type: "mechanical"`): Use Edit tool directly.
+      - **Structural fixes** (`fix_type: "structural"`): Create missing files with Write.
+      - **Content fixes** (`fix_type: "content"`): Re-spawn the appropriate writer as a **foreground** Task.
+
+   f. **Re-run the plugin-reviewer once** to verify fixes. Only ONE re-review per plugin.
+
+   g. **Store the result**: `REVIEW_RESULTS[role] = { initial_grade, final_grade, fixes_applied, remaining }`.
+
+   h. **Report progress**:
 
       ```
-      Review batch <N>/<total_batches> complete:
-      - <role1>: <initial_grade> → <final_grade>
-      - <role2>: <initial_grade> → <final_grade>
-      - <role3>: <initial_grade> → <final_grade>
+      Plugin <current>/<total> reviewed: <PLUGIN_NAME>
+      Grade: <initial_grade> → <final_grade>
+      Fixes applied: <count>
       ```
 
-3. After all batches, collect all remaining issues across all plugins.
+3. After all plugins are reviewed, collect all remaining issues.
 
 4. **If any plugin has remaining issues**, present them via AskUserQuestion:
 
@@ -810,9 +794,6 @@ Proceeding to Phase 9 (Batched Review).
 
    <plugin1>: <issue count> issues
    <list issues with severity>
-
-   <plugin2>: <issue count> issues
-   <list issues>
 
    Options:
    - Accept all as-is — proceed to finalization
@@ -824,7 +805,10 @@ Proceeding to Phase 9 (Batched Review).
 
    ```
    Phase 9 complete. Review results:
-   <table of all plugins with grades>
+   | Plugin | Initial | Final | Fixes |
+   |--------|---------|-------|-------|
+   | <name> | <grade> | <grade> | <count> |
+   ...
    Proceeding to Phase 10 (Finalization).
    ```
 
@@ -984,25 +968,25 @@ If output is not valid JSON when expected:
 | 6 | User Approval | 0 | — | Medium |
 | 7 | Batched Implementation | 3×4=12 per batch (writer teams) | Yes (within batch) | Slow |
 | 8 | Assembly | 0 | — | Fast |
-| 9 | Batched Review | 3 per batch (reviewer teams) | Yes (within batch) | Medium-Slow |
+| 9 | Sequential Review | 1 (reviewer per plugin, sequential) | No — FOREGROUND ONLY | Medium-Slow |
 | 10 | Finalization | 0 | — | Fast |
 
 **Batch sizing:**
 - Implementation: 3 plugins/batch × 4 writers/plugin = 12 parallel subagents per batch
-- Review: 3 plugins/batch × 1 reviewer+fixers/plugin = 3-15 parallel subagents per batch
+- Review: **1 plugin at a time, sequential** (foreground only — prevents data loss during context compaction)
 
 **Example: 4-role team (engineer, grader, tester, debugger)**
 - Domain analysis: 4 analyzers (once)
 - Architecture: 4 architects (parallel)
 - Implementation: Batch 1 (3 plugins × 4 writers = 12), Batch 2 (1 plugin × 4 writers = 4)
-- Review: Batch 1 (3 reviews), Batch 2 (1 review)
+- Review: 4 sequential reviews (1 at a time, foreground)
 - Total subagent dispatches: ~35-45
 
 **Example: 2-role team (engineer, grader)**
 - Domain analysis: 4 analyzers (once)
 - Architecture: 2 architects (parallel)
 - Implementation: 1 batch (2 plugins × 4 writers = 8)
-- Review: 1 batch (2 reviews)
+- Review: 2 sequential reviews (1 at a time, foreground)
 - Total subagent dispatches: ~20-25
 
 </workflow_summary>

@@ -5,7 +5,7 @@ description: "Aggregates scores from all grading dimension agents, applies confi
 tools: Read, Glob, Grep, Bash
 skills: identity, scoring-engine, grading-rubrics
 color: "#FFD700"
-permissionMode: bypassPermissions
+permissionMode: plan
 ---
 
 <role>
