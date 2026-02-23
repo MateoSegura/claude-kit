@@ -2,6 +2,11 @@ name: publish-devcontainer
 
 # Rebuilds and pushes ghcr.io/mateosegura/dev-env-claude-kit:latest
 # whenever the Dockerfile or this workflow file changes on main.
+#
+# Caching strategy (two layers):
+#   1. Local Docker layer cache — persists on self-hosted runner between runs
+#   2. Registry cache — BuildKit pulls cache metadata from ghcr.io on cold
+#      starts (e.g. after a runner rebuild)
 
 on:
   push:
@@ -15,29 +20,38 @@ permissions:
   contents: read
   packages: write
 
+env:
+  IMAGE: ghcr.io/mateosegura/dev-env-claude-kit
+  CACHE: ghcr.io/mateosegura/dev-env-claude-kit:cache
+
 jobs:
   build-and-push:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
-      - name: Start Docker daemon (self-hosted runner)
+      - name: Start Docker daemon
         run: |
           sudo service docker start 2>/dev/null || sudo systemctl start docker 2>/dev/null || true
           timeout 30 sh -c 'until docker info > /dev/null 2>&1; do sleep 1; done'
-          docker info
 
       - name: Log in to ghcr.io
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | \
             docker login ghcr.io --username "${{ github.actor }}" --password-stdin
 
-      - name: Build image
+      - name: Set up Buildx
         run: |
-          docker build \
-            --platform linux/amd64 \
-            --tag ghcr.io/mateosegura/dev-env-claude-kit:latest \
-            .devcontainer/
+          docker buildx create --name kit-builder --use 2>/dev/null || \
+            docker buildx use kit-builder
+          docker buildx inspect --bootstrap
 
-      - name: Push image
-        run: docker push ghcr.io/mateosegura/dev-env-claude-kit:latest
+      - name: Build and push (with cache)
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            --tag "$IMAGE:latest" \
+            --cache-from "type=registry,ref=$CACHE" \
+            --cache-to "type=registry,ref=$CACHE,mode=max" \
+            --push \
+            .devcontainer/
