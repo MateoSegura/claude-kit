@@ -1,0 +1,66 @@
+{
+  "name": "claude-kit",
+  "image": "ghcr.io/mateosegura/dev-env-claude-kit:latest",
+
+  // Run with elevated privileges so Docker-in-Docker works
+  "runArgs": ["--privileged", "--init"],
+
+  "mounts": [
+    // Inherit host Claude credentials, config, and local plugins
+    "source=${localEnv:HOME}/.claude,target=/home/dev/.claude,type=bind,consistency=cached",
+    // Persist Go module cache across rebuilds
+    "source=claude-kit-gomodcache,target=/go/pkg/mod,type=volume",
+    // Persist bash history
+    "source=claude-kit-bashhistory,target=/commandhistory,type=volume"
+  ],
+
+  // Start Docker daemon for DinD on every container start
+  "postStartCommand": "sudo nohup dockerd < /dev/null > /tmp/dockerd.log 2>&1 & timeout 30 sh -c 'until docker info > /dev/null 2>&1; do sleep 1; done' && echo '[devcontainer] Docker ready'",
+
+  // Install claude-kit CLI from the workspace into PATH
+  "postCreateCommand": "sudo ln -sf /workspace/claude-kit /usr/local/bin/claude-kit && echo '[devcontainer] claude-kit linked'",
+
+  "remoteUser": "dev",
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "python.defaultInterpreterPath": "/usr/bin/python3",
+        "go.gopath": "/go",
+        "go.goroot": "/usr/local/go",
+        "editor.formatOnSave": true,
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff"
+        },
+        "[go]": {
+          "editor.defaultFormatter": "golang.go"
+        }
+      },
+      "extensions": [
+        // Python
+        "ms-python.python",
+        "charliermarsh.ruff",
+        // Go
+        "golang.go",
+        // Shell
+        "timonwong.shellcheck",
+        // YAML / JSON / TOML
+        "redhat.vscode-yaml",
+        // GitHub
+        "github.vscode-pull-request-github",
+        // Docker
+        "ms-azuretools.vscode-docker",
+        // General
+        "eamodio.gitlens",
+        "usernamehw.errorlens"
+      ]
+    }
+  },
+
+  "forwardPorts": [],
+
+  "features": {}
+}
