@@ -238,6 +238,9 @@ def _show_changelog(changelog_path: pathlib.Path) -> None:
         if line.startswith("## ["):
             if in_entry:
                 break  # stop at the next version header
+            ver_name = line.split("]")[0].replace("## [", "").strip()
+            if ver_name.lower() == "unreleased":
+                continue  # skip the unreleased section
             in_entry = True
             entry_lines.append(line)
         elif in_entry:
@@ -284,13 +287,13 @@ def cmd_update() -> None:
             if d.is_dir():
                 old_versions[d.name] = plugin_version(d)
 
-    old_ref = _git(["rev-parse", "--short", "HEAD"]) or "?"
+    old_hash = _git(["rev-parse", "HEAD"]) or "?"
 
     p(f"  {col(C.CY, 'Pulling from origin...')}")
     p()
 
     result = subprocess.run(
-        ["git", "-C", str(INSTALL_DIR), "pull", "--ff-only"],
+        ["git", "-C", str(INSTALL_DIR), "pull", "--ff-only", "--tags"],
         capture_output=True, text=True
     )
 
@@ -302,16 +305,16 @@ def cmd_update() -> None:
         p()
         sys.exit(1)
 
-    new_ref = _git(["rev-parse", "--short", "HEAD"]) or "?"
+    new_ver = _current_version()
 
     if "Already up to date" in (result.stdout + result.stderr):
-        p(f"  {col(C.G, '✓ Already up to date')}  {col(C.DIM, f'({new_ref})')}")
+        p(f"  {col(C.G, '✓ Already up to date')}  {col(C.DIM, f'({new_ver})')}")
         p()
         return
 
-    n_commits = _git(["rev-list", f"{old_ref}..HEAD", "--count"]) or "?"
+    n_commits = _git(["rev-list", f"{old_hash}..HEAD", "--count"]) or "?"
     commit_word = "commit" if n_commits == "1" else "commits"
-    p(f"  {col(C.G, '✓ Updated to')} {col(C.W, new_ref)}  {col(C.DIM, f'({n_commits} new {commit_word})')}")
+    p(f"  {col(C.G, '✓ Updated to')} {col(C.W, new_ver)}  {col(C.DIM, f'({n_commits} new {commit_word})')}")
     p()
 
     new_versions: dict = {}
@@ -367,14 +370,20 @@ def cmd_update() -> None:
 # ── cmd_version ───────────────────────────────────────────────────────────────
 
 def _current_version() -> str:
-    """Return the git tag pointing at HEAD, or the short commit hash."""
+    """Return the git tag at HEAD, nearest ancestor tag, or short commit hash."""
     tag = _git(["tag", "--points-at", "HEAD", "--sort=-version:refname"])
     if tag:
         return tag.splitlines()[0]
+    desc = _git(["describe", "--tags", "--abbrev=0"])
+    if desc:
+        return desc
     return _git(["rev-parse", "--short", "HEAD"]) or "unknown"
 
 def _remote_version() -> str:
-    """Return the latest semver tag on origin, or the short hash of origin/main."""
+    """Return the latest semver tag on origin/main, or short hash if no tags exist."""
+    tag = _git(["tag", "--points-at", "origin/main", "--sort=-version:refname"])
+    if tag:
+        return tag.splitlines()[0]
     tag = _git(["tag", "--sort=-version:refname", "--list", "v*"])
     if tag:
         return tag.splitlines()[0]
