@@ -4,7 +4,7 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 ### Plugins Changed
-<!-- Use /bump-plugin to add entries here -->
+- **system-maker** 0.0.0 → 0.1.0 — Added `/system-maker:validate` semantic review command
 
 ### Tooling Added
 - **validate-plugins.py** — Tier 1 structural validator (JSON syntax, field names, companion existence, hook script references)
