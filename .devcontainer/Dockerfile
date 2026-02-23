@@ -63,7 +63,7 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
     && apt-get install -y gh \
     && rm -rf /var/lib/apt/lists/*
 
-# ── Docker CE (Docker-in-Docker) ─────────────────────────────────────────────
+# ── Docker CLI (uses host Docker socket mounted at /var/run/docker.sock) ──────
 RUN install -m 0755 -d /etc/apt/keyrings \
     && curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
     | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
@@ -73,9 +73,7 @@ RUN install -m 0755 -d /etc/apt/keyrings \
     | tee /etc/apt/sources.list.d/docker.list > /dev/null \
     && apt-get update \
     && apt-get install -y \
-        containerd.io \
         docker-buildx-plugin \
-        docker-ce \
         docker-ce-cli \
         docker-compose-plugin \
     && rm -rf /var/lib/apt/lists/*
