@@ -1,0 +1,42 @@
+name: fast-validate
+
+on:
+  push:
+    branches: ["**"]
+    tags-ignore: ["**"]
+
+jobs:
+  branch-name:
+    runs-on: self-hosted
+    # Skip check on main itself
+    if: github.ref != 'refs/heads/main'
+    steps:
+      - name: Enforce branch naming convention
+        run: |
+          BRANCH="${GITHUB_REF_NAME}"
+          PATTERN="^(feat|fix|chore|docs|test|refactor|perf|ci|build|style|release|hotfix)/.+"
+          if echo "$BRANCH" | grep -qE "$PATTERN"; then
+            echo "Branch name OK: $BRANCH"
+          else
+            echo "ERROR: Branch '$BRANCH' does not follow naming convention."
+            echo ""
+            echo "Required pattern: <type>/<description>"
+            echo "Valid types: feat, fix, chore, docs, test, refactor, perf, ci, build, style, release, hotfix"
+            echo ""
+            echo "Examples:"
+            echo "  feat/add-new-agent"
+            echo "  fix/hook-script-path"
+            echo "  chore/bump-dependencies"
+            echo "  release/v0.2.0"
+            exit 1
+          fi
+
+  fast-validate:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Tier 1 — changed plugins
+        run: python3 scripts/validate-plugins.py --changed --json

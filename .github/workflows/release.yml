@@ -1,0 +1,63 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  release-gate:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tier 1 — all plugins (strict)
+        run: python3 scripts/validate-plugins.py --all --strict --json
+
+      - name: Verify CHANGELOG entry for this tag
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          if ! grep -q "## \[${VERSION}\]" CHANGELOG.md; then
+            echo "ERROR: CHANGELOG.md has no entry for [${VERSION}]"
+            echo "Add a '## [${VERSION}] - YYYY-MM-DD' section before tagging."
+            exit 1
+          fi
+          echo "CHANGELOG entry found for v${VERSION}"
+
+      - name: Extract CHANGELOG section for release body
+        id: changelog
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          # Extract lines from ## [VERSION] to the next ## [
+          python3 - <<'EOF'
+          import re, sys, pathlib
+          version = "${{ github.ref_name }}".lstrip("v")
+          text = pathlib.Path("CHANGELOG.md").read_text()
+          pattern = rf"(## \[{re.escape(version)}\].*?)(?=\n## \[|\Z)"
+          m = re.search(pattern, text, re.DOTALL)
+          if not m:
+              print(f"Could not extract section for {version}", file=sys.stderr)
+              sys.exit(1)
+          body = m.group(1).strip()
+          pathlib.Path("/tmp/release-body.md").write_text(body)
+          print(body)
+          EOF
+
+      - name: Create GitHub Release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('/tmp/release-body.md', 'utf8');
+            const tag = context.ref.replace('refs/tags/', '');
+            await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tag,
+              name: tag,
+              body,
+              draft: false,
+              prerelease: tag.includes('-'),
+            });

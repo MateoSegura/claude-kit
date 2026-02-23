@@ -1,5 +1,5 @@
 {
   "name": "system-maker",
   "description": "Agent Maker \u2014 guides users through designing and building Claude Code domain-expert plugins (single or full teams) via structured multi-phase workflows with parallel subagent execution.",
-  "version": "0.0.0"
+  "version": "0.1.0"
 }
