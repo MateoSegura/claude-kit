@@ -1,0 +1,56 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-dangerous-test-commands.sh",
+            "description": "Block west flash, west debug, and destructive commands in tester context — tester should only run tests, not flash/debug"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/protect-source-files.sh",
+            "description": "Warn when tester agent tries to modify non-test source files (src/ but not tests/)"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/validate-test-file.sh",
+            "description": "Validate test file structure: check for ZTEST_SUITE, proper includes, testcase.yaml presence"
+          },
+          {
+            "type": "prompt",
+            "prompt": "Review the test code change for quality anti-patterns. Tool input: $ARGUMENTS\n\nIf the file is NOT a C test source file (.c extension in a tests/ directory), respond {\"ok\": true} immediately and skip all checks.\n\nFor C test source files, check for ALL of these anti-patterns:\n\n1. **Missing assertion messages** - zassert_* calls without a diagnostic format string (e.g., bare `zassert_equal(a, b)` without a message)\n2. **Missing mock reset** - FFF fakes used in tests but no RESET_FAKE() or FFF_RESET_HISTORY() in the before/setup function\n3. **Test interdependence** - Tests that rely on state from previous tests instead of setting up their own preconditions\n4. **k_sleep synchronization** - Using k_sleep()/k_msleep() instead of k_sem_take/k_event_wait for test synchronization\n5. **Missing testcase.yaml** - Test directory without a testcase.yaml file (check if one exists nearby)\n6. **Deprecated ztest API** - Using ztest_test_suite()/ztest_run_test_suite() instead of ZTEST_SUITE()\n7. **Magic numbers** - Hardcoded values in assertions without named constants or explanatory comments\n8. **Over-mocking** - Mocking functions that belong to the module under test rather than external dependencies\n9. **Giant test functions** - Test functions exceeding ~40 lines with multiple unrelated assertions\n10. **Missing error path tests** - Only happy-path tests visible, no tests for -EINVAL, -ENODEV, -EIO etc.\n\nSeverity rules:\n- For NEW test files: Report anti-patterns as ERROR\n- For MODIFIED test files: Report anti-patterns as WARNING\n\nIf any anti-patterns are found, respond:\n{\"ok\": false, \"reason\": \"Test anti-pattern found: [describe the issue and suggest the fix]\"}\n\nIf no anti-patterns found or file is not a test file, respond:\n{\"ok\": true}",
+            "description": "Review test code for quality anti-patterns: missing assertions, improper mock reset, test interdependence, magic numbers"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "agent",
+            "prompt": "Verify test deliverables before allowing the agent to stop. Context: $ARGUMENTS\n\nCheck ALL of the following:\n\n1. **testcase.yaml exists** - Every test directory with .c test files must have a testcase.yaml\n2. **ZTEST_SUITE registration** - Every test .c file must contain ZTEST_SUITE() macro\n3. **Assertion messages** - Spot-check that zassert_* calls include diagnostic messages\n4. **Mock resets** - If FFF fakes are used, verify RESET_FAKE and FFF_RESET_HISTORY in before/setup\n5. **No TODO/FIXME** - No unresolved TODO or FIXME comments in new test files\n6. **prj.conf has CONFIG_ZTEST** - Test prj.conf must include CONFIG_ZTEST=y and CONFIG_ZTEST_NEW_API=y\n7. **Platform specification** - testcase.yaml must have platform_allow (at minimum native_sim for unit tests)\n\nUse Read, Grep, and Glob tools to verify these conditions.\n\nIf ALL checks pass, respond:\n{\"ok\": true}\n\nIf ANY check fails, respond:\n{\"ok\": false, \"reason\": \"[Specific issue found and what needs to be fixed]\"}",
+            "timeout": 120,
+            "description": "Verify test deliverables: testcase.yaml exists, ZTEST_SUITE present, assertions have messages, mocks reset, no TODO/FIXME"
+          }
+        ]
+      }
+    ]
+  }
+}

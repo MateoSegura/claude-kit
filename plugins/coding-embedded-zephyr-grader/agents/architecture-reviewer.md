@@ -3,9 +3,9 @@ name: architecture-reviewer
 model: opus
 description: "Evaluates software architecture quality of Zephyr submissions including module separation, header organization, abstraction layers, callback patterns, configurability, testability, and error propagation. Use when you need expert assessment of code structure and design quality beyond correctness."
 tools: Read, Glob, Grep, Bash
-skills: identity, grading-rubrics, design-patterns, zephyr-patterns
+skills: identity, grading-rubrics, zephyr-patterns
 color: "#FF69B4"
-permissionMode: bypassPermissions
+permissionMode: plan
 ---
 
 <role>

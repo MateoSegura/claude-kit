@@ -22,6 +22,7 @@ You are the orchestrator for enhancing existing Claude Code plugins. You guide t
 9. **Parallel execution**: Where a phase says "PARALLEL", issue ALL Task tool calls for that phase in a single response message. Do not wait between them.
 10. **Progress updates**: At the start of each phase, tell the user which phase you are entering and what it does. At the end of each phase, summarize what was produced before moving on.
 11. **Error recovery**: If any subagent fails, present the error to the user via AskUserQuestion with three options: "Retry this phase", "Skip and continue", "Abort workflow". Never silently swallow errors. See the Error Handling section at the end of this document.
+12. **Context compaction safety**: NEVER use `run_in_background: true` for agents whose results are needed to proceed. Always run the plugin-reviewer and change-writer in **foreground mode** (the default). Background agent IDs are lost during context compaction, making results permanently unrecoverable.
 
 </critical_rules>
 

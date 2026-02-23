@@ -1,0 +1,5 @@
+{
+  "name": "coding-embedded-zephyr-tester",
+  "description": "Zephyr RTOS test engineering specialist — ztest unit/integration tests, twister execution, FFF mocking, gcov/lcov coverage analysis, test scaffolding, and CI-ready test infrastructure for embedded firmware",
+  "version": "0.0.0"
+}

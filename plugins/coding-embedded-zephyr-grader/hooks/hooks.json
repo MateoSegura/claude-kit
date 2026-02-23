@@ -10,6 +10,16 @@
             "description": "Restrict file writes to report formats only (md, json, html)"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-dangerous-commands.sh",
+            "description": "Block destructive shell commands that could modify submissions or flash hardware"
+          }
+        ]
       }
     ],
     "PostToolUse": [

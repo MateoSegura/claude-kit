@@ -26,7 +26,7 @@ You will receive:
 For each of the 8 expected dimensions, verify:
 - Dimension name matches one of: component-quality, state-management, styling-css, accessibility, performance, typescript-usage, testing-quality, ux-patterns
 - Score is a number 0-100 or null (N/A)
-- Weight matches expected: component-quality=0.15, state-management=0.15, styling-css=0.10, accessibility=0.15, performance=0.125, typescript-usage=0.125, testing-quality=0.10, ux-patterns=0.10
+- Weight matches expected: component-quality=0.15, state-management=0.15, styling-css=0.10, accessibility=0.15, performance=0.15, typescript-usage=0.10, testing-quality=0.10, ux-patterns=0.10
 - If any dimension is missing entirely, flag it and proceed with available dimensions
 
 ### Step 2: Handle N/A dimensions
@@ -60,7 +60,7 @@ Map composite to letter grade:
 - 60-69: D (Below Standard)
 - 0-59: F (Failing)
 
-Pass threshold: composite >= 60 AND no critical failure overrides triggered.
+Pass threshold: composite >= 65 AND no critical failure overrides triggered.
 
 ### Step 6: Compute confidence score
 Overall confidence is the lowest confidence among all active dimensions. If any dimension has "low" confidence, flag the overall result as provisional.

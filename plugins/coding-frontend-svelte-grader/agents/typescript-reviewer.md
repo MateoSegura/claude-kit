@@ -82,7 +82,7 @@ Return a single JSON object. Do not wrap it in markdown code fences.
 {
   "dimension": "typescript-usage",
   "dimension_number": 6,
-  "weight": 0.125,
+  "weight": 0.10,
   "score": 81,
   "pass": true,
   "confidence": "high",

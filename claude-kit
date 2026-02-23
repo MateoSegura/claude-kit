@@ -217,6 +217,49 @@ def cmd_list() -> None:
 
 # ── cmd_update ────────────────────────────────────────────────────────────────
 
+def _show_changelog(changelog_path: pathlib.Path) -> None:
+    """Parse CHANGELOG.md and display the latest release entry."""
+    try:
+        text = changelog_path.read_text()
+    except OSError:
+        return
+
+    lines = text.splitlines()
+    entry_lines: list = []
+    in_entry = False
+
+    for line in lines:
+        if line.startswith("## ["):
+            if in_entry:
+                break  # stop at the next version header
+            in_entry = True
+            entry_lines.append(line)
+        elif in_entry:
+            entry_lines.append(line)
+
+    if not entry_lines:
+        return
+
+    p()
+    p(f"  {col(C.W, 'What\\'s new:')}")
+    p()
+
+    for line in entry_lines:
+        if line.startswith("## ["):
+            # Version header: ## [0.1.0] - 2026-02-22
+            ver = line.split("]")[0].replace("## [", "").strip()
+            date = line.split("- ", 1)[1].strip() if "- " in line else ""
+            p(f"    {col(C.CY, f'v{ver}')}  {col(C.DIM, date)}")
+            p()
+        elif line.startswith("### "):
+            section = line.replace("### ", "").strip()
+            p(f"    {col(C.W, section)}")
+        elif line.startswith("- "):
+            # Strip markdown bold markers for cleaner terminal output
+            clean = line[2:].replace("**", "")
+            p(f"      {col(C.DIM, '•')} {clean}")
+        # Skip blank lines and other content
+
 def _git(args: list) -> str:
     return subprocess.run(
         ["git", "-C", str(INSTALL_DIR)] + args,
@@ -307,6 +350,11 @@ def cmd_update() -> None:
             p(f"  {col(C.W, 'Scripts:')}")
             p()
             p(f"    {col(C.Y, '↑')} {col(C.W, 'statusline-command.sh')}  {col(C.Y, 'updated')}")
+
+    # Show changelog summary
+    changelog = INSTALL_DIR / "CHANGELOG.md"
+    if changelog.exists():
+        _show_changelog(changelog)
 
     p()
     p(f"  {col(C.G, 'Done.')}")

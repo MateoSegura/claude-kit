@@ -70,7 +70,7 @@ Return a single JSON object. Do not wrap it in markdown code fences.
 {
   "dimension": "performance",
   "dimension_number": 5,
-  "weight": 0.125,
+  "weight": 0.15,
   "score": 74,
   "pass": true,
   "confidence": "high",

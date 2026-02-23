@@ -5,7 +5,7 @@ description: "Builds Zephyr submissions against qemu_cortex_m3 and native_sim ta
 tools: Read, Glob, Grep, Bash
 skills: identity, grading-rubrics, tool-pipeline
 color: "#FF6347"
-permissionMode: bypassPermissions
+permissionMode: default
 ---
 
 <role>

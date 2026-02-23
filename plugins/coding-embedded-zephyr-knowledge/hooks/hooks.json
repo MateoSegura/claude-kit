@@ -12,14 +12,26 @@
         ]
       }
     ],
-    "SessionStart": [
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Review this file change for Zephyr knowledge accuracy. Context: $ARGUMENTS. If the file is NOT a Zephyr reference file (.md in a skills directory), respond {\"ok\": true} immediately. For Zephyr reference files, check: 1) API signatures match current Zephyr v3.x documentation. 2) Devicetree examples use proper syntax (node-name@unit-address format). 3) Kconfig symbols follow CONFIG_ prefix convention. 4) No deprecated APIs referenced without migration notes. Respond {\"ok\": true} if accurate, or {\"ok\": false, \"reason\": \"specific inaccuracy\"}.",
+            "description": "Validate Zephyr reference material accuracy"
+          }
+        ]
+      }
+    ],
+    "Stop": [
       {
         "matcher": "",
         "hooks": [
           {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-environment.sh",
-            "description": "Verify Zephyr development environment is properly configured"
+            "type": "prompt",
+            "prompt": "Verify knowledge content quality before stopping. Context: $ARGUMENTS. Check: 1) Any new or modified reference files contain substantive content (not stubs). 2) Code examples in reference files compile conceptually (correct Zephyr API usage). 3) No TODO/FIXME markers left in reference content. Respond {\"ok\": true} if complete, or {\"ok\": false, \"reason\": \"specific issue\"}.",
+            "description": "Verify knowledge content completeness"
           }
         ]
       }
