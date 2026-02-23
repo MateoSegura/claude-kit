@@ -41,5 +41,8 @@ jobs:
       - name: Syntax check — claude-kit CLI
         run: python3 -m py_compile claude-kit && echo "Syntax OK"
 
+      - name: CLI smoke tests
+        run: bash scripts/test-cli.sh
+
       - name: Tier 1 — changed plugins
         run: python3 scripts/validate-plugins.py --changed --json
