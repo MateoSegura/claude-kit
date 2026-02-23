@@ -4,7 +4,8 @@ FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=UTC \
     GOPATH=/go \
-    PATH="/usr/local/go/bin:/go/bin:/home/dev/.local/bin:$PATH"
+    IS_SANDBOX=1 \
+    PATH="/usr/local/go/bin:/go/bin:/root/.local/bin:$PATH"
 
 # ── Version pins (bump here to upgrade) ──────────────────────────────────────
 ARG GO_VERSION=1.26.0
@@ -51,8 +52,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ── Go ────────────────────────────────────────────────────────────────────────
 RUN curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" \
     | tar -C /usr/local -xz \
-    && mkdir -p /go/bin /go/src /go/pkg \
-    && chmod -R 777 /go
+    && mkdir -p /go/bin /go/src /go/pkg
 
 # ── GitHub CLI ────────────────────────────────────────────────────────────────
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
@@ -85,6 +85,9 @@ RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
+# ── Claude Code — native installer (standalone binary) ────────────────────────
+RUN curl -fsSL https://claude.ai/install.sh | bash
+
 # ── ripgrep + fd (used by Claude Code internals) ─────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ripgrep \
@@ -115,44 +118,16 @@ RUN pip3 install --break-system-packages \
     ruff \
     typer
 
-# ── Non-root user: dev ────────────────────────────────────────────────────────
-ARG USERNAME=dev
-ARG USER_UID=1000
-ARG USER_GID=1000
-
-RUN groupadd --force --gid ${USER_GID} ${USERNAME} \
-    && useradd \
-        --uid ${USER_UID} \
-        --gid ${USER_GID} \
-        --shell /bin/bash \
-        --create-home \
-        --non-unique \
-        ${USERNAME} \
-    && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME} \
-    && chmod 0440 /etc/sudoers.d/${USERNAME} \
-    && usermod -aG docker ${USERNAME} \
-    && mkdir -p /home/${USERNAME}/.local/bin
-
-# ── Shell / PATH configuration ────────────────────────────────────────────────
-RUN echo 'export PATH="/usr/local/go/bin:/go/bin:/home/dev/.local/bin:$PATH"' \
-        >> /home/${USERNAME}/.bashrc \
-    && echo 'export GOPATH=/go' >> /home/${USERNAME}/.bashrc \
-    && echo '. /usr/share/bash-completion/bash_completion' \
-        >> /home/${USERNAME}/.bashrc \
-    && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}
-
-# ── Switch to dev user for user-scoped installs ───────────────────────────────
-USER ${USERNAME}
-WORKDIR /home/${USERNAME}
-
-# ── Claude Code — native installer (standalone binary, no Node required) ──────
-# Installs to ~/.local/bin/claude; already on PATH via ENV above
-RUN curl -fsSL https://claude.ai/install.sh | bash
-
 # ── Go toolchain ──────────────────────────────────────────────────────────────
 RUN go install golang.org/x/tools/gopls@latest \
     && go install github.com/go-delve/delve/cmd/dlv@latest \
     && go install mvdan.cc/gofumpt@latest
+
+# ── Shell config ──────────────────────────────────────────────────────────────
+RUN echo 'export PATH="/usr/local/go/bin:/go/bin:/root/.local/bin:$PATH"' >> /root/.bashrc \
+    && echo 'export GOPATH=/go' >> /root/.bashrc \
+    && echo 'export IS_SANDBOX=1' >> /root/.bashrc \
+    && echo '. /usr/share/bash-completion/bash_completion' >> /root/.bashrc
 
 WORKDIR /workspace
 CMD ["sleep", "infinity"]
