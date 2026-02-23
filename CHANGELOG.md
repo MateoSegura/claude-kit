@@ -5,6 +5,11 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.0.9] - 2026-02-23
+
+### Added
+- `scripts/test-cli.sh` — 20 smoke tests covering help, list, validate, version, and all error/unknown-flag cases; wired into `fast-validate` CI between syntax check and Tier 1 plugin validation
+
 ## [0.0.8] - 2026-02-23
 
 ### Fixed
