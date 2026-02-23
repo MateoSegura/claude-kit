@@ -1,0 +1,60 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-environment.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-safe-command.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/validate-test-file.sh"
+          },
+          {
+            "type": "prompt",
+            "prompt": "Review this test file for quality issues. Context: $ARGUMENTS. Check for: 1) Svelte 4 patterns in test setup (on:click, export let, createEventDispatcher, slot, $: reactive) — these are FORBIDDEN, use Svelte 5 runes only ($state, $derived, $effect, $props). 2) Implementation-detail testing (spying on internal state, asserting internal method calls rather than observable behavior). 3) Missing behavior assertions (test body has no meaningful expect() or assert calls — only stubs or TODOs). 4) Hardcoded timeouts (setTimeout/sleep waits instead of waitFor/findBy async queries). 5) TypeScript 'any' types or missing type annotations in test files. Respond {\"ok\": true} or {\"ok\": false, \"reason\": \"specific violation with line context\"}.",
+            "model": "haiku"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/run-affected-tests.sh",
+            "async": true,
+            "timeout": 180
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Evaluate whether the tester has completed all required work and should be allowed to stop. Context: $ARGUMENTS. Verify all of the following: 1) All requested test files were written and saved (not just planned). 2) Written test files contain meaningful assertions — not just TODO stubs or empty describe blocks. 3) All written tests were executed at least once and their pass/fail status is known and reported to the user. 4) If a coverage target (80%) was specified or checked, coverage was analyzed and the result was reported. 5) No test files contain Svelte 4 patterns (on:click event handlers, export let prop declarations, createEventDispatcher, slot elements, $: reactive declarations) — only Svelte 5 runes are allowed. 6) All test files use TypeScript (lang='ts' in svelte test setup, or .ts file extension). Respond {\"ok\": true} if all criteria are met, or {\"ok\": false, \"reason\": \"description of what remains incomplete\"} to force continuation.",
+            "model": "haiku"
+          }
+        ]
+      }
+    ]
+  }
+}
