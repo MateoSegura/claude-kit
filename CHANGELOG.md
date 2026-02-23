@@ -5,6 +5,21 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.0.14] - 2026-02-23
+
+### Added
+- `nightly.yml` CI workflow — runs semantic review of all plugins at 02:00 UTC
+  daily; if WARN or FATAL findings exist, Claude auto-fixes them, opens a PR,
+  and enables auto-merge so it merges once Tier 1 validation passes
+- Detailed version number documentation in `.claude/rules/git-workflow.md`:
+  MAJOR/MINOR/PATCH semantics for plugin versions and repo release tags, with
+  decision tables and examples
+
+### Changed
+- `pr.yml` — removed `claude-validate` job; semantic review (5–10 min, token-
+  expensive) is now handled by the nightly workflow instead of every PR; required
+  PR gates remain `fast-validate` and `validate-tier1` only
+
 ## [0.0.13] - 2026-02-23
 
 ### Added
