@@ -49,22 +49,9 @@ Located at `.claude-plugin/plugin.json`. This is the ONLY file that goes inside 
 | `description` | string | Human-readable plugin description |
 | `version` | string | Semantic version (e.g., "1.0.0") |
 
-### Optional Fields
+**CRITICAL: plugin.json is parsed by Claude Code's plugin loader. Only use the fields listed below. Adding unrecognized fields (e.g., `role`, `keywords`, `companions`, `author`) will cause the plugin to SILENTLY FAIL TO LOAD. Put orchestration metadata in `ctl.json` instead.**
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `author` | string | Author name or handle |
-| `homepage` | string | URL to plugin homepage |
-| `repository` | string | URL to source repository |
-| `license` | string | SPDX license identifier |
-| `keywords` | string[] | Searchable tags |
-| `commands` | object | Command configuration overrides |
-| `agents` | object | Agent configuration overrides |
-| `skills` | object | Skill configuration overrides |
-| `hooks` | object | Hook definitions (alternative to hooks.json) |
-| `mcpServers` | object | MCP server definitions (alternative to .mcp.json) |
-| `companions` | string[] | List of companion plugin names to load alongside this plugin. Example: `["coding-embedded-zephyr-knowledge"]`. At runtime, `ctl.sh` resolves companions and passes multiple `--plugin-dir` arguments to Claude. |
-| `role` | string | Plugin archetype. Standard values: `engineer`, `grader`, `tester`, `debugger`, `deployer`, `migrator`, `knowledge`. Knowledge plugins must NOT have agents/ or commands/ directories. |
+Only these three fields are safe. Do NOT add `role`, `keywords`, `companions`, `author`, `license`, or any other fields to plugin.json.
 
 ### Example
 
@@ -72,16 +59,29 @@ Located at `.claude-plugin/plugin.json`. This is the ONLY file that goes inside 
 {
   "name": "coding-embedded-zephyr-engineer",
   "description": "Domain-expert coding agent for Zephyr RTOS embedded systems",
-  "version": "1.0.0",
-  "author": "mateo",
-  "keywords": ["embedded", "zephyr", "rtos", "firmware"],
-  "license": "MIT"
+  "version": "1.0.0"
+}
+```
+
+### ctl.json — Orchestration Metadata
+
+Located at `.claude-plugin/ctl.json` (alongside plugin.json). Read by claude-kit, NOT by Claude Code. This is where `role` and `companions` go.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `role` | string | no | Plugin archetype. Standard values: `engineer`, `grader`, `tester`, `knowledge`, `system` |
+| `companions` | string[] | no | Companion plugin names to auto-load. Example: `["coding-embedded-zephyr-knowledge"]` |
+
+```json
+{
+  "role": "engineer",
+  "companions": ["coding-embedded-zephyr-knowledge"]
 }
 ```
 
 ### Knowledge Plugins
 
-Knowledge plugins have `role: "knowledge"` and provide shared domain reference material (API references, hardware targets, design patterns, build system docs, safety hooks). They are loaded as companions by role plugins via the `companions` field. Knowledge plugins must NOT contain `agents/` or `commands/` directories — they only provide skills and hooks.
+Knowledge plugins use `"role": "knowledge"` in ctl.json and must NOT contain `agents/` or `commands/` directories — they serve as companion reference material loaded alongside role plugins.
 
 ## Agent Files (agents/*.md)
 
