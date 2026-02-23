@@ -231,15 +231,15 @@ def _list_section(dirs: list, label: str, empty_msg: str) -> None:
         p()
         return
 
-    # Group by prefix (everything before the last '-')
-    prefix_map: dict = {}
+    # Any plugin with a hyphen groups under its prefix; no-hyphen names are standalone
+    groups: dict = {}
+    standalones: list = []
     for d in dirs:
-        parts = d.name.rsplit("-", 1)
-        prefix = parts[0] if len(parts) == 2 else d.name
-        prefix_map.setdefault(prefix, []).append(d)
-
-    groups     = {k: v for k, v in prefix_map.items() if len(v) >= 2}
-    standalones = [v[0] for k, v in prefix_map.items() if len(v) == 1]
+        if "-" in d.name:
+            prefix = d.name.rsplit("-", 1)[0]
+            groups.setdefault(prefix, []).append(d)
+        else:
+            standalones.append(d)
 
     sep = f"  {col(C.DIM, '·')}  "
 
