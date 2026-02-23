@@ -110,11 +110,16 @@ cmd_post_start() {
     exit 0
   fi
 
-  if echo "${GITHUB_TOKEN}" | timeout 10 gh auth login --with-token 2>&1; then
-    ok "gh authenticated"
+  # gh: GITHUB_TOKEN in env is sufficient — no login needed
+  if timeout 10 gh auth status 2>&1; then
+    ok "gh authenticated (via GITHUB_TOKEN env)"
   else
-    warn "gh auth failed (non-fatal)"
+    warn "gh auth status failed (non-fatal)"
   fi
+
+  # docker: override credsStore to avoid host's wincred/desktop helper
+  mkdir -p /root/.docker
+  echo '{}' > /root/.docker/config.json
 
   if echo "${GITHUB_TOKEN}" | timeout 10 docker login ghcr.io -u MateoSegura --password-stdin 2>&1; then
     ok "ghcr.io authenticated"
