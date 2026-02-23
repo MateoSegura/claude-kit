@@ -15,7 +15,6 @@ ARG NODE_MAJOR=24
 
 # ── Base system packages ──────────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    bash-completion \
     build-essential \
     ca-certificates \
     curl \
@@ -38,6 +37,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     vim \
     wget \
     zip \
+    zsh \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Python 3 (full stack) ────────────────────────────────────────────────────
@@ -121,11 +121,14 @@ RUN go install golang.org/x/tools/gopls@latest \
     && go install github.com/go-delve/delve/cmd/dlv@latest \
     && go install mvdan.cc/gofumpt@latest
 
-# ── Shell config ──────────────────────────────────────────────────────────────
-RUN echo 'export PATH="/usr/local/go/bin:/go/bin:/root/.local/bin:$PATH"' >> /root/.bashrc \
-    && echo 'export GOPATH=/go' >> /root/.bashrc \
-    && echo 'export IS_SANDBOX=1' >> /root/.bashrc \
-    && echo '. /usr/share/bash-completion/bash_completion' >> /root/.bashrc
+# ── Oh My Zsh ─────────────────────────────────────────────────────────────────
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended \
+    && sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="agnoster"/' /root/.zshrc \
+    && sed -i 's/plugins=(git)/plugins=(git docker golang python pip npm)/' /root/.zshrc \
+    && echo 'export PATH="/usr/local/go/bin:/go/bin:/root/.local/bin:$PATH"' >> /root/.zshrc \
+    && echo 'export GOPATH=/go' >> /root/.zshrc \
+    && echo 'export IS_SANDBOX=1' >> /root/.zshrc \
+    && chsh -s /usr/bin/zsh root
 
 WORKDIR /workspace
 CMD ["sleep", "infinity"]

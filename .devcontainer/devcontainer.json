@@ -23,7 +23,7 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.defaultProfile.linux": "zsh",
         "python.defaultInterpreterPath": "/usr/bin/python3",
         "go.gopath": "/go",
         "go.goroot": "/usr/local/go",
