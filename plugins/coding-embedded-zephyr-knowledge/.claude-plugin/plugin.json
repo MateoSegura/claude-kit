@@ -1,5 +1,5 @@
 {
   "name": "coding-embedded-zephyr-knowledge",
-  "description": "Shared domain knowledge for Zephyr RTOS embedded development — kernel APIs, devicetree, hardware targets, design patterns, build system, networking, security, and serialization reference material",
-  "version": "1.0.0"
+  "description": "Shared domain knowledge for Zephyr RTOS embedded development \u2014 kernel APIs, devicetree, hardware targets, design patterns, build system, networking, security, and serialization reference material",
+  "version": "0.0.0"
 }
