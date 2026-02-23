@@ -38,6 +38,9 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Python version
+        run: python3 --version
+
       - name: Syntax check — claude-kit CLI
         run: python3 -m py_compile claude-kit && echo "Syntax OK"
 

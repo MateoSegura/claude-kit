@@ -23,6 +23,28 @@ PLUGINS_DIR = REPO_ROOT / "plugins"
 
 VALID_PLUGIN_JSON_FIELDS = {"name", "description", "version"}
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
+VALID_ROLES = {
+    "engineer", "grader", "tester", "knowledge",
+    "system", "debugger", "deployer", "migrator",
+}
+SKILL_MD_LINE_LIMIT = 500
+
+
+def _frontmatter_keys(path: pathlib.Path) -> set:
+    """Return the set of top-level frontmatter key names from a markdown file."""
+    try:
+        lines = path.read_text().splitlines()
+    except OSError:
+        return set()
+    if not lines or lines[0].strip() != "---":
+        return set()
+    keys = set()
+    for line in lines[1:]:
+        if line.strip() == "---":
+            break
+        if ":" in line and not line.startswith(" "):
+            keys.add(line.split(":", 1)[0].strip())
+    return keys
 
 
 # ── Changed-plugin detection ──────────────────────────────────────────────────
@@ -177,6 +199,50 @@ def validate_plugin(plugin_dir: pathlib.Path, strict: bool) -> dict:
             f"plugin.json 'description' is empty or very short "
             f"({len(desc)} chars, minimum 20)"
         ))
+
+    # ── Check 10: SKILL.md files must not exceed 500 lines ───────────────────
+    skills_dir = plugin_dir / "skills"
+    if skills_dir.exists():
+        for skill_dir in sorted(skills_dir.iterdir()):
+            if not skill_dir.is_dir():
+                continue
+            skill_md = skill_dir / "SKILL.md"
+            if skill_md.exists():
+                n = len(skill_md.read_text().splitlines())
+                if n > SKILL_MD_LINE_LIMIT:
+                    warn(10, (
+                        f"skills/{skill_dir.name}/SKILL.md exceeds {SKILL_MD_LINE_LIMIT} lines "
+                        f"({n} lines) — split overflow into reference.md or other companion files"
+                    ))
+
+    # ── Check 11: agent files must use 'tools:' not 'allowed-tools:' ─────────
+    agents_dir = plugin_dir / "agents"
+    if agents_dir.exists():
+        for f in sorted(agents_dir.glob("*.md")):
+            if "allowed-tools" in _frontmatter_keys(f):
+                fatal(11, (
+                    f"agents/{f.name}: uses 'allowed-tools:' frontmatter key — "
+                    f"agents must use 'tools:' (silent load failure)"
+                ))
+
+    # ── Check 12: command files must use 'allowed-tools:' not 'tools:' ───────
+    commands_dir = plugin_dir / "commands"
+    if commands_dir.exists():
+        for f in sorted(commands_dir.glob("*.md")):
+            if "tools" in _frontmatter_keys(f):
+                fatal(12, (
+                    f"commands/{f.name}: uses 'tools:' frontmatter key — "
+                    f"commands must use 'allowed-tools:' (silent load failure)"
+                ))
+
+    # ── Check 13: ctl.json role must be a known value ─────────────────────────
+    if ctl_data is not None:
+        role = ctl_data.get("role")
+        if role is not None and role not in VALID_ROLES:
+            warn(13, (
+                f"ctl.json 'role' is '{role}' — "
+                f"expected one of: {', '.join(sorted(VALID_ROLES))}"
+            ))
 
     # ── Warning 9: knowledge plugins must not have agents/ or commands/ ───────
     is_knowledge = (
