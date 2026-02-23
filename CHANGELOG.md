@@ -5,6 +5,16 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.0.12] - 2026-02-23
+
+### Added
+- Tier 1 validator check 10 (warn): `SKILL.md` files must not exceed 500 lines
+- Tier 1 validator check 11 (fatal): agent files must use `tools:` not `allowed-tools:` — catches silent load failures
+- Tier 1 validator check 12 (fatal): command files must use `allowed-tools:` not `tools:` — catches silent load failures
+- Tier 1 validator check 13 (warn): `ctl.json` role must be a known value
+- `push.yml` now prints Python version before syntax check for visibility
+- Branch protection rules on `main` now require `fast-validate` and `validate-tier1` to pass before any PR can merge
+
 ## [0.0.11] - 2026-02-23
 
 ### Fixed
