@@ -5,6 +5,16 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.0.18] - 2026-02-23
+
+### Fixed
+- `nightly.yml` — YAML parse error caused by unindented lines (`$PREVIEW`,
+  `$FIXES`, `## Review Findings`) inside a `run: |` block; YAML parser
+  treated them as top-level keys, producing "workflow file issue" failures
+  on every push; fixed by moving PR body generation to
+  `scripts/build-nightly-prompt.py` (new `pr-body` subcommand) and using
+  `gh pr create --body-file` instead of a multi-line shell variable
+
 ## [0.0.17] - 2026-02-23
 
 ### Fixed
