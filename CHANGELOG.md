@@ -5,6 +5,11 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.0.7] - 2026-02-23
+
+### Added
+- `claude-kit list` redesigned — plugins grouped by shared prefix, each group header shows the exact shortcut command (`claude-kit -k <prefix>`), plugin versions shown inline, redundant Shortcuts section removed
+
 ## [0.0.6] - 2026-02-23
 
 ### Added
