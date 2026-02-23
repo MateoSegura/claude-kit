@@ -5,6 +5,11 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.0.10] - 2026-02-23
+
+### Fixed
+- `claude-kit list` now groups all hyphenated plugin names under their prefix regardless of member count — `core-spec` now correctly appears under `core` instead of as a standalone entry
+
 ## [0.0.9] - 2026-02-23
 
 ### Added
