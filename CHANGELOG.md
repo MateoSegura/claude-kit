@@ -5,6 +5,21 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.0.15] - 2026-02-23
+
+### Added
+- `pr-autofix.yml` — when `fast-validate` fails on a PR branch, Claude reads
+  the failure logs and pushes a fix commit automatically; CI re-runs and the
+  loop continues until all checks pass or 3 attempts are exhausted (tracked
+  via `autofix-attempt-N` PR labels); posts a comment if no changes could be made
+
+### Fixed
+- `push.yml` — changed to full history fetch (`fetch-depth: 0`) and added
+  `git fetch --tags --force`; fixes `version shows tag format` smoke test
+  failure on self-hosted runners with stale tag caches
+- `nightly.yml` — replaced bash heredoc prompt construction with a Python
+  inline script; previous heredoc caused the workflow to produce 0 jobs
+
 ## [0.0.14] - 2026-02-23
 
 ### Added
