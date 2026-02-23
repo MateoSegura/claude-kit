@@ -5,6 +5,13 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.0.8] - 2026-02-23
+
+### Fixed
+- Changelog bullet lines in `claude-kit update` now wrap at 70 chars — no more single-line walls of text
+- `SyntaxError` in `claude-kit list` on Python < 3.12 caused by backslash inside f-string expression; fixed by pre-computing the plural suffix
+- CI (`fast-validate`) now runs `python3 -m py_compile` on the CLI script first, catching syntax errors on every push before plugin validation
+
 ## [0.0.7] - 2026-02-23
 
 ### Added
