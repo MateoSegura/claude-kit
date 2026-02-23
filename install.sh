@@ -72,12 +72,12 @@ fi
 if [ -d "$KIT_HOME/.git" ]; then
   info "Updating ..."
   git -C "$KIT_HOME" pull --ff-only -q
-  VER=$(git -C "$KIT_HOME" describe --tags --always 2>/dev/null || git -C "$KIT_HOME" rev-parse --short HEAD)
+  VER=$(git -C "$KIT_HOME" rev-parse --short HEAD)
   ok "Updated → $VER"
 else
   info "Installing ..."
   git clone "$REPO_URL" "$KIT_HOME" -q
-  VER=$(git -C "$KIT_HOME" describe --tags --always 2>/dev/null || git -C "$KIT_HOME" rev-parse --short HEAD)
+  VER=$(git -C "$KIT_HOME" rev-parse --short HEAD)
   ok "Installed → $VER"
 fi
 

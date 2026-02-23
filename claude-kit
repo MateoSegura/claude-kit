@@ -296,9 +296,7 @@ def cmd_update() -> None:
         p()
         sys.exit(1)
 
-    new_ref = (_git(["describe", "--tags", "--always"])
-               or _git(["rev-parse", "--short", "HEAD"])
-               or "?")
+    new_ref = _git(["rev-parse", "--short", "HEAD"]) or "?"
 
     if "Already up to date" in (result.stdout + result.stderr):
         p(f"  {col(C.G, '✓ Already up to date')}  {col(C.DIM, f'({new_ref})')}")
@@ -363,9 +361,7 @@ def cmd_update() -> None:
 # ── cmd_version ───────────────────────────────────────────────────────────────
 
 def cmd_version() -> None:
-    local_ver = (_git(["describe", "--tags", "--always"])
-                 or _git(["rev-parse", "--short", "HEAD"])
-                 or "unknown")
+    local_ver = _git(["rev-parse", "--short", "HEAD"]) or "unknown"
 
     p()
     p(f"  {col(C.W, 'claude-kit')}  {col(C.CY, local_ver)}")
@@ -382,9 +378,7 @@ def cmd_version() -> None:
         p()
         return
 
-    remote_ver = (_git(["describe", "--tags", "--always", "origin/main"])
-                  or _git(["rev-parse", "--short", "origin/main"])
-                  or "?")
+    remote_ver = _git(["rev-parse", "--short", "origin/main"]) or "?"
 
     if local_ver == remote_ver:
         p(f"  {col(C.G, '✓')} Up to date  {col(C.DIM, f'({local_ver})')}")
