@@ -5,6 +5,11 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.0.4] - 2026-02-23
+
+### Chore
+- Removed `.claude/CLAUDE.md` and migrated all repo rules into `.claude/rules/plugin-conventions.md` for consistency with the modular rules layout
+
 ## [0.0.3] - 2026-02-23
 
 ### Added
