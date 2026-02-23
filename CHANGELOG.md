@@ -5,6 +5,22 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.1.0] - 2026-02-23
+
+### Added
+- All unknown CLI flags are now passed through to `claude` instead of
+  being rejected — `--resume`, `--continue`, `--verbose`, `--print`,
+  `--output-format`, and any future Claude flags work out of the box
+- Updated help text with passthrough documentation and examples
+
+### Fixed
+- Dockerfile: `groupadd --force` and `useradd --non-unique` to handle
+  GID/UID 1000 collision on self-hosted runner base image
+- Devcontainer: updated tool versions — Go 1.26.0, yq 4.52.4,
+  hyperfine 1.20.0, Node.js 24; Claude Code uses native installer
+  (`curl -fsSL https://claude.ai/install.sh | bash`) instead of npm
+- Devcontainer: start Docker daemon before build in publish workflow
+
 ## [0.0.18] - 2026-02-23
 
 ### Fixed
