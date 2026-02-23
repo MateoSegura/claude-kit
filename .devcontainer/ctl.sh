@@ -92,7 +92,7 @@ cmd_start() {
   command -v devcontainer > /dev/null 2>&1 \
     || die "devcontainer CLI not found — run: npm install -g @devcontainers/cli"
   info "Opening shell (root, IS_SANDBOX=1) ..."
-  devcontainer exec --workspace-folder "${REPO_ROOT}" bash
+  devcontainer exec --workspace-folder "${REPO_ROOT}" zsh
 }
 
 # ── container lifecycle actions ───────────────────────────────────────────────
