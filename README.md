@@ -1,5 +1,9 @@
 # claude-kit
 
+[![Stable](https://img.shields.io/github/v/release/MateoSegura/claude-kit?label=stable&color=blue)](https://github.com/MateoSegura/claude-kit/releases/latest)
+[![CI](https://github.com/MateoSegura/claude-kit/actions/workflows/push.yml/badge.svg)](https://github.com/MateoSegura/claude-kit/actions/workflows/push.yml)
+[![PR Validation](https://github.com/MateoSegura/claude-kit/actions/workflows/pr.yml/badge.svg)](https://github.com/MateoSegura/claude-kit/actions/workflows/pr.yml)
+
 Specialized Claude Code plugins for your team. One command launches a domain expert — with companion knowledge and the right tools loaded automatically.
 
 ## Install
@@ -41,7 +45,8 @@ claude-kit update
 # Set up Claude Code features (status line)
 claude-kit setup
 
-# Validate a plugin's structure
+# Validate plugin structure (Tier 1: JSON, fields, hooks)
+claude-kit validate --all
 claude-kit validate coding-embedded-zephyr-engineer
 
 # Undo setup changes
@@ -51,61 +56,139 @@ claude-kit restore
 claude-kit uninstall
 ```
 
-## How It Works
+---
 
-`claude-kit --kit <name>` launches Claude Code with `--plugin-dir` pointing at the right plugin(s). Your working directory and `CLAUDE.md` are preserved — claude-kit doesn't touch them.
+## Theory: Why Agent Teams?
 
-**Smart loading:**
-- **Domain shortcuts** — `coding-embedded-zephyr` loads all four plugins: `engineer`, `grader`, `knowledge`, `tester`
-- **Companion auto-load** — a plugin can declare companions in `.claude-plugin/ctl.json`; claude-kit loads them automatically. The `engineer` and `tester` plugins always pull in `knowledge`.
+Claude Code is a powerful single-agent system. But a single agent trying to be a firmware engineer, a code reviewer, a test writer, and a domain expert simultaneously hits a fundamental problem: **context dilution**. When you ask one agent to do everything, its instructions grow unbounded, its tool access is unrestricted, and there's no enforcement of what "good" looks like for each role.
+
+claude-kit solves this with **specialized agent teams** — multiple Claude agents, each expert at one thing, working together in a single session.
+
+### The Four-Role Team Model
+
+Every domain team in claude-kit has exactly four roles:
+
+```
+Knowledge ──► Engineer
+     └──────► Grader
+     └──────► Tester
+```
+
+| Role | Responsibility | Key design principle |
+|------|---------------|---------------------|
+| **Knowledge** | Domain reference — APIs, patterns, hardware specs | No agents, no commands. Pure skill injection. |
+| **Engineer** | Active implementation — writes, builds, debugs | Loads knowledge as companion. Hooks enforce hard constraints. |
+| **Grader** | Blind quantitative review — scores code across weighted dimensions | Isolated from engineer context. Never writes code. |
+| **Tester** | Test engineering — writes tests, runs coverage, validates CI | Own test knowledge. Never touches production code. |
+
+**Why four?** Each role requires a different permission model, different tool access, and different hard constraints:
+
+- The **engineer** needs write access and aggressive build-and-fix loops
+- The **grader** needs read-only access and must be blind to who wrote the code
+- The **tester** needs write access but only to test files, never source files
+- The **knowledge** plugin provides shared domain context without polluting any role's instructions
+
+### How Claude's Architecture Makes This Work
+
+**Skills = context injection, not instructions.** A `skill` file in claude-kit is preloaded verbatim into an agent's context at launch. The knowledge plugin's skills — kernel API references, hardware specs, design patterns — are injected into the engineer's context automatically, giving it domain expertise without bloating the engineer's own instructions.
+
+**Agents = focused subagents.** When you run `/coding-embedded-zephyr-engineer:develop`, the `develop` command spawns a set of specialized subagents (firmware-engineer, devicetree-specialist, code-reviewer) in parallel. Each subagent has:
+- `tools:` restricted to exactly what it needs
+- `skills:` preloaded with exactly the reference material it uses
+- `permissionMode:` set to `plan` for read-only agents, `acceptEdits` for writers
+
+**Hooks = behavioral enforcement, not guidelines.** Every plugin uses hooks to enforce hard constraints that Claude must never bypass:
+- **PreToolUse `command` hooks** block dangerous shell commands before they run (exit 2 = block)
+- **PostToolUse `prompt` hooks** review code changes for anti-patterns using a focused Claude evaluation
+- **PostToolUse `agent` hooks** run multi-step verification that requires reading files (e.g., checking that DTS overlays are valid, not just that they were written)
+- **Stop `agent` hooks** verify deliverable quality before Claude is allowed to stop — checking build success, error handling, and coverage thresholds
+
+**Commands = orchestration, not implementation.** A `command` file coordinates a workflow by spawning agents. The command itself never writes code. It gathers requirements, launches specialized agents in parallel, synthesizes results, and presents output. This keeps the main conversation clean and the implementation in dedicated subagents.
+
+---
 
 ## Plugins
 
 ### Zephyr RTOS Team
 
-| Plugin | What it does |
-|--------|-------------|
-| `coding-embedded-zephyr-engineer` | Firmware development specialist — Zephyr RTOS, devicetree, Kconfig, west builds, secure boot |
-| `coding-embedded-zephyr-knowledge` | Shared domain reference — kernel APIs, hardware targets, design patterns (auto-loaded) |
-| `coding-embedded-zephyr-grader` | Blind quantitative code review across 9 weighted dimensions with automated tooling |
-| `coding-embedded-zephyr-tester` | Test engineering — ztest, twister, FFF mocking, gcov/lcov coverage, CI infrastructure |
+```bash
+claude-kit --kit coding-embedded-zephyr  # loads all four
+```
+
+| Plugin | Role | What it does |
+|--------|------|-------------|
+| `coding-embedded-zephyr-knowledge` | Knowledge | Shared domain reference: kernel APIs, devicetree/Kconfig syntax, build system (west/sysbuild), Nordic/STM32/NXP/ESP32 hardware, networking, security, serialization. Auto-loaded by engineer and tester. |
+| `coding-embedded-zephyr-engineer` | Engineer | Firmware development specialist. Agents: firmware-engineer, devicetree-specialist, build-debug-analyst, code-reviewer, test-engineer. Hooks enforce sysbuild usage, block destructive commands, validate DTS overlays and Kconfig, run async builds. |
+| `coding-embedded-zephyr-grader` | Grader | Blind quantitative code review across 9 weighted dimensions (correctness, resource usage, style, Zephyr patterns, compilability, completeness, architecture, static analysis, testing). Agents run a full tool pipeline. |
+| `coding-embedded-zephyr-tester` | Tester | Test engineering: ztest unit tests, Twister test runner, FFF mocking, gcov/lcov coverage, CI infrastructure. Agents: unit-test-writer, integration-test-writer, coverage-analyzer, test-runner, mock-specialist, test-reviewer. |
 
 ### Svelte Frontend Team
 
-| Plugin | What it does |
-|--------|-------------|
-| `coding-frontend-svelte-engineer` | Svelte 5 / SvelteKit specialist — runes, TypeScript strict, Tailwind, Tauri desktop targets |
-| `coding-frontend-svelte-knowledge` | Shared domain reference — runes, CSS architecture, accessibility, hardware comms (auto-loaded) |
-| `coding-frontend-svelte-grader` | Blind quantitative code review across 8 weighted dimensions |
-| `coding-frontend-svelte-tester` | Testing specialist — Vitest, vitest-browser-svelte, Playwright E2E, axe accessibility audits |
+```bash
+claude-kit --kit coding-frontend-svelte  # loads all four
+```
+
+| Plugin | Role | What it does |
+|--------|------|-------------|
+| `coding-frontend-svelte-knowledge` | Knowledge | Shared reference: Svelte 5 runes, SvelteKit patterns, CSS architecture, accessibility, hardware communication (USB/BLE/LAN/audio), Tauri desktop targets. Auto-loaded by engineer and tester. |
+| `coding-frontend-svelte-engineer` | Engineer | Svelte 5 / SvelteKit specialist. Agents: component-writer, feature-builder, scaffold-writer, style-engineer, performance-analyst. Hooks enforce Svelte 5 rune patterns, block deprecated Svelte 4 syntax in real-time. |
+| `coding-frontend-svelte-grader` | Grader | Blind code review across 8 dimensions (component quality, TypeScript, state management, styling, testing, accessibility, performance, UX). |
+| `coding-frontend-svelte-tester` | Tester | Testing specialist: Vitest, vitest-browser-svelte component testing, Playwright E2E, axe accessibility audits. Agents cover unit, component, E2E, and coverage analysis. |
 
 ### System Plugins
 
 | Plugin | What it does |
 |--------|-------------|
-| `core-spec` | Spec-driven development — write the spec first, track phases via file-based state, recover after context compaction |
-| `system-maker` | Build new domain plugins via a guided multi-phase workflow with parallel subagent execution |
-| `system-updater` | Enhance existing plugins via a structured 6-phase workflow with surgical change planning |
+| `core-spec` | Spec-driven development for long-running sessions — write the spec first, derive implementation phases from it, track progress via file-based state, recover full context after compaction through hooks and agents |
+| `system-maker` | Build new domain plugins via a guided 11-phase workflow with parallel subagent execution. Includes the `/system-maker:validate` semantic reviewer. |
+| `system-updater` | Enhance existing plugins via a structured 6-phase workflow with surgical change planning — reads current state, plans changes, implements with reviewer verification |
+
+---
 
 ## Plugin Structure
+
+Every plugin is a directory of markdown files and JSON configs:
 
 ```
 plugins/<name>/
 ├── .claude-plugin/
-│   ├── plugin.json    # manifest (name, version, description)
-│   └── ctl.json       # companions, role (optional)
-├── agents/            # subagent definitions
-├── commands/          # slash commands
-├── skills/            # domain knowledge (auto-loaded into context)
+│   ├── plugin.json    # { name, description, version } — parsed by Claude Code
+│   └── ctl.json       # { role, companions } — read by claude-kit
+├── agents/            # subagent definitions (tools:, permissionMode:, skills:)
+├── commands/          # user-invocable slash commands (allowed-tools:)
+├── skills/            # domain knowledge preloaded into agent context
+│   └── <skill-name>/
+│       ├── SKILL.md   # entry point (max 500 lines)
+│       └── reference.md
 ├── hooks/
-│   └── hooks.json
-└── scripts/           # hook scripts
+│   └── hooks.json     # PreToolUse / PostToolUse / Stop handlers
+└── scripts/           # shell scripts called by command hooks
 ```
 
-To create a new plugin: `claude-kit --kit system-maker` then `/system-maker:make-agent`
+**Critical distinction:** Agents use `tools:` in frontmatter. Commands and skills use `allowed-tools:`. Using the wrong key is a silent failure.
 
-To update an existing plugin: `claude-kit --kit system-updater` then `/system-updater:update-agent`
+**Companion auto-loading:** A plugin declares companions in `ctl.json`. claude-kit loads them first, before the requesting plugin. The engineer always gets the knowledge plugin's skills injected before its own agents launch.
+
+See [`docs/plugin-spec.md`](docs/plugin-spec.md) for the complete specification.
+
+---
 
 ## For Plugin Developers
 
-See `docs/` for architecture research and `templates/` for plugin format reference.
+```bash
+# Create a new plugin (guided 11-phase workflow)
+claude-kit --kit system-maker
+# → /system-maker:make-agent
+
+# Enhance an existing plugin (6-phase workflow)
+claude-kit --kit system-updater
+# → /system-updater:update-agent
+
+# Validate your plugin before committing
+claude-kit validate --all          # Tier 1: JSON, fields, hooks
+claude-kit validate --changed      # only files changed since last commit
+# → /system-maker:validate         # Tier 2-4: semantic review
+```
+
+**Branch naming is enforced by CI:** `<type>/<description>`
+Valid types: `feat`, `fix`, `chore`, `docs`, `test`, `refactor`, `perf`, `ci`, `build`, `style`, `release`, `hotfix`
