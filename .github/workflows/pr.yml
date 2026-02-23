@@ -79,8 +79,6 @@ jobs:
   claude-validate:
     runs-on: self-hosted
     needs: validate-tier1
-    # Skip entirely when only docs/scripts/config changed — saves Claude credits
-    if: needs.validate-tier1.outputs.plugins_changed == 'true'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -96,7 +94,15 @@ jobs:
       - name: Claude Tier 2-4 review
         env:
           CHANGED_PLUGINS: ${{ steps.changed.outputs.list }}
+          PLUGINS_CHANGED: ${{ needs.validate-tier1.outputs.plugins_changed }}
         run: |
+          if [ "$PLUGINS_CHANGED" != "true" ]; then
+            echo "No plugin changes — semantic review skipped"
+            echo "## 🤖 Semantic Validation (Tier 2-4)" > /tmp/claude-review.md
+            echo "" >> /tmp/claude-review.md
+            echo "No plugin files changed in this PR. Semantic review skipped." >> /tmp/claude-review.md
+            exit 0
+          fi
           # Unset CLAUDECODE so claude -p can run even from within a Claude Code session
           # Prompt via stdin avoids --plugin-dir consuming extra positional args
           unset CLAUDECODE
