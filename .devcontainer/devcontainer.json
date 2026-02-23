@@ -2,13 +2,8 @@
   "name": "claude-kit",
   "image": "ghcr.io/mateosegura/dev-env-claude-kit:latest",
 
-  "runArgs": ["--init"],
-
-  // Pass host env vars into the container (set by ctl.sh from .env)
-  "containerEnv": {
-    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}",
-    "IS_SANDBOX": "${localEnv:IS_SANDBOX}"
-  },
+  // .env loaded automatically via --env-file (GITHUB_TOKEN, IS_SANDBOX)
+  "runArgs": ["--init", "--env-file", ".devcontainer/.env"],
 
   "mounts": [
     // Inherit host Claude credentials, config, and local plugins
@@ -19,11 +14,8 @@
     "source=claude-kit-gomodcache,target=/go/pkg/mod,type=volume"
   ],
 
-  // One-time setup: link claude-kit CLI into PATH
-  "postCreateCommand": "ln -sf /workspace/claude-kit /usr/local/bin/claude-kit && echo '[devcontainer] claude-kit linked'",
-
-  // Every start: gh/ghcr auth from GITHUB_TOKEN (Docker uses host socket)
-  "postStartCommand": "echo \"$GITHUB_TOKEN\" | gh auth login --with-token 2>/dev/null && echo \"$GITHUB_TOKEN\" | docker login ghcr.io -u MateoSegura --password-stdin 2>/dev/null && echo '[devcontainer] Ready — gh and ghcr.io authenticated'",
+  "postCreateCommand": "/workspace/.devcontainer/ctl.sh post-create",
+  "postStartCommand": "/workspace/.devcontainer/ctl.sh post-start",
 
   "workspaceFolder": "/workspace",
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
