@@ -73,7 +73,10 @@ fi
 _kit_version() {
   local tag
   tag=$(git -C "$KIT_HOME" tag --points-at HEAD --sort=-version:refname 2>/dev/null | head -1)
-  if [ -n "$tag" ]; then echo "$tag"; else git -C "$KIT_HOME" rev-parse --short HEAD; fi
+  if [ -n "$tag" ]; then echo "$tag"; return; fi
+  tag=$(git -C "$KIT_HOME" describe --tags --abbrev=0 2>/dev/null)
+  if [ -n "$tag" ]; then echo "$tag"; return; fi
+  git -C "$KIT_HOME" rev-parse --short HEAD
 }
 
 if [ -d "$KIT_HOME/.git" ]; then
