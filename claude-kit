@@ -221,46 +221,69 @@ def cmd_run(args: list) -> None:
 
 # ── cmd_list ──────────────────────────────────────────────────────────────────
 
+def _list_section(dirs: list, label: str, empty_msg: str) -> None:
+    """Render one section (Bundled or Local) with grouped plugins and versions."""
+    p(f"  {col(C.W, label)}")
+    p()
+    if not dirs:
+        p(f"  {empty_msg}")
+        p()
+        return
+
+    # Group by prefix (everything before the last '-')
+    prefix_map: dict = {}
+    for d in dirs:
+        parts = d.name.rsplit("-", 1)
+        prefix = parts[0] if len(parts) == 2 else d.name
+        prefix_map.setdefault(prefix, []).append(d)
+
+    groups     = {k: v for k, v in prefix_map.items() if len(v) >= 2}
+    standalones = [v[0] for k, v in prefix_map.items() if len(v) == 1]
+
+    sep = f"  {col(C.DIM, '·')}  "
+
+    for prefix, members in sorted(groups.items()):
+        p(f"  {col(C.DIM, 'claude-kit -k')} {col(C.W, prefix)}")
+        parts_str = sep.join(
+            f"{col(C.CY, d.name[len(prefix)+1:])}  {col(C.DIM, plugin_version(d))}"
+            for d in members
+        )
+        p(f"    {parts_str}")
+        p()
+
+    if standalones:
+        max_len = max(len(d.name) for d in standalones)
+        for d in sorted(standalones, key=lambda x: x.name):
+            pad = " " * (max_len - len(d.name))
+            p(f"  {col(C.W, d.name)}{pad}  {col(C.DIM, plugin_version(d))}")
+        p()
+
 def cmd_list() -> None:
-    p(col(C.W, "Bundled kits:"))
-    if PLUGINS_DIR.exists():
-        kits = [d for d in sorted(PLUGINS_DIR.iterdir()) if d.is_dir()]
-        for d in kits:
-            p(f"  {d.name}")
-        if not kits:
-            p("  (none)")
-    else:
-        p("  (none)")
+    bundled = sorted(
+        (d for d in PLUGINS_DIR.iterdir() if d.is_dir()), key=lambda x: x.name
+    ) if PLUGINS_DIR.exists() else []
+
+    local = sorted(
+        (d for d in LOCAL_DIR.iterdir() if d.is_dir()), key=lambda x: x.name
+    ) if LOCAL_DIR.exists() else []
+
+    total = len(bundled) + len(local)
 
     p()
-    p(col(C.W, "Local kits:"))
-    if LOCAL_DIR.exists():
-        local_kits = [d for d in sorted(LOCAL_DIR.iterdir()) if d.is_dir()]
-        if local_kits:
-            for d in local_kits:
-                p(f"  {d.name}")
-        else:
-            p("  (none — run 'claude-kit --kit system-maker' to create one)")
-    else:
-        p("  (none — run 'claude-kit --kit system-maker' to create one)")
+    p(f"  {col(C.W, 'claude-kit')}  {col(C.DIM, f'·  {total} plugin{\"s\" if total != 1 else \"\"}')}")
+    p(f"  {col(C.DIM, '─' * 40)}")
+    p()
 
-    # Shortcuts: group plugins sharing a prefix (2+)
-    if PLUGINS_DIR.exists():
-        prefix_map: dict = {}
-        for d in sorted(PLUGINS_DIR.iterdir()):
-            if not d.is_dir():
-                continue
-            parts = d.name.split("-")
-            if len(parts) > 1:
-                prefix = "-".join(parts[:-1])
-                prefix_map.setdefault(prefix, []).append(d.name)
+    _list_section(bundled, "Bundled", col(C.DIM, "(none)"))
 
-        shortcuts = {k: v for k, v in prefix_map.items() if len(v) >= 2}
-        if shortcuts:
-            p()
-            p(col(C.W, "Shortcuts (loads full group):"))
-            for prefix, members in sorted(shortcuts.items()):
-                p(f"  {prefix} → [{', '.join(sorted(members))}]")
+    p(f"  {col(C.DIM, '─' * 40)}")
+    p()
+
+    _list_section(
+        local,
+        "Local",
+        f"{col(C.DIM, 'none — run')}  {col(C.CY, 'claude-kit --kit system-maker')}  {col(C.DIM, 'to create one')}",
+    )
 
 
 # ── cmd_update ────────────────────────────────────────────────────────────────
