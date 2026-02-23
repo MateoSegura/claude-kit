@@ -241,7 +241,7 @@ def _show_changelog(changelog_path: pathlib.Path) -> None:
         return
 
     p()
-    p(f"  {col(C.W, 'What\\'s new:')}")
+    p("  " + col(C.W, "What's new:"))
     p()
 
     for line in entry_lines:
@@ -358,6 +358,40 @@ def cmd_update() -> None:
 
     p()
     p(f"  {col(C.G, 'Done.')}")
+    p()
+
+# ── cmd_version ───────────────────────────────────────────────────────────────
+
+def cmd_version() -> None:
+    local_ver = (_git(["describe", "--tags", "--always"])
+                 or _git(["rev-parse", "--short", "HEAD"])
+                 or "unknown")
+
+    p()
+    p(f"  {col(C.W, 'claude-kit')}  {col(C.CY, local_ver)}")
+    p()
+    p(f"  {col(C.DIM, 'Checking for updates...')}")
+
+    fetch = subprocess.run(
+        ["git", "-C", str(INSTALL_DIR), "fetch", "--tags", "-q", "origin"],
+        capture_output=True, text=True
+    )
+
+    if fetch.returncode != 0:
+        p(f"  {col(C.Y, '! Could not reach remote — skipping update check.')}")
+        p()
+        return
+
+    remote_ver = (_git(["describe", "--tags", "--always", "origin/main"])
+                  or _git(["rev-parse", "--short", "origin/main"])
+                  or "?")
+
+    if local_ver == remote_ver:
+        p(f"  {col(C.G, '✓')} Up to date  {col(C.DIM, f'({local_ver})')}")
+    else:
+        p(f"  {col(C.Y, '↑')} Update available: {col(C.W, remote_ver)}  {col(C.DIM, f'(current: {local_ver})')}")
+        p()
+        p(f"  Run {col(C.CY, 'claude-kit update')} to upgrade.")
     p()
 
 # ── cmd_validate ──────────────────────────────────────────────────────────────
@@ -738,6 +772,7 @@ def cmd_help() -> None:
     {CY}claude-kit restore{C.N}    undo setup — restores original files with diff preview
     {CY}claude-kit list{C.N}       show available kits (bundled + local)
     {CY}claude-kit update{C.N}     pull latest plugins, show version changes
+    {CY}claude-kit version{C.N}    show current version and check for updates
     {CY}claude-kit validate{C.N}   check a kit's structure
     {CY}claude-kit uninstall{C.N}  remove claude-kit and the CLI symlink
 """)
@@ -757,6 +792,7 @@ def main() -> None:
     dispatch = {
         "list":      lambda: cmd_list(),
         "update":    lambda: cmd_update(),
+        "version":   lambda: cmd_version(),
         "setup":     lambda: cmd_setup(rest),
         "restore":   lambda: cmd_restore(rest),
         "validate":  lambda: cmd_validate(rest),
