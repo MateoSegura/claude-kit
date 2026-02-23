@@ -8,6 +8,7 @@ import subprocess
 import shutil
 import pathlib
 import difflib
+import textwrap
 from datetime import datetime
 
 # ── Constants ────────────────────────────────────────────────────────────────
@@ -269,8 +270,9 @@ def cmd_list() -> None:
 
     total = len(bundled) + len(local)
 
+    suffix = "s" if total != 1 else ""
     p()
-    p(f"  {col(C.W, 'claude-kit')}  {col(C.DIM, f'·  {total} plugin{\"s\" if total != 1 else \"\"}')}")
+    p(f"  {col(C.W, 'claude-kit')}  {col(C.DIM, f'·  {total} plugin{suffix}')}")
     p(f"  {col(C.DIM, '─' * 40)}")
     p()
 
@@ -329,9 +331,12 @@ def _show_changelog(changelog_path: pathlib.Path) -> None:
             section = line.replace("### ", "").strip()
             p(f"    {col(C.W, section)}")
         elif line.startswith("- "):
-            # Strip markdown bold markers for cleaner terminal output
             clean = line[2:].replace("**", "")
-            p(f"      {col(C.DIM, '•')} {clean}")
+            wrapped = textwrap.wrap(clean, width=70)
+            if wrapped:
+                p(f"      {col(C.DIM, '•')} {wrapped[0]}")
+                for cont in wrapped[1:]:
+                    p(f"        {cont}")
         # Skip blank lines and other content
 
 def _git(args: list) -> str:
