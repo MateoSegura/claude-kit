@@ -5,6 +5,15 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.0.17] - 2026-02-23
+
+### Fixed
+- `claude-kit update` no longer fails with "would clobber existing tag"
+  errors when the user's local clone has stale tags (e.g. after an upstream
+  history rewrite); now runs `git fetch --tags --force` before pulling so
+  local tags are always synced to remote state
+- `install.sh` update path has the same fix applied
+
 ## [0.0.16] - 2026-02-23
 
 ### Fixed
