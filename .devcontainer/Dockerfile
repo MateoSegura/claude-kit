@@ -4,13 +4,13 @@ FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive \
     TZ=UTC \
     GOPATH=/go \
-    PATH="/usr/local/go/bin:/go/bin:$PATH"
+    PATH="/usr/local/go/bin:/go/bin:/home/dev/.local/bin:$PATH"
 
 # ── Version pins (bump here to upgrade) ──────────────────────────────────────
-ARG GO_VERSION=1.23.5
-ARG YQ_VERSION=4.44.3
-ARG HYPERFINE_VERSION=1.18.0
-ARG NODE_MAJOR=22
+ARG GO_VERSION=1.26.0
+ARG YQ_VERSION=4.52.4
+ARG HYPERFINE_VERSION=1.20.0
+ARG NODE_MAJOR=24
 
 # ── Base system packages ──────────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -39,7 +39,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zip \
     && rm -rf /var/lib/apt/lists/*
 
-# ── Python 3 (full stack) ─────────────────────────────────────────────────────
+# ── Python 3 (full stack) ────────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-dev \
@@ -80,13 +80,10 @@ RUN install -m 0755 -d /etc/apt/keyrings \
         docker-compose-plugin \
     && rm -rf /var/lib/apt/lists/*
 
-# ── Node.js (required for Claude Code) ───────────────────────────────────────
+# ── Node.js (LTS) ─────────────────────────────────────────────────────────────
 RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
-
-# ── Claude Code (native npm installer) ───────────────────────────────────────
-RUN npm install -g @anthropic-ai/claude-code
 
 # ── ripgrep + fd (used by Claude Code internals) ─────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -132,19 +129,29 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} \
         ${USERNAME} \
     && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME} \
     && chmod 0440 /etc/sudoers.d/${USERNAME} \
-    && usermod -aG docker ${USERNAME}
+    && usermod -aG docker ${USERNAME} \
+    && mkdir -p /home/${USERNAME}/.local/bin
 
-# ── Shell configuration ───────────────────────────────────────────────────────
-RUN echo 'export PATH="/usr/local/go/bin:/go/bin:$PATH"' >> /home/${USERNAME}/.bashrc \
+# ── Shell / PATH configuration ────────────────────────────────────────────────
+RUN echo 'export PATH="/usr/local/go/bin:/go/bin:/home/dev/.local/bin:$PATH"' \
+        >> /home/${USERNAME}/.bashrc \
     && echo 'export GOPATH=/go' >> /home/${USERNAME}/.bashrc \
-    && echo '. /usr/share/bash-completion/bash_completion' >> /home/${USERNAME}/.bashrc
+    && echo '. /usr/share/bash-completion/bash_completion' \
+        >> /home/${USERNAME}/.bashrc \
+    && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}
 
+# ── Switch to dev user for user-scoped installs ───────────────────────────────
 USER ${USERNAME}
-WORKDIR /workspace
+WORKDIR /home/${USERNAME}
 
-# ── Go toolchain (installed as dev user) ──────────────────────────────────────
+# ── Claude Code — native installer (standalone binary, no Node required) ──────
+# Installs to ~/.local/bin/claude; already on PATH via ENV above
+RUN curl -fsSL https://claude.ai/install.sh | bash
+
+# ── Go toolchain ──────────────────────────────────────────────────────────────
 RUN go install golang.org/x/tools/gopls@latest \
     && go install github.com/go-delve/delve/cmd/dlv@latest \
     && go install mvdan.cc/gofumpt@latest
 
+WORKDIR /workspace
 CMD ["sleep", "infinity"]
