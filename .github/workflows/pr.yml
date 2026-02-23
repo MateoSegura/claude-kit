@@ -27,7 +27,7 @@ jobs:
       - name: Check if plugins changed
         id: check
         run: |
-          CHANGED=$(git diff --name-only origin/main...HEAD | grep '^plugins/')
+          CHANGED=$(git diff --name-only origin/main...HEAD | grep '^plugins/' || true)
           if [ -n "$CHANGED" ]; then
             echo "plugins_changed=true" >> "$GITHUB_OUTPUT"
           else
