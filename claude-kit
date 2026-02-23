@@ -106,6 +106,48 @@ def expand_kit(kit_name: str, seen: set) -> list:
 
     return result
 
+# ── Launch display ────────────────────────────────────────────────────────────
+
+_ROLE_SUFFIXES = ("knowledge", "engineer", "grader", "tester")
+
+def _group_plugins(names: list) -> tuple:
+    """Split plugin list into team groups (prefix → roles) and standalone plugins."""
+    groups: dict = {}
+    standalone: list = []
+    for name in names:
+        parts = name.rsplit("-", 1)
+        if len(parts) == 2 and parts[1] in _ROLE_SUFFIXES:
+            groups.setdefault(parts[0], []).append(parts[1])
+        else:
+            standalone.append(name)
+    return groups, standalone
+
+def _print_launch_header(plugin_names: list) -> None:
+    groups, standalone = _group_plugins(plugin_names)
+    total    = len(plugin_names)
+    n_kits   = len(groups) + len(standalone)
+    kit_word    = "kit"    if n_kits == 1 else "kits"
+    plugin_word = "plugin" if total  == 1 else "plugins"
+
+    p()
+    p(f"  {col(C.W, 'claude-kit')}  {col(C.DIM, f'·  {n_kits} {kit_word}  ·  {total} {plugin_word}')}")
+    p(f"  {col(C.DIM, '─' * 40)}")
+    p()
+
+    for prefix, roles in groups.items():
+        p(f"  {col(C.W, prefix)}")
+        sep = f"  {col(C.DIM, '·')}  "
+        p(f"    {sep.join(col(C.CY, r) for r in roles)}")
+        p()
+
+    for name in standalone:
+        p(f"  {col(C.W, name)}")
+        p()
+
+    p(f"  {col(C.DIM, '─' * 40)}")
+    p(f"  {col(C.DIM, 'Launching Claude Code...')}")
+    p()
+
 # ── cmd_run ───────────────────────────────────────────────────────────────────
 
 def cmd_run(args: list) -> None:
@@ -162,18 +204,18 @@ def cmd_run(args: list) -> None:
         claude_args.extend(["--plugin-dir", str(pdir)])
     claude_args.extend(["--model", model])
 
-    if skip_permissions:
-        claude_args.append("--dangerously-skip-permissions")
-        print("Warning: Running with --dangerously-skip-permissions")
-
     import shutil
     if not shutil.which("claude"):
         print("Error: Claude Code CLI ('claude') not found.")
         print("Install it first: https://claude.ai/code")
         sys.exit(1)
 
-    if len(all_plugins) > 1:
-        print(f"Loading: {', '.join(all_plugins)}")
+    _print_launch_header(all_plugins)
+
+    if skip_permissions:
+        claude_args.append("--dangerously-skip-permissions")
+        p(f"  {col(C.Y, 'Warning:')} running with --dangerously-skip-permissions")
+        p()
 
     os.execvp("claude", claude_args)
 
