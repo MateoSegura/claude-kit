@@ -31,8 +31,9 @@ if ! command -v python3 &>/dev/null; then
 fi
 
 if ! command -v claude &>/dev/null; then
-  warn "Claude Code CLI ('claude') not found — install it before running kits."
-  warn "Install: https://claude.ai/code"
+  err "Claude Code CLI ('claude') is required but not found."
+  err "Install it first: https://claude.ai/code"
+  exit 1
 fi
 
 # ── Install jq if missing ────────────────────────────────────────────────────

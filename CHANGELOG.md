@@ -5,6 +5,12 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.0.1] - 2026-02-23
+
+### Fixed
+- `install.sh` now exits with an error if Claude Code CLI (`claude`) is not found — previously installed silently and crashed at runtime
+- `claude-kit --kit` now shows a clear error message instead of a Python traceback when `claude` is not in PATH
+
 ## [0.0.0] - 2026-02-23
 
 ### Plugins
