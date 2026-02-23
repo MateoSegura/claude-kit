@@ -5,6 +5,13 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.0.11] - 2026-02-23
+
+### Fixed
+- `system-updater` plugin-structure skill was documenting `role`, `companions`, `author`, `keywords` etc. as valid `plugin.json` optional fields — these cause silent load failures; replaced with the correct CRITICAL warning and `ctl.json` section matching `system-maker`
+- `core-spec` was missing `.claude-plugin/ctl.json`; created with `{"role": "system"}`
+- `system-maker` and `system-updater` `ctl.json` were missing the `role` field; added `"role": "system"` to both
+
 ## [0.0.10] - 2026-02-23
 
 ### Fixed
