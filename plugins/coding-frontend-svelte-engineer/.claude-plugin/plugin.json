@@ -1,5 +1,5 @@
 {
   "name": "coding-frontend-svelte-engineer",
-  "description": "Svelte 5 / SvelteKit frontend development agent \u2014 writes code, builds features, fixes bugs with runes-only patterns, TypeScript strict mode, Tailwind CSS, proactive performance management, WCAG 2.2 AA accessibility, and desktop targets (Tauri/Electron)",
-  "version": "0.0.0"
+  "description": "Svelte 5 / SvelteKit frontend development agent — writes code, builds features, fixes bugs with runes-only patterns, TypeScript strict mode, Tailwind CSS, proactive performance management, WCAG 2.2 AA accessibility, and desktop targets (Tauri/Electron)",
+  "version": "0.0.1"
 }

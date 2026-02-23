@@ -5,6 +5,32 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.0.13] - 2026-02-23
+
+### Added
+- `README.md` added to all 11 plugins documenting agents (with exact descriptions
+  from frontmatter), commands, skill inventories, companion auto-loading, and
+  launch instructions
+- `.claude/rules/documentation.md` — project rule requiring README updates
+  whenever plugin agents, commands, or skills change
+- `system-maker` identity skill Phase 11 now generates `README.md` in the staged
+  build directory before copying to output — all new plugins ship with docs
+- `system-updater` identity skill Phase 7 now regenerates `README.md` from the
+  staged plugin's current state before replacing the live plugin
+
+### Changed
+- Main README plugins section replaced: verbose 4-column tables swapped for
+  one-paragraph team blurbs and a links table pointing to each plugin README
+- `claude-validate` CI job no longer uses `if:` condition — always runs and exits
+  with success or failure (never skipped); non-plugin PRs exit 0 immediately with
+  a "No plugin files changed" message, making the job safe to add as a required
+  branch protection check
+
+### Plugin versions
+- `system-maker`: 0.1.0 → 0.1.1 (identity skill Phase 11 README generation)
+- `system-updater`: 0.0.0 → 0.0.1 (identity skill Phase 7 README regeneration)
+- All other plugins: 0.0.0 → 0.0.1 (README doc added)
+
 ## [0.0.12] - 2026-02-23
 
 ### Added
