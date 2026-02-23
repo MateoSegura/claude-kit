@@ -79,12 +79,15 @@ jobs:
 
       - name: Claude Tier 2-4 review
         if: steps.changed.outputs.list != ''
+        env:
+          CHANGED_PLUGINS: ${{ steps.changed.outputs.list }}
         run: |
-          # Unset CLAUDECODE so claude --print can run even from within a Claude Code session
+          # Unset CLAUDECODE so claude -p can run even from within a Claude Code session
+          # Prompt via stdin avoids --plugin-dir consuming extra positional args
           unset CLAUDECODE
-          claude --print \
-            --plugin-dir plugins/system-maker \
-            "Run /system-maker:validate on these plugins: ${{ steps.changed.outputs.list }}. Read the files directly from the repository. Output structured markdown with PASS/FAIL per plugin." \
+          PROMPT="Run /system-maker:validate on these plugins: ${CHANGED_PLUGINS}. Read the files directly from the repository. Output structured markdown with PASS/FAIL per plugin."
+          echo "$PROMPT" | claude -p \
+            --plugin-dir "${GITHUB_WORKSPACE}/plugins/system-maker" \
             > /tmp/claude-review.md
           cat /tmp/claude-review.md
 

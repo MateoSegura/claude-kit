@@ -20,9 +20,9 @@ jobs:
         id: claude
         run: |
           unset CLAUDECODE
-          claude --print \
-            --plugin-dir plugins/system-maker \
-            "Run /system-maker:validate on ALL plugins in plugins/. Read every plugin directory. Output structured markdown with PASS/FAIL per plugin, then an aggregate cross-coherence assessment: are companion relationships appropriate? Are there contradictory conventions across plugins in the same team (e.g. zephyr-engineer vs zephyr-tester)?" \
+          PROMPT="Run /system-maker:validate on ALL plugins in plugins/. Read every plugin directory. Output structured markdown with PASS/FAIL per plugin, then an aggregate cross-coherence assessment: are companion relationships appropriate? Are there contradictory conventions across plugins in the same team (e.g. zephyr-engineer vs zephyr-tester)?"
+          echo "$PROMPT" | claude -p \
+            --plugin-dir "${GITHUB_WORKSPACE}/plugins/system-maker" \
             > /tmp/weekly-claude.md 2>&1
           cat /tmp/weekly-claude.md
         continue-on-error: true
