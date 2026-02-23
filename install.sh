@@ -40,26 +40,26 @@ fi
 _install_jq() {
   if command -v apt-get &>/dev/null; then
     info "Installing jq via apt ..."
-    sudo apt-get update -qq && sudo apt-get install -y -qq jq
+    sudo apt-get update -qq >/dev/null && sudo apt-get install -y -qq jq >/dev/null
   elif command -v brew &>/dev/null; then
     info "Installing jq via brew ..."
-    brew install jq
+    brew install jq >/dev/null
   elif command -v dnf &>/dev/null; then
     info "Installing jq via dnf ..."
-    sudo dnf install -y -q jq
+    sudo dnf install -y -q jq >/dev/null
   elif command -v pacman &>/dev/null; then
     info "Installing jq via pacman ..."
-    sudo pacman -S --noconfirm jq
+    sudo pacman -S --noconfirm jq >/dev/null
   elif command -v apk &>/dev/null; then
     info "Installing jq via apk ..."
-    sudo apk add -q jq
+    sudo apk add -q jq >/dev/null
   else
     return 1
   fi
 }
 
 if ! command -v jq &>/dev/null; then
-  if _install_jq 2>/dev/null; then
+  if _install_jq; then
     ok "jq installed"
   else
     warn "Could not auto-install jq. Plugin hooks will run in degraded mode."
