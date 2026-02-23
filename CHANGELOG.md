@@ -5,6 +5,27 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.1.0] - 2026-02-23
+
+### Added
+- CLI flag passthrough: all unknown flags (--resume, --continue,
+  --verbose, --print, --output-format, etc.) are now forwarded to
+  `claude` instead of being rejected with "Unknown flag"
+- `.devcontainer/.env.example` for GITHUB_TOKEN and IS_SANDBOX config
+- `ctl.sh create/start` auto-authenticate gh and ghcr.io from .env
+
+### Changed
+- Devcontainer runs as root (removed `dev` user); IS_SANDBOX=1 baked
+  in so Claude Code runs without restrictions
+- Devcontainer uses native Claude Code installer instead of npm
+- Tool versions: Go 1.26.0, yq 4.52.4, hyperfine 1.20.0, Node.js 24
+- `ctl.sh push` uses GITHUB_TOKEN from .env instead of gh auth token
+- Updated help text with passthrough examples and claude-kit flag docs
+
+### Fixed
+- Dockerfile GID 1000 collision on self-hosted runner (--force flag)
+- publish-devcontainer workflow starts Docker daemon before build
+
 ## [0.0.18] - 2026-02-23
 
 ### Fixed
