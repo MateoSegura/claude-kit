@@ -166,6 +166,12 @@ def cmd_run(args: list) -> None:
         claude_args.append("--dangerously-skip-permissions")
         print("Warning: Running with --dangerously-skip-permissions")
 
+    import shutil
+    if not shutil.which("claude"):
+        print("Error: Claude Code CLI ('claude') not found.")
+        print("Install it first: https://claude.ai/code")
+        sys.exit(1)
+
     if len(all_plugins) > 1:
         print(f"Loading: {', '.join(all_plugins)}")
 
