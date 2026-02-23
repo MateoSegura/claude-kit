@@ -362,8 +362,15 @@ def cmd_update() -> None:
     p(f"  {col(C.CY, 'Pulling from origin...')}")
     p()
 
+    # Fetch tags with --force first so stale local tags (e.g. after an
+    # upstream history rewrite) never block the subsequent pull.
+    subprocess.run(
+        ["git", "-C", str(INSTALL_DIR), "fetch", "--tags", "--force", "-q", "origin"],
+        capture_output=True, text=True
+    )
+
     result = subprocess.run(
-        ["git", "-C", str(INSTALL_DIR), "pull", "--ff-only", "--tags"],
+        ["git", "-C", str(INSTALL_DIR), "pull", "--ff-only"],
         capture_output=True, text=True
     )
 
