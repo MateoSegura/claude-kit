@@ -2,8 +2,7 @@
   "name": "claude-kit",
   "image": "ghcr.io/mateosegura/dev-env-claude-kit:latest",
 
-  // Privileged for Docker-in-Docker; root user throughout
-  "runArgs": ["--privileged", "--init"],
+  "runArgs": ["--init"],
 
   // Pass host env vars into the container (set by ctl.sh from .env)
   "containerEnv": {
@@ -14,6 +13,8 @@
   "mounts": [
     // Inherit host Claude credentials, config, and local plugins
     "source=${localEnv:HOME}/.claude,target=/root/.claude,type=bind,consistency=cached",
+    // Docker-outside-of-Docker: mount host Docker socket
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
     // Persist Go module cache across rebuilds
     "source=claude-kit-gomodcache,target=/go/pkg/mod,type=volume"
   ],
@@ -21,8 +22,8 @@
   // One-time setup: link claude-kit CLI into PATH
   "postCreateCommand": "ln -sf /workspace/claude-kit /usr/local/bin/claude-kit && echo '[devcontainer] claude-kit linked'",
 
-  // Every start: Docker daemon + gh/ghcr auth from GITHUB_TOKEN
-  "postStartCommand": "dockerd < /dev/null > /tmp/dockerd.log 2>&1 & timeout 30 sh -c 'until docker info > /dev/null 2>&1; do sleep 1; done' && echo \"$GITHUB_TOKEN\" | gh auth login --with-token 2>/dev/null && echo \"$GITHUB_TOKEN\" | docker login ghcr.io -u MateoSegura --password-stdin 2>/dev/null && echo '[devcontainer] Ready — Docker, gh, ghcr.io authenticated'",
+  // Every start: gh/ghcr auth from GITHUB_TOKEN (Docker uses host socket)
+  "postStartCommand": "echo \"$GITHUB_TOKEN\" | gh auth login --with-token 2>/dev/null && echo \"$GITHUB_TOKEN\" | docker login ghcr.io -u MateoSegura --password-stdin 2>/dev/null && echo '[devcontainer] Ready — gh and ghcr.io authenticated'",
 
   "workspaceFolder": "/workspace",
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
