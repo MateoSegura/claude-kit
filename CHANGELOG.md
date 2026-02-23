@@ -5,6 +5,15 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.0.5] - 2026-02-23
+
+### Fixed
+- `claude-kit version` now shows the nearest git tag (e.g. `v0.0.4`) instead of a raw commit hash when HEAD is not exactly on a tagged commit
+- `claude-kit update` now shows the version tag after updating instead of the short commit hash
+- `claude-kit update` "What's new" section now skips `[Unreleased]` and shows the latest versioned release entry instead of `vUnreleased`
+- `install.sh` version display applies the same tag fallback fix
+- `git pull` in update now passes `--tags` to ensure new tags are fetched alongside commits
+
 ## [0.0.4] - 2026-02-23
 
 ### Chore
