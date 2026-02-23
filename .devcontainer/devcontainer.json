@@ -2,25 +2,28 @@
   "name": "claude-kit",
   "image": "ghcr.io/mateosegura/dev-env-claude-kit:latest",
 
-  // Run with elevated privileges so Docker-in-Docker works
+  // Privileged for Docker-in-Docker; root user throughout
   "runArgs": ["--privileged", "--init"],
+
+  // Pass host env vars into the container (set by ctl.sh from .env)
+  "containerEnv": {
+    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}",
+    "IS_SANDBOX": "${localEnv:IS_SANDBOX}"
+  },
 
   "mounts": [
     // Inherit host Claude credentials, config, and local plugins
-    "source=${localEnv:HOME}/.claude,target=/home/dev/.claude,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.claude,target=/root/.claude,type=bind,consistency=cached",
     // Persist Go module cache across rebuilds
-    "source=claude-kit-gomodcache,target=/go/pkg/mod,type=volume",
-    // Persist bash history
-    "source=claude-kit-bashhistory,target=/commandhistory,type=volume"
+    "source=claude-kit-gomodcache,target=/go/pkg/mod,type=volume"
   ],
 
-  // Start Docker daemon for DinD on every container start
-  "postStartCommand": "sudo nohup dockerd < /dev/null > /tmp/dockerd.log 2>&1 & timeout 30 sh -c 'until docker info > /dev/null 2>&1; do sleep 1; done' && echo '[devcontainer] Docker ready'",
+  // One-time setup: link claude-kit CLI into PATH
+  "postCreateCommand": "ln -sf /workspace/claude-kit /usr/local/bin/claude-kit && echo '[devcontainer] claude-kit linked'",
 
-  // Install claude-kit CLI from the workspace into PATH
-  "postCreateCommand": "sudo ln -sf /workspace/claude-kit /usr/local/bin/claude-kit && echo '[devcontainer] claude-kit linked'",
+  // Every start: Docker daemon + gh/ghcr auth from GITHUB_TOKEN
+  "postStartCommand": "dockerd < /dev/null > /tmp/dockerd.log 2>&1 & timeout 30 sh -c 'until docker info > /dev/null 2>&1; do sleep 1; done' && echo \"$GITHUB_TOKEN\" | gh auth login --with-token 2>/dev/null && echo \"$GITHUB_TOKEN\" | docker login ghcr.io -u MateoSegura --password-stdin 2>/dev/null && echo '[devcontainer] Ready — Docker, gh, ghcr.io authenticated'",
 
-  "remoteUser": "dev",
   "workspaceFolder": "/workspace",
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
 
@@ -40,20 +43,13 @@
         }
       },
       "extensions": [
-        // Python
         "ms-python.python",
         "charliermarsh.ruff",
-        // Go
         "golang.go",
-        // Shell
         "timonwong.shellcheck",
-        // YAML / JSON / TOML
         "redhat.vscode-yaml",
-        // GitHub
         "github.vscode-pull-request-github",
-        // Docker
         "ms-azuretools.vscode-docker",
-        // General
         "eamodio.gitlens",
         "usernamehw.errorlens"
       ]
@@ -61,6 +57,5 @@
   },
 
   "forwardPorts": [],
-
   "features": {}
 }
