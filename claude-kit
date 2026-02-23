@@ -155,6 +155,11 @@ def cmd_run(args: list) -> None:
     kit_names = []
     model = "opus"
     skip_permissions = False
+    passthrough = []  # flags/args forwarded to claude as-is
+
+    # Flags we consume ourselves; everything else goes to claude.
+    OUR_KV_FLAGS = {"--kit", "-k", "--model", "-m"}
+    OUR_BOOL_FLAGS = {"--dangerously-skip-permissions", "--yolo", "-y"}
 
     i = 0
     while i < len(args):
@@ -172,11 +177,15 @@ def cmd_run(args: list) -> None:
         elif a in ("--dangerously-skip-permissions", "--yolo", "-y"):
             skip_permissions = True
         elif a.startswith("-"):
-            print(f"Unknown flag: {a}")
-            print("Run 'claude-kit help' for usage.")
-            sys.exit(1)
+            # Unknown flag → pass through to claude
+            passthrough.append(a)
         else:
-            kit_names.append(a)
+            # Positional arg: if we haven't seen any passthrough flags yet
+            # treat as kit name; otherwise it's a value for the previous flag.
+            if passthrough and not passthrough[-1].startswith("--no"):
+                passthrough.append(a)
+            else:
+                kit_names.append(a)
         i += 1
 
     if not kit_names:
@@ -205,6 +214,12 @@ def cmd_run(args: list) -> None:
         claude_args.extend(["--plugin-dir", str(pdir)])
     claude_args.extend(["--model", model])
 
+    if skip_permissions:
+        claude_args.append("--dangerously-skip-permissions")
+
+    # Append any flags we don't handle (--resume, --continue, --verbose, etc.)
+    claude_args.extend(passthrough)
+
     import shutil
     if not shutil.which("claude"):
         print("Error: Claude Code CLI ('claude') not found.")
@@ -214,7 +229,6 @@ def cmd_run(args: list) -> None:
     _print_launch_header(all_plugins)
 
     if skip_permissions:
-        claude_args.append("--dangerously-skip-permissions")
         p(f"  {col(C.Y, 'Warning:')} running with --dangerously-skip-permissions")
         p()
 
@@ -816,9 +830,19 @@ def cmd_help() -> None:
 
   {DIM}Launch:{C.N}
     {CY}claude-kit --kit <name>{C.N}
-    {CY}claude-kit --kit <name> --kit core-spec{C.N}   {DIM}combine kits{C.N}
-    {CY}claude-kit --kit <name> --yolo{C.N}               {DIM}skip permission prompts{C.N}
-    {CY}claude-kit --kit <name> --model sonnet{C.N}       {DIM}choose model  (default: opus){C.N}
+    {CY}claude-kit -k <name> -k core-spec{C.N}            {DIM}combine kits{C.N}
+    {CY}claude-kit -k <name> -y{C.N}                       {DIM}skip permission prompts{C.N}
+    {CY}claude-kit -k <name> --model sonnet{C.N}           {DIM}choose model  (default: opus){C.N}
+    {CY}claude-kit -k <name> --resume{C.N}                 {DIM}resume last session{C.N}
+    {CY}claude-kit -k <name> --continue{C.N}               {DIM}continue last conversation{C.N}
+
+  {DIM}All flags not listed below are passed through to claude:{C.N}
+    {CY}--resume, --continue, --print, --verbose, --output-format, ...{C.N}
+
+  {DIM}claude-kit flags:{C.N}
+    {CY}--kit, -k <name>{C.N}       plugin kit to load (repeatable)
+    {CY}--model, -m <model>{C.N}    model to use (default: opus)
+    {CY}-y, --yolo{C.N}             shorthand for --dangerously-skip-permissions
 
   {DIM}Commands:{C.N}
     {CY}claude-kit setup{C.N}      install Claude Code features with backup
@@ -854,14 +878,9 @@ def main() -> None:
 
     if cmd in dispatch:
         dispatch[cmd]()
-    elif cmd in ("--kit", "-k", "--model", "-m",
-                 "--dangerously-skip-permissions", "--yolo", "-y"):
-        cmd_run(args)
-    elif cmd.startswith("-"):
-        print(f"Unknown flag: {cmd}")
-        print("Run 'claude-kit help' for usage.")
-        sys.exit(1)
     else:
+        # Any flag or positional not matching a subcommand goes to cmd_run,
+        # which separates claude-kit flags from claude passthrough flags.
         cmd_run(args)
 
 if __name__ == "__main__":
