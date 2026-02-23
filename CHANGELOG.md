@@ -5,6 +5,12 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.0.2] - 2026-02-23
+
+### Fixed
+- `claude-kit version` now displays the git tag (e.g. `v0.0.1`) instead of a raw commit hash when HEAD is tagged
+- `install.sh` version display likewise shows the tag on install/update
+
 ## [0.0.1] - 2026-02-23
 
 ### Fixed

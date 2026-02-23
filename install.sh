@@ -70,16 +70,21 @@ fi
 
 # ── Clone or update ───────────────────────────────────────────────────────────
 
+_kit_version() {
+  local tag
+  tag=$(git -C "$KIT_HOME" tag --points-at HEAD --sort=-version:refname 2>/dev/null | head -1)
+  if [ -n "$tag" ]; then echo "$tag"; else git -C "$KIT_HOME" rev-parse --short HEAD; fi
+}
+
 if [ -d "$KIT_HOME/.git" ]; then
   info "Updating ..."
+  git -C "$KIT_HOME" fetch --tags -q origin
   git -C "$KIT_HOME" pull --ff-only -q
-  VER=$(git -C "$KIT_HOME" rev-parse --short HEAD)
-  ok "Updated → $VER"
+  ok "Updated → $(_kit_version)"
 else
   info "Installing ..."
   git clone "$REPO_URL" "$KIT_HOME" -q
-  VER=$(git -C "$KIT_HOME" rev-parse --short HEAD)
-  ok "Installed → $VER"
+  ok "Installed → $(_kit_version)"
 fi
 
 chmod +x "$KIT_HOME/claude-kit"

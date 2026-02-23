@@ -366,8 +366,22 @@ def cmd_update() -> None:
 
 # ── cmd_version ───────────────────────────────────────────────────────────────
 
+def _current_version() -> str:
+    """Return the git tag pointing at HEAD, or the short commit hash."""
+    tag = _git(["tag", "--points-at", "HEAD", "--sort=-version:refname"])
+    if tag:
+        return tag.splitlines()[0]
+    return _git(["rev-parse", "--short", "HEAD"]) or "unknown"
+
+def _remote_version() -> str:
+    """Return the latest semver tag on origin, or the short hash of origin/main."""
+    tag = _git(["tag", "--sort=-version:refname", "--list", "v*"])
+    if tag:
+        return tag.splitlines()[0]
+    return _git(["rev-parse", "--short", "origin/main"]) or "?"
+
 def cmd_version() -> None:
-    local_ver = _git(["rev-parse", "--short", "HEAD"]) or "unknown"
+    local_ver = _current_version()
 
     p()
     p(f"  {col(C.W, 'claude-kit')}  {col(C.CY, local_ver)}")
@@ -384,7 +398,7 @@ def cmd_version() -> None:
         p()
         return
 
-    remote_ver = _git(["rev-parse", "--short", "origin/main"]) or "?"
+    remote_ver = _remote_version()
 
     if local_ver == remote_ver:
         p(f"  {col(C.G, '✓')} Up to date  {col(C.DIM, f'({local_ver})')}")
