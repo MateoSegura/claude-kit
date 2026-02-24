@@ -5,6 +5,12 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.2.4] - 2026-02-24
+
+### Fixed
+- CLI: debugger plugins now group with their team in the launch display instead
+  of appearing as standalone entries; added `"debugger"` to `_ROLE_SUFFIXES`
+
 ## [0.2.3] - 2026-02-24
 
 ### Changed
