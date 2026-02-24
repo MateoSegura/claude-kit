@@ -4,6 +4,8 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-02-24
+
 ### Changed
 - **Grader report output convention** — all 3 grader plugins now write reports
   to `reports/<YYYY-MM-DD_HH-MM-SS>/` (was `grade-reports/`) and zip all files
