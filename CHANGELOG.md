@@ -4,6 +4,8 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-02-24
+
 ### Fixed
 - **Engineer hook scripts**: `grep -qE '--sysbuild'` treated `--sysbuild` as a
   grep option flag instead of a search pattern, blocking all `west build`
