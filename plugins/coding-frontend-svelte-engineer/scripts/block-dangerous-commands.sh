@@ -38,7 +38,7 @@ fi
 
 # Block npm publish without --dry-run (accidental package publishing)
 if echo "$COMMAND" | grep -qE '(npm|pnpm)\s+publish'; then
-  if ! echo "$COMMAND" | grep -qE '--dry-run'; then
+  if ! echo "$COMMAND" | grep -qE -- '--dry-run'; then
     echo "BLOCKED: npm/pnpm publish without --dry-run is not allowed. Run with --dry-run first to verify the package contents, then publish manually after review." >&2
     exit 2
   fi
