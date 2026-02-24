@@ -4,6 +4,14 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Engineer hook scripts**: `grep -qE '--sysbuild'` treated `--sysbuild` as a
+  grep option flag instead of a search pattern, blocking all `west build`
+  commands. Added `--` end-of-options marker to all grep calls matching
+  double-dash patterns
+  - `coding-embedded-zephyr-engineer`: 0.0.5 → 0.0.6 (`enforce-sysbuild.sh`)
+  - `coding-frontend-svelte-engineer`: 0.0.5 → 0.0.6 (`block-dangerous-commands.sh`)
+
 ## [0.3.4] - 2026-02-24
 
 ### Changed
