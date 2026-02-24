@@ -1,5 +1,5 @@
 {
   "name": "coding-frontend-svelte-debugger",
-  "description": "Svelte 5 / SvelteKit frontend debugger — diagnoses compiler errors, reactivity bugs, SSR failures, styling issues, accessibility violations, Tauri hardware integration failures, build errors, and test failure root causes with structured evidence-based diagnostic reports",
-  "version": "1.0.0"
+  "description": "Svelte 5 / SvelteKit frontend debugger \u2014 diagnoses compiler errors, reactivity bugs, SSR failures, styling issues, accessibility violations, Tauri hardware integration failures, build errors, and test failure root causes with structured evidence-based diagnostic reports",
+  "version": "0.0.1"
 }
