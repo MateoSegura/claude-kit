@@ -4,6 +4,14 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **coding-frontend-svelte-debugger** (0.0.4 → 0.0.5): fix 7 agent files missing
+  `coding-frontend-svelte-knowledge:` companion prefix on skill references — all
+  companion skills (svelte5-runes, sveltekit-patterns, component-patterns,
+  css-architecture, accessibility, desktop-targets, hardware-abstraction,
+  usb-serial-hid, ble-communication, lan-discovery, audio-midi-devices) now
+  resolve correctly at runtime
+
 ### Changed
 - **Deterministic hooks for teams** — complete architectural overhaul of hook
   strategy across all 15 team plugins. Removed ALL prompt-type hooks from

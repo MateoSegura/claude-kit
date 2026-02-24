@@ -3,7 +3,7 @@ name: compiler-ts-analyst
 model: opus
 description: "Diagnoses Svelte compiler errors and TypeScript type errors. Analyzes svelte-check output, tsc diagnostics, Vite transform errors, and Svelte 5 runes compilation failures. Identifies root cause in .svelte, .ts, or .svelte.ts files."
 tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
-skills: identity, design-patterns, diagnostic-heuristics, output-format, svelte5-runes, sveltekit-patterns
+skills: identity, design-patterns, diagnostic-heuristics, output-format, coding-frontend-svelte-knowledge:svelte5-runes, coding-frontend-svelte-knowledge:sveltekit-patterns
 permissionMode: plan
 color: "#FF6347"
 ---
