@@ -1,0 +1,64 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-environment.sh",
+            "description": "Verify diagnostic tools are available (node, npx, svelte-check, tsc)"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-write-edit.sh",
+            "description": "Unconditionally block all Write and Edit tool invocations — read-only debugger"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-dangerous-commands.sh",
+            "description": "Block destructive shell commands, allow read-only diagnostic commands"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "A diagnostic command was just run. Context: $ARGUMENTS. Evaluate whether the output contains actionable diagnostic information or if the command failed due to environment misconfiguration (missing tools, wrong Node version, missing dependencies). Respond {\"ok\": true} if usable, or {\"ok\": false, \"reason\": \"Environment issue: <problem>\"} if environment failure.",
+            "model": "haiku",
+            "description": "Detect environment issues vs application bugs in diagnostic command output"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "The debugger is about to stop. Review the diagnostic session: $ARGUMENTS. Verify: 1) Root cause identified (or explicitly marked Low confidence with evidence gaps), 2) Fix recipe provided with concrete steps, 3) Verification procedure included, 4) Confidence level (High/Medium/Low) explicitly stated. Respond {\"ok\": true} if complete, or {\"ok\": false, \"reason\": \"Missing: <element>\"} if incomplete.",
+            "model": "haiku",
+            "description": "Ensure every diagnostic session produces a complete report"
+          }
+        ]
+      }
+    ]
+  }
+}

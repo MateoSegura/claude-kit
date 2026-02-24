@@ -1,0 +1,59 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-debug-environment.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-write-tools.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-dangerous-commands.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Review debug tool command output from $ARGUMENTS. Check: (1) GDB output has meaningful data (thread list, backtrace, registers), not just connection errors. (2) addr2line/objdump resolved to actual source (not ??:0). (3) Probe commands connected successfully. (4) Flag Error/FAILED/Connection refused. (5) Flag empty output. Respond {\"ok\": true} if usable data, {\"ok\": false, \"reason\": \"...\"} if tool failure.",
+            "model": "haiku"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Verify debug session completeness from $ARGUMENTS. ALL required: (1) TRIAGE: failure domain classified with confidence. (2) INVESTIGATION: at least one specialist invoked. (3) EVIDENCE: every conclusion traces to artifact (register value, log line, memory address, config entry). (4) ROOT CAUSE: stated with confidence, OR ranked candidates listed. (5) FIX REC: actionable recommendation given. (6) NO MODIFICATIONS: no Write/Edit/flash operations. Respond {\"ok\": true} if complete, {\"ok\": false, \"reason\": \"Missing: ...\"}  if incomplete.",
+            "model": "sonnet"
+          }
+        ]
+      }
+    ]
+  }
+}

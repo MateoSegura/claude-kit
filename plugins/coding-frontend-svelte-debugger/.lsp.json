@@ -1,0 +1,19 @@
+{
+  "typescript-language-server": {
+    "command": "typescript-language-server",
+    "args": ["--stdio"],
+    "extensionToLanguage": {
+      ".ts": "typescript",
+      ".tsx": "typescriptreact",
+      ".js": "javascript",
+      ".jsx": "javascriptreact"
+    }
+  },
+  "svelteserver": {
+    "command": "svelteserver",
+    "args": ["--stdio"],
+    "extensionToLanguage": {
+      ".svelte": "svelte"
+    }
+  }
+}
