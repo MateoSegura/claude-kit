@@ -1,6 +1,6 @@
 # coding-cloud-python-knowledge
 
-> **Role:** Knowledge companion · **Version:** 0.0.1
+> **Role:** Knowledge companion · **Version:** 0.0.2
 
 Shared domain knowledge for modern Python cloud-backend development — asyncio, FastAPI, gRPC, Docker, Kubernetes, distributed systems patterns, and design patterns.
 

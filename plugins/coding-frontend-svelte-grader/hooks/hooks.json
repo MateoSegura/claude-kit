@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Validate this grading report output: $ARGUMENTS. Check that: 1) All dimension scores are in the range 0-100 or explicitly marked N/A with justification, 2) Each finding includes a code example as evidence and a fix suggestion, 3) Severity levels are one of: critical, major, minor, info, 4) No production code was written directly into submission source files — fix suggestions appear only as examples inside the report content. Respond {\"ok\": true} or {\"ok\": false, \"reason\": \"...\"}.",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a GRADER (running dimension reviews, computing scores, generating grade reports). If you are NOT in a grading role (e.g. you are an engineer, tester, or debugger), respond {\"ok\": true} immediately — this validation only applies to grading sessions. If you ARE the grader, validate the report output: (1) All dimension scores are in the range 0-100 or explicitly marked N/A with justification, (2) Each finding includes a code example as evidence and a fix suggestion, (3) Severity levels are one of: critical, major, minor, info, (4) No production code was written directly into submission source files. Respond {\"ok\": true} or {\"ok\": false, \"reason\": \"...\"}.",
             "model": "haiku"
           }
         ]
