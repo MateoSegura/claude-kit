@@ -5,6 +5,26 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.2.5] - 2026-02-24
+
+### Fixed
+- Debugger hook collision when loading full teams: all three debugger plugins
+  (`coding-embedded-zephyr-debugger`, `coding-frontend-svelte-debugger`,
+  `coding-cloud-python-debugger`) converted Write|Edit PreToolUse hooks from
+  hard-block `command` (exit 2) to soft `prompt` reminders — prevents debugger
+  hooks from blocking legitimate writes by grader/engineer plugins loaded in
+  the same session
+- `coding-cloud-python-grader` write hook was unconditionally blocking ALL
+  writes (including scorecard/report output); replaced with
+  `restrict-file-writes.sh` that allows report formats (.md, .json, .html,
+  .txt) matching the pattern used by the other two graders
+
+### Plugin versions
+- `coding-embedded-zephyr-debugger`: 0.0.1 → 0.0.2
+- `coding-frontend-svelte-debugger`: 0.0.1 → 0.0.2
+- `coding-cloud-python-debugger`: 0.0.1 → 0.0.2
+- `coding-cloud-python-grader`: 0.0.1 → 0.0.2
+
 ## [0.2.4] - 2026-02-24
 
 ### Fixed
