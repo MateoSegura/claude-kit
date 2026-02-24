@@ -22,13 +22,23 @@ You will receive:
 </input>
 
 <process>
-### Step 1: Validate inputs
+### Step 1: Validate inputs and gather context
 Confirm the scorecard JSON is well-formed and contains all expected fields. Confirm the output directory exists (create it if needed using Bash).
+
+Gather git context from the submission directory:
+```bash
+cd <submission_path> && \
+  echo "branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'N/A')" && \
+  echo "commit=$(git rev-parse --short HEAD 2>/dev/null || echo 'N/A')" && \
+  echo "dirty=$(git diff --quiet 2>/dev/null && echo 'clean' || echo 'dirty')" && \
+  echo "remote=$(git remote get-url origin 2>/dev/null || echo 'N/A')"
+```
+Include this git metadata in all three output formats.
 
 ### Step 2: Generate Markdown report
 Write `<output_dir>/<submission_id>-report.md` with the following structure:
 
-1. **Header**: Submission ID, date, overall grade
+1. **Header**: Submission ID, date, overall grade, git context (branch, commit, clean/dirty)
 2. **Score summary table**: All 9 dimensions with scores and weights
 3. **Per-dimension sections**: For each dimension, include:
    - Score and letter grade
@@ -42,6 +52,7 @@ Write `<output_dir>/<submission_id>-report.json` with the complete scorecard plu
 - All dimension scores and weights
 - All findings from all dimensions
 - Grading metadata (timestamp, tool versions, rubric version)
+- Git context (branch, commit, dirty, remote)
 
 ### Step 4: Generate HTML report
 Write `<output_dir>/<submission_id>-report.html` with:
@@ -55,10 +66,17 @@ If mode is "comparison", additionally generate:
 - `<output_dir>/comparison-report.md` with side-by-side tables
 - Delta column showing which submission wins per dimension
 - Overall winner declaration with margin
+
+### Step 6: Create zip archive
+Package all report files into a single archive for easy transfer:
+```bash
+cd <output_dir> && zip contents.zip *.md *.json *.html 2>/dev/null
+```
+This creates `<output_dir>/contents.zip` containing all generated report files.
 </process>
 
 <output_format>
-Write three files to the output directory. Return confirmation JSON:
+Write report files to the output directory, then zip them. Return confirmation JSON:
 
 ```json
 {
@@ -79,6 +97,7 @@ Write three files to the output directory. Return confirmation JSON:
       "size_bytes": 12340
     }
   ],
+  "zip_path": "/absolute/path/to/output/contents.zip",
   "submission_id": "sub001",
   "aggregate_score": 74.3,
   "letter_grade": "C"
@@ -88,11 +107,18 @@ Write three files to the output directory. Return confirmation JSON:
 ### Markdown report example (excerpt):
 
 ```markdown
-# Grading Report: sub001
+# Zephyr RTOS — Code Quality Report
 
-**Date**: 2026-02-16
+| | |
+|---|---|
+| **Submission** | `/home/user/ble-peripheral` |
+| **Board** | nrf52840dk_nrf52840 |
+| **Date** | 2026-02-24 |
+| **Branch** | `feat/ble-service` |
+| **Commit** | `a1b2c3d` |
+| **Working Tree** | clean |
+
 **Overall Score**: 74.3 / 100 (C)
-**Confidence**: High
 
 ## Score Summary
 
