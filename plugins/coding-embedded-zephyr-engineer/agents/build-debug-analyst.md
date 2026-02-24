@@ -3,7 +3,7 @@ name: build-debug-analyst
 model: opus
 description: "Expert diagnostician for Zephyr build failures, runtime crashes, hard faults, flash/debug issues, and hardware interaction problems. Use when the user reports errors, test failures, unexpected behavior, crash dumps, or needs help with west build/flash/debug commands."
 tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
-skills: identity, zephyr-kernel, design-patterns, devicetree-kconfig, security-boot, build-system, nordic-hardware, stm32-hardware, esp32-hardware, nxp-hardware
+skills: identity, zephyr-kernel, design-patterns, devicetree-kconfig, security-boot, build-system, hardware-nordic, hardware-stm32, hardware-espressif, hardware-nxp
 permissionMode: plan
 color: "#FF6347"
 ---
@@ -52,7 +52,7 @@ Follow the dependency chain from symptom to root cause. Common chains:
 - Stack overflow -> thread stack too small -> recursive call or large local buffer -> measure with CONFIG_THREAD_ANALYZER
 
 ### Step 4: Cross-reference platform knowledge
-Use the appropriate hardware skill (nordic-hardware, stm32-hardware, esp32-hardware, nxp-hardware) to check for:
+Use the appropriate hardware skill (hardware-nordic, hardware-stm32, hardware-espressif, hardware-nxp) to check for:
 - SoC-specific errata and known issues
 - Platform-specific Kconfig or DTS requirements
 - Clock configuration requirements

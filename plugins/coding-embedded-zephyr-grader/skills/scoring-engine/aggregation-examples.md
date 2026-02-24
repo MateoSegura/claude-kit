@@ -132,41 +132,38 @@ $ arm-zephyr-eabi-size build/zephyr/zephyr.elf
    text    data     bss     dec     hex filename
   98304    2048   10240  110592   1b000 build/zephyr/zephyr.elf
 
-Flash (text + data): 98304 + 2048 = 100,352 bytes (~98 KB)
-RAM (data + bss): 2048 + 10240 = 12,288 bytes (12 KB)
+actual_flash = text + data = 98304 + 2048 = 100,352 bytes
+actual_ram   = data + bss  = 2048 + 10240 = 12,288 bytes
 ```
 
-**Baseline (nRF52840 BLE peripheral):**
+**Board capacity (from build/zephyr/.config):**
 ```
-Flash baseline: 131,072 bytes (128 KB)
-RAM baseline: 16,384 bytes (16 KB)
+$ grep -E "CONFIG_(FLASH|SRAM)_SIZE" build/zephyr/.config
+CONFIG_FLASH_SIZE=1024
+CONFIG_SRAM_SIZE=256
+
+flash_capacity = 1024 × 1024 = 1,048,576 bytes (1 MB)
+ram_capacity   = 256  × 1024 =   262,144 bytes (256 KB)
 ```
 
-**Efficiency ratios:**
+**Capacity utilization percentages:**
 ```
-flash_ratio = 100352 / 131072 = 0.766
-ram_ratio = 12288 / 16384 = 0.75
+flash_pct = 100352 / 1048576 * 100 = 9.57%
+ram_pct   = 12288  / 262144  * 100 = 4.69%
 ```
 
 **Scores:**
 ```
-flash_score = 100 - ((0.766 - 0.5) × 200)
-            = 100 - (0.266 × 200)
-            = 100 - 53.2
-            = 46.8
+flash_score = max(0.0, 100.0 - 9.57)  = 90.43
+ram_score   = max(0.0, 100.0 - 4.69)  = 95.31
 
-ram_score = 100 - ((0.75 - 0.5) × 200)
-          = 100 - (0.25 × 200)
-          = 100 - 50
-          = 50
-
-combined = (46.8 × 0.6) + (50 × 0.4)
-         = 28.08 + 20
-         = 48.08
-         ≈ 48
+resource_score = 0.5 * 90.43 + 0.5 * 95.31
+               = 45.22 + 47.66
+               = 92.88
+               ≈ 93
 ```
 
-**Result:** Resource Efficiency = 48 / 100
+**Result:** Resource Efficiency = 93 / 100
 
 ---
 
@@ -320,7 +317,7 @@ documentation of design decisions and data flow.
 Compilability:       92.5 × 0.20 = 18.50
 Static Analysis:        0 × 0.15 =  0.00
 Zephyr Correctness:    50 × 0.15 =  7.50
-Resource Efficiency:   48 × 0.15 =  7.20
+Resource Efficiency:   93 × 0.15 = 13.95
 Architecture:          70 × 0.10 =  7.00
 Code Metrics:          59 × 0.10 =  5.90
 Style:                  0 × 0.05 =  0.00
@@ -330,15 +327,15 @@ Documentation:         60 × 0.05 =  3.00
 
 **Aggregate:**
 ```
-Total = 18.50 + 0.00 + 7.50 + 7.20 + 7.00 + 5.90 + 0.00 + 4.25 + 3.00
-      = 53.35
-      ≈ 53 / 100
+Total = 18.50 + 0.00 + 7.50 + 13.95 + 7.00 + 5.90 + 0.00 + 4.25 + 3.00
+      = 60.10
+      ≈ 60 / 100
 ```
 
-**Final Grade: 53 (F)**
+**Final Grade: 60 (D)**
 
 **Summary:**
-The submission demonstrates functional BLE peripheral implementation with good completeness, but suffers from critical code quality issues (static analysis errors, style violations) that prevent it from achieving a passing grade. The student should focus on addressing memory safety issues and coding style compliance.
+The submission demonstrates functional BLE peripheral implementation with good completeness and efficient use of board resources, but suffers from critical code quality issues (static analysis errors, style violations) that prevent it from achieving a higher grade. The student should focus on addressing memory safety issues and coding style compliance.
 
 ---
 

@@ -59,11 +59,11 @@ All dimensions use a 0-100 point scale with the following interpretation:
 - **0**: Critical anti-patterns (e.g., sleeping in ISR)
 
 ### Resource Efficiency (15%)
-- **100**: <50% of reference baseline
-- **75**: 50-75% of reference baseline
-- **50**: 75-100% of reference baseline
-- **25**: 100-150% of reference baseline
-- **0**: >150% of reference baseline
+- **100**: <10% of board capacity used
+- **75**: 10-25% of board capacity used
+- **50**: 25-50% of board capacity used
+- **25**: 50-75% of board capacity used
+- **0**: ≥75% of board capacity used (or capacity undetermined → N/A)
 
 ### Architecture (10%)
 - **100**: Clean layering, excellent separation of concerns

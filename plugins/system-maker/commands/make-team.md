@@ -613,6 +613,9 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
       - hooks.json uses event-based keys (PreToolUse, PostToolUse, Stop) — NOT flat array
       - Do NOT create CLAUDE.md — use skills for all plugin context
       - Every agent MUST include 'identity' in its skills: list
+      - SESSION-AWARENESS: This is a TEAM build — all plugins are loaded simultaneously.
+        Role-specific restriction hooks MUST use prompt type with session-awareness preambles.
+        Shell scripts cannot determine the active role. All Stop hooks need session-awareness.
 
       Step 1: Spawn 4 writers in PARALLEL (single response, 4 Task calls):
 
@@ -635,6 +638,13 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
       Writer 4 — hook-writer:
       Task(subagent_type: 'hook-writer', prompt: 'Write hooks/hooks.json and scripts/.
         Use event-based keys. Use ALL 3 hook types.
+        CRITICAL — SESSION-AWARENESS: This plugin is part of a team build. ALL team plugins
+        hooks fire for EVERY event regardless of which role is active. You MUST:
+        1. Classify each hook as universal-safety or role-specific-restriction
+        2. Universal safety hooks (block things NO role should do) → command type, no guard
+        3. Role-specific hooks (restrict based on active role) → prompt type with session-awareness preamble
+        4. ALL Stop hooks → include session-awareness (check if this roles work was performed)
+        5. Shell scripts CANNOT determine the active role — never use command hooks for role-specific blocking
         AGENT_NAME: <name> BUILD_DIR: <dir> APPROVED_ARCH: <arch>')
 
       Step 2: Wait for all 4 writers. Retry any single failure once.

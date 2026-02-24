@@ -94,6 +94,8 @@ For EACH skill's SKILL.md file, check ALL of these:
 | H12 | All `agent`-type hooks have a `"timeout"` field | WARNING |
 | H13 | All script files referenced by hooks have a shebang line (`#!/bin/bash` or `#!/usr/bin/env bash`) | WARNING |
 | H14 | PreToolUse command hooks use `exit 2` for blocking (grep the script source) | WARNING |
+| H15 | Role-specific blocking hooks (grader/debugger/tester restrictions) use `prompt` type with session-awareness preamble, NOT `command` type. A role-specific hook is one that restricts operations based on the active role (e.g., "graders must not write source files", "debuggers are read-only"). Check the prompt text for a "FIRST: Determine if you are currently operating as a [ROLE]" guard. | CRITICAL |
+| H16 | Stop hooks in team plugins (plugins with companions or part of a role set) include session-awareness — the prompt checks whether this role's work was actually performed before enforcing completion requirements. Look for "If NO [role] work was performed" or equivalent guard. | WARNING |
 
 ## Category 7: Cross-Reference Integrity
 

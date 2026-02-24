@@ -18,8 +18,9 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "BLOCKED: You are a debugger agent — strictly read-only. Do not write or edit any files. Investigate and diagnose only. Use the engineer plugin to apply fixes.",
-            "description": "Soft reminder that debugger agents must not write or edit files"
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a DEBUGGER (investigating bugs, analyzing errors, running diagnostic commands). If you are NOT in a debugging role (e.g. you are an engineer, tester, or grader), respond {\"ok\": true} immediately — this restriction only applies to debugging sessions. If you ARE the debugger, you must NOT write or edit any files. Debugger agents are strictly read-only — investigate and diagnose only. Respond {\"ok\": false, \"reason\": \"BLOCKED: Debugger agents are read-only. Use the engineer plugin to apply fixes.\"}.",
+            "model": "haiku",
+            "description": "Block debugger writes — session-aware to avoid blocking other roles"
           }
         ]
       },
@@ -27,9 +28,9 @@
         "matcher": "Bash",
         "hooks": [
           {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-dangerous-commands.sh",
-            "description": "Block destructive shell commands, allow read-only diagnostic commands"
+            "type": "prompt",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a DEBUGGER (investigating bugs, analyzing errors, running diagnostic commands). If you are NOT in a debugging role (e.g. you are an engineer, tester, or grader), respond {\"ok\": true} immediately — this restriction only applies to debugging sessions. If you ARE the debugger, check: debuggers must ONLY run read-only diagnostic commands. BLOCK: rm/delete operations, git push/commit/reset --hard/clean -f, npm/pnpm/yarn install or publish, sed -i or in-place file editing, shell output redirection to source files, dd/mkfs/shred. ALLOW: cat, head, grep, find, ls, git log/diff/status/show, npx svelte-check, npx tsc --noEmit, node --inspect, chrome-devtools URLs. Respond {\"ok\": true} if the command is safe for a debugger, or {\"ok\": false, \"reason\": \"BLOCKED: Debuggers must only run read-only diagnostic commands\"} if blocked.",
+            "model": "haiku"
           }
         ]
       }
@@ -40,7 +41,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "A diagnostic command was just run. Context: $ARGUMENTS. Evaluate whether the output contains actionable diagnostic information or if the command failed due to environment misconfiguration (missing tools, wrong Node version, missing dependencies). Respond {\"ok\": true} if usable, or {\"ok\": false, \"reason\": \"Environment issue: <problem>\"} if environment failure.",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a DEBUGGER. If you are NOT in a debugging role, respond {\"ok\": true} immediately. If you ARE the debugger, evaluate whether the output contains actionable diagnostic information or if the command failed due to environment misconfiguration (missing tools, wrong Node version, missing dependencies). Respond {\"ok\": true} if usable, or {\"ok\": false, \"reason\": \"Environment issue: <problem>\"} if environment failure.",
             "model": "haiku",
             "description": "Detect environment issues vs application bugs in diagnostic command output"
           }
@@ -53,7 +54,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "The debugger is about to stop. Review the diagnostic session: $ARGUMENTS. Verify: 1) Root cause identified (or explicitly marked Low confidence with evidence gaps), 2) Fix recipe provided with concrete steps, 3) Verification procedure included, 4) Confidence level (High/Medium/Low) explicitly stated. Respond {\"ok\": true} if complete, or {\"ok\": false, \"reason\": \"Missing: <element>\"} if incomplete.",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if this session involved diagnosing or debugging an issue (investigating bugs, analyzing errors, running diagnostic commands). If NO debugging or diagnostic work was performed in this session (e.g. this was a grading, engineering, or testing session), respond {\"ok\": true} immediately — this hook only applies to debugging sessions. If debugging WAS performed, verify: 1) Root cause identified (or explicitly marked Low confidence with evidence gaps), 2) Fix recipe provided with concrete steps, 3) Verification procedure included, 4) Confidence level (High/Medium/Low) explicitly stated. Respond {\"ok\": true} if complete, or {\"ok\": false, \"reason\": \"Missing: <element>\"} if incomplete.",
             "model": "haiku",
             "description": "Ensure every diagnostic session produces a complete report"
           }

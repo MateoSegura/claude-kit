@@ -5,8 +5,9 @@
         "matcher": "Write|Edit",
         "hooks": [
           {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/restrict-writes.sh"
+            "type": "prompt",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a GRADER (running dimension reviews, computing scores, generating grade reports). If you are NOT in a grading role (e.g. you are an engineer, tester, or debugger), respond {\"ok\": true} immediately — this restriction only applies to grading sessions. If you ARE the grader, check: the file being written must be a report output file (.md, .json, .html). Writing source code files (.svelte, .ts, .tsx, .js, .css, .scss) is FORBIDDEN for the grader — show fix suggestions as code examples inside the report instead. Respond {\"ok\": true} if the write is allowed, or {\"ok\": false, \"reason\": \"BLOCKED: Grader must not write source files\"} if blocked.",
+            "model": "haiku"
           }
         ]
       },
@@ -14,8 +15,9 @@
         "matcher": "Bash",
         "hooks": [
           {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-dangerous-commands.sh"
+            "type": "prompt",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a GRADER (running dimension reviews, computing scores, generating grade reports). If you are NOT in a grading role (e.g. you are an engineer, tester, or debugger), respond {\"ok\": true} immediately — this restriction only applies to grading sessions. If you ARE the grader, check: graders must ONLY run read-only analysis commands. BLOCK: rm/delete operations, git push/commit/write operations, npm/pnpm/yarn install (unless --dry-run), npm/pnpm/yarn publish, sed -i or in-place file editing, shell output redirection to source files (.svelte, .ts, .js, .css), chmod 777. ALLOW: cat, head, grep, find, ls, git log/diff/status/show, npx svelte-check, npx tsc --noEmit, eslint (read-only). Respond {\"ok\": true} if the command is safe for a grader, or {\"ok\": false, \"reason\": \"BLOCKED: Graders must only run read-only commands\"} if blocked.",
+            "model": "haiku"
           }
         ]
       }
@@ -49,7 +51,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Before the grading session ends, verify completeness: 1) All 8 grading dimensions have been scored or explicitly marked N/A with written justification — dimensions are: component quality, state management, styling/CSS, accessibility, performance, TypeScript usage, testing quality, UX patterns, 2) A weighted composite aggregate score has been computed from the dimension scores, 3) A final grading report has been generated with executive summary, dimension scorecards, findings with evidence, and fix suggestions. Context: $ARGUMENTS. Respond {\"ok\": true} or {\"ok\": false, \"reason\": \"Missing: list what is incomplete or absent\"}.",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if this session involved grading a codebase (running dimension reviewers, computing scores, generating grade reports). If NO grading work was performed in this session, respond {\"ok\": true} immediately — this hook only applies to grading sessions. If grading WAS performed, verify: 1) All 8 grading dimensions have been scored or explicitly marked N/A with written justification — dimensions are: component quality, state management, styling/CSS, accessibility, performance, TypeScript usage, testing quality, UX patterns, 2) A weighted composite aggregate score has been computed from the dimension scores, 3) A final grading report has been generated with executive summary, dimension scorecards, findings with evidence, and fix suggestions. Respond {\"ok\": true} or {\"ok\": false, \"reason\": \"Missing: list what is incomplete or absent\"}.",
             "model": "haiku"
           }
         ]

@@ -3,7 +3,7 @@ name: devicetree-specialist
 model: sonnet
 description: "Expert on Zephyr devicetree: writes DTS overlays, binding YAML files, pinctrl configurations, clock trees, flash partition layouts, shield overlays, and multi-instance peripheral setups. Use when the user needs help with devicetree configuration, hardware description, pin assignments, or when build errors involve DTS bindings."
 tools: Read, Glob, Grep, Write, Edit, Bash
-skills: identity, devicetree-kconfig, nordic-hardware, stm32-hardware, esp32-hardware, nxp-hardware
+skills: identity, devicetree-kconfig, hardware-nordic, hardware-stm32, hardware-espressif, hardware-nxp
 permissionMode: acceptEdits
 color: "#DAA520"
 ---

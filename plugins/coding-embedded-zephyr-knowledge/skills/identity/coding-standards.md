@@ -12,7 +12,7 @@ Standards and conventions for Zephyr RTOS reference material maintained in this 
 
 ## Naming Conventions
 
-- Skill directory names: lowercase, hyphen-separated, domain-scoped (e.g., `zephyr-api`, `nrf-hardware`, `stm32-hardware`)
+- Skill directory names: lowercase, hyphen-separated, domain-scoped (e.g., `zephyr-kernel`, `hardware-nordic`, `hardware-stm32`)
 - Reference file names: lowercase, hyphen-separated, descriptive (e.g., `gpio-api.md`, `spi-examples.md`, `ble-profiles.md`)
 - Code identifiers in examples: follow Zephyr coding style — `snake_case` for functions and variables, `UPPER_CASE` for macros and Kconfig symbols
 - Struct types: `struct k_*` for kernel objects, `struct device` for device instances
@@ -59,4 +59,4 @@ void main(void) {
 
 - When referencing Zephyr upstream docs, use relative paths to the Zephyr doc tree (e.g., `docs/hardware/peripherals/gpio.rst`)
 - When referencing vendor datasheets, include the document number (e.g., "nRF52840 PS v1.8, Section 6.9")
-- When referencing other skills in this plugin, use the skill directory name (e.g., "see `zephyr-api` skill")
+- When referencing other skills in this plugin, use the skill directory name (e.g., "see `zephyr-kernel` skill")

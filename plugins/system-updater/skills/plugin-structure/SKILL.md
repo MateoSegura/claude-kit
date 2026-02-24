@@ -302,6 +302,7 @@ The hooks format uses **event names as top-level keys** with arrays of matcher/h
 6. **Hook scripts**: Always use `${CLAUDE_PLUGIN_ROOT}` for script paths, never hardcode
 7. **Model selection**: Use `opus` for complex reasoning, `sonnet` for generation, `haiku` for validation
 8. **Flat hierarchy**: Subagents cannot spawn other subagents — design accordingly
+9. **Session-awareness for team plugins**: When a plugin has companions or is part of a role set (engineer/grader/tester/debugger/knowledge), ALL hooks from ALL loaded plugins fire for every event. Role-specific restriction hooks MUST use `prompt` type with session-awareness preambles — shell scripts cannot determine the active role. All Stop hooks must include session-awareness. See review-checklist.md checks H15 and H16.
 
 ## Common Format Errors
 

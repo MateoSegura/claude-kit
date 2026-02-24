@@ -20,17 +20,21 @@ This document contains detailed, step-by-step workflows for the grading agent's 
 ### Step 2: Compilability Gate
 
 ```
-2.1  For each target board in [qemu_cortex_m3, native_sim]:
-     a. Run: west build -b <board> -d build_<board> <work_dir> -- -DCONF_FILE=prj.conf
-     b. Capture stdout + stderr to build_<board>.log
-     c. Record: board, exit_code, wall_time, warning_count, error_count
-2.2  Score per board: exit_code == 0 ? 100.0 : 0.0
-2.3  Compilability score = average of all board scores
-2.4  DECISION POINT:
+2.1  Use <detected_boards> from intake descriptor (descriptor.boards).
+     These are the boards detected from the submission's CMakeLists.txt,
+     prj.conf, board overlay files, or user-specified via the grade command.
+2.2  For each board in <detected_boards>:
+     a. Compute board_safe_name = board.replace('/', '_').replace(':', '_')
+     b. Run: west build -b <board> -d build_<board_safe_name> <work_dir> -- -DCONF_FILE=prj.conf
+     c. Capture stdout + stderr to build_<board_safe_name>.log
+     d. Record: board, exit_code, wall_time, warning_count, error_count
+2.3  Score per board: exit_code == 0 ? 100.0 : 0.0
+2.4  Compilability score = average of all board scores
+2.5  DECISION POINT:
      - If ALL boards fail: mark Resource Efficiency as N/A (no binary)
      - If SOME boards pass: proceed with binaries from passing boards only
      - If ALL boards pass: proceed normally
-2.5  Extract warning count from build logs (grep -c "warning:" build_<board>.log)
+2.6  Extract warning count from build logs (grep -c "warning:" build_<board_safe_name>.log)
      Warnings are recorded but do not affect Compilability score (they affect Static Analysis)
 ```
 
@@ -154,7 +158,7 @@ Run for each LLM-evaluated dimension. If `llm_passes > 1`, run each pass indepen
 
 ## Workflow 3: Handling Non-Compiling Submissions
 
-When `west build` fails for ALL target boards:
+When `west build` fails for ALL project-specified target boards:
 
 ```
 1.  Compilability score = 0.0
@@ -171,7 +175,7 @@ When `west build` fails for ALL target boards:
     - Completeness: checklist evaluation (no build required)
     - Documentation: LLM rubric on source (no build required)
 4.  Redistribute Resource Efficiency weight (15%) across remaining 8 dimensions
-5.  In the report, prominently note: "Submission did not compile on any target board.
+5.  In the report, prominently note: "Submission did not compile on any project-specified target board.
     Resource Efficiency could not be measured. Weight redistributed."
 ```
 
@@ -214,12 +218,13 @@ Before starting any grading run, verify tool availability:
 
 ## Workflow 5: Multi-Board Compilation Check
 
-For validating across additional boards beyond the defaults:
+For validating across multiple project-specified boards:
 
 ```
-1.  Accept board list from user configuration or command arguments
-    Default: [qemu_cortex_m3, native_sim]
-    Extended example: [qemu_cortex_m3, native_sim, nrf52840dk/nrf52840, nucleo_f401re]
+1.  Accept board list from the intake descriptor (boards detected from project configuration).
+    Boards may also be supplied by the user via the grade command parameter as a comma-separated list.
+    There is no default board list — boards are always determined from project configuration or user input.
+    Example: boards detected from project = [nrf52840dk_nrf52840, nucleo_f401re]
 2.  For each board in the list:
     a. Verify board is known: west boards | grep <board>
        If unknown, skip with WARNING: "Board <board> not recognized by west"

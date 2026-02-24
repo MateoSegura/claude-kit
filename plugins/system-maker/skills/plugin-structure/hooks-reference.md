@@ -755,6 +755,105 @@ Verify required tools and environment are available when a session starts.
 
 ---
 
+## Session-Awareness for Multi-Plugin Teams
+
+When multiple plugins from the same domain team are loaded simultaneously (e.g., engineer + grader + tester + debugger + knowledge), **ALL hooks from ALL loaded plugins fire for every event**. This means a grader's PreToolUse hook fires when the engineer writes code, and a debugger's Stop hook fires when the tester ends a session.
+
+Without session-awareness guards, this causes **hook cross-fire** — hooks from one role incorrectly block or interfere with operations from another role. This is the single most common source of hook failures in team deployments.
+
+### The Problem: Hook Cross-Fire
+
+Consider a team with an engineer and a grader loaded simultaneously:
+
+1. The grader has a PreToolUse hook on `Write|Edit` that blocks writes to source files (graders should only write reports)
+2. The engineer tries to write a `.py` file — the grader's hook fires and BLOCKS the write
+3. Result: the engineer cannot do its job because the grader's hook doesn't know which role is active
+
+This affects ALL hook events:
+- **PreToolUse**: Role-specific blocking hooks prevent other roles from using tools
+- **PostToolUse**: Role-specific validation hooks reject valid operations from other roles
+- **Stop**: Role-specific completion checks fail because the session wasn't performing that role's work
+
+### The Solution: Session-Awareness Guards
+
+Every role-specific hook MUST include a **session-awareness preamble** that checks whether the hook's role is actually active before applying restrictions. Only prompt-type hooks can determine the active role (by reading conversation context). Shell scripts (command hooks) cannot determine the active role.
+
+### Universal vs Role-Specific Hooks
+
+Not all hooks need session-awareness. Categorize each hook:
+
+- **Universal safety hooks**: Block operations that NO role should perform (e.g., `rm -rf /`, `git push --force`, writing to `.env` files). These stay as `command` hooks with NO session-awareness guard — they apply unconditionally.
+- **Role-specific restriction hooks**: Block operations that only a SPECIFIC role should not perform (e.g., graders shouldn't write source code, debuggers shouldn't modify files, testers shouldn't write to `src/`). These MUST be `prompt` hooks with session-awareness guards.
+
+### Critical Rule: Role-Specific Blocking Requires Prompt Hooks
+
+If a hook restricts operations based on the active role, it **MUST** be a `prompt` hook (not `command`). Shell scripts have no way to determine which role is active in the conversation. Only the LLM can infer the active role from conversation context.
+
+**Wrong** — command hook that blocks all writes (affects all roles):
+```json
+{
+  "type": "command",
+  "command": "${CLAUDE_PLUGIN_ROOT}/scripts/restrict-file-writes.sh",
+  "description": "Restrict grader to report files only"
+}
+```
+
+**Right** — prompt hook with session-awareness:
+```json
+{
+  "type": "prompt",
+  "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a GRADER (running dimension reviews, computing scores, generating grade reports). If you are NOT in a grading role (e.g. you are an engineer, tester, or debugger), respond {\"ok\": true} immediately — this restriction only applies to grading sessions. If you ARE the grader, check: the file being written must be a report output file (.md, .json, .html). Writing source code files is FORBIDDEN for the grader. Respond {\"ok\": true} if the write is allowed, or {\"ok\": false, \"reason\": \"BLOCKED: Grader must not write source files\"} if blocked.",
+  "model": "haiku"
+}
+```
+
+### Pattern 11: Session-Aware Role-Specific Hook (PreToolUse prompt)
+
+The canonical pattern for role-specific blocking hooks in team plugins:
+
+```json
+{
+  "matcher": "Write|Edit",
+  "hooks": [
+    {
+      "type": "prompt",
+      "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a [ROLE_NAME] ([brief description of role activities]). If you are NOT in a [role] role (e.g. you are an [list other roles]), respond {\"ok\": true} immediately — this restriction only applies to [role] sessions. If you ARE the [role], check: [specific restrictions for this role]. Respond {\"ok\": true} if the operation is allowed, or {\"ok\": false, \"reason\": \"BLOCKED: [specific reason]\"} if blocked.",
+      "model": "haiku"
+    }
+  ]
+}
+```
+
+### Pattern 12: Session-Aware Stop Hook (completion verification)
+
+Stop hooks that verify role-specific work completion must also be session-aware, since ALL plugins' Stop hooks fire at session end regardless of which role was active:
+
+```json
+{
+  "matcher": "",
+  "hooks": [
+    {
+      "type": "prompt",
+      "prompt": "Context: $ARGUMENTS. FIRST: Determine if this session involved [role-specific work description]. If NO [role] work was performed in this session (e.g. this was a [list other roles] session), respond {\"ok\": true} immediately — this hook only applies to [role] sessions. If [role] work WAS performed, verify: [specific completion checks]. Respond {\"ok\": true} if all checks pass, or {\"ok\": false, \"reason\": \"Missing: [specific element]\"} if incomplete.",
+      "model": "haiku"
+    }
+  ]
+}
+```
+
+### Team Hook Design Checklist
+
+When designing hooks for a plugin that will be loaded as part of a team:
+
+1. **Classify each hook** as universal safety or role-specific restriction
+2. **Universal safety hooks** → `command` type, no session-awareness needed
+3. **Role-specific restriction hooks** → `prompt` type with session-awareness preamble
+4. **All Stop hooks** → Add session-awareness preamble (checks whether this role's work was performed)
+5. **All PostToolUse prompt hooks** that assume a specific role → Add session-awareness preamble
+6. **Test mentally**: "If all 5 team plugins are loaded and the engineer runs a command, will this hook incorrectly block it?"
+
+---
+
 ## Hook Shell Scripts — Complete Guide
 
 Scripts live at `BUILD_DIR/scripts/` and are referenced from hooks.json using `${CLAUDE_PLUGIN_ROOT}/scripts/`. Scripts receive the hook event's JSON input on **stdin**. They MUST use `jq` to parse it. They do NOT receive environment variables for tool input.

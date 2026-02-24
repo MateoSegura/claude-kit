@@ -13,8 +13,10 @@ Accept these parameters from the user (ask if not provided):
 
 1. **submission_a_path** (required): Path to first submission
 2. **submission_b_path** (required): Path to second submission
-3. **board** (optional): Target board name
-   - If not provided, use board from first submission or auto-detect
+3. **boards** (optional): Target board name(s), comma-separated for multi-board
+   - If not provided, each submission's board(s) are auto-detected from its project files
+   - Each submission may target different boards — handled with board-specific baselines
+   - If detection fails for either submission, report an error and stop
 4. **weight_overrides** (optional): Custom dimension weights as JSON
 5. **blind_mode** (optional): Randomize order before grading (default: true)
    - If true, submissions are graded as "Submission X" and "Submission Y", then mapped back
@@ -30,7 +32,7 @@ Accept these parameters from the user (ask if not provided):
 ```json
 {
   "submission_path": "<submission_a_path>",
-  "board": "<board or null>",
+  "boards": ["<board>"],
   "strip_metadata": true
 }
 ```
@@ -39,10 +41,12 @@ Accept these parameters from the user (ask if not provided):
 ```json
 {
   "submission_path": "<submission_b_path>",
-  "board": "<board or null>",
+  "boards": ["<board>"],
   "strip_metadata": true
 }
 ```
+
+If `boards` was provided by the user, pass the same list to both intake agents. Otherwise, pass an empty array and let each intake agent detect boards independently from each submission's project files.
 
 **Metadata stripping:**
 - Remove student name from comments
@@ -181,7 +185,7 @@ Display a summary:
 
 Submission A: <path>
 Submission B: <path>
-Board: <board>
+Board(s): <boards detected or specified>
 
 Aggregate Scores:
   A: <score> (<grade>)
@@ -251,9 +255,9 @@ If A builds but B doesn't:
 ### Submissions Use Different Boards
 
 If A is for nRF52840 and B is for ESP32:
-- Warn user: "Comparing different boards, resource baselines differ"
-- Use board-specific baselines for each
-- Note in report that comparison is across different targets
+- Warn user: "Comparing different boards — resource baselines derived separately from each board's build configuration"
+- Use each board's dynamically determined capacity from its build artifacts
+- Note in report that comparison is across different target hardware
 
 ### Identical Submissions
 

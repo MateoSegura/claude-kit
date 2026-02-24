@@ -7,10 +7,11 @@ This document defines the exact procedures for invoking tools, parsing their out
 ### west build (Compilability)
 
 ```bash
-# For each target board:
-west build -b qemu_cortex_m3 -d build_qemu <submission_dir> -- -DCONF_FILE=prj.conf
-west build -b native_sim -d build_native <submission_dir> -- -DCONF_FILE=prj.conf
+# For each project-specified target board:
+west build -b <board> -d build_<board_safe_name> <submission_dir> -- -DCONF_FILE=prj.conf
 ```
+
+Where `<board>` comes from `descriptor.boards` (detected during intake from CMakeLists.txt, prj.conf, board overlays, or user-specified via the grade command). `<board_safe_name>` replaces `/` and `:` with `_`.
 
 - Capture BOTH stdout and stderr. Build warnings appear in stderr.
 - Exit code 0 = pass. Any non-zero = fail.
@@ -66,8 +67,10 @@ ${ZEPHYR_BASE}/scripts/checkpatch.pl --no-tree --terse -f <file>
 ### arm-zephyr-eabi-size (Resource Efficiency)
 
 ```bash
-arm-zephyr-eabi-size build_qemu/zephyr/zephyr.elf
+arm-zephyr-eabi-size <build_dir>/zephyr/zephyr.elf
 ```
+
+Where `<build_dir>` is the build directory for each successfully compiled board.
 
 - Output columns: `text`, `data`, `bss`, `dec`, `hex`, `filename`
 - Extract: `text` (ROM code), `data` (initialized data in ROM+RAM), `bss` (zero-init RAM)
@@ -76,7 +79,7 @@ arm-zephyr-eabi-size build_qemu/zephyr/zephyr.elf
 ### bloaty (Resource Efficiency)
 
 ```bash
-bloaty build_qemu/zephyr/zephyr.elf -d sections -n 0 --csv
+bloaty <build_dir>/zephyr/zephyr.elf -d sections -n 0 --csv
 ```
 
 - CSV columns: `sections`, `vmsize`, `filesize`
@@ -155,28 +158,41 @@ If defect density exceeds max_acceptable_density, score floors at 0.0.
 
 ## Score Computation: Resource Efficiency
 
+Board capacity is determined dynamically from the build artifacts, not hardcoded. For each successfully compiled board:
+
 ```
-# Reference baselines for a minimal Zephyr application on qemu_cortex_m3:
-baseline_rom = 32768   # 32 KB
-baseline_ram = 8192    # 8 KB
+# Step 1: Determine board capacity from build artifacts:
+#   Priority 1: CONFIG_FLASH_SIZE and CONFIG_SRAM_SIZE from <build_dir>/zephyr/.config
+#   Priority 2: flash/sram reg properties in <build_dir>/zephyr/zephyr.dts
+#   Priority 3: Board YAML definition in Zephyr SDK boards directory
+#   If capacity cannot be determined: mark board resource analysis as N/A
+
+board_flash_capacity = <determined from build config, DTS, or board YAML>
+board_ram_capacity   = <determined from build config, DTS, or board YAML>
 
 # Actual from size output:
 actual_rom = text + data
 actual_ram = data + bss
 
-# Efficiency ratio (lower is better):
-rom_ratio = actual_rom / baseline_rom
-ram_ratio = actual_ram / baseline_ram
+# Utilization ratio (lower is better):
+flash_pct = actual_rom / board_flash_capacity * 100
+ram_pct   = actual_ram / board_ram_capacity   * 100
 
-# Score: 100 at baseline, decreasing linearly, floor at 0
-# Applications up to 4x baseline score above 0
-rom_score = max(0.0, 100.0 - (rom_ratio - 1.0) * 33.3)
-ram_score = max(0.0, 100.0 - (ram_ratio - 1.0) * 33.3)
+# Score based on utilization percentage:
+# <10%  both: 100   |  <25% both: 85   |  <50% both: 70
+# <75% both: 50     |  <100% both: 25  |  ≥100% either: 0
+# (blend flash and RAM scores at 50/50 weight)
 
-resource_score = round((rom_score * 0.5 + ram_score * 0.5), 1)
+rom_score = max(0.0, 100.0 - (flash_pct / 100.0) * 100.0)
+ram_score = max(0.0, 100.0 - (ram_pct   / 100.0) * 100.0)
+board_score = round((rom_score * 0.5 + ram_score * 0.5), 1)
+
+# Final resource_score = average board_score across all boards with known capacity
+resource_score = round(mean([board_score for each board with capacity determined]), 1)
 ```
 
 For non-compiling submissions, Resource Efficiency = N/A (no binary to measure).
+For boards where capacity cannot be determined, that board's analysis is marked N/A individually.
 
 ## N/A Weight Redistribution
 
@@ -213,7 +229,8 @@ Every report MUST begin with:
 # Code Grading Report
 - **Date**: YYYY-MM-DD HH:MM:SS UTC
 - **Mode**: Single | A/B Comparison
-- **Target Boards**: qemu_cortex_m3, native_sim
+- **Target Board(s)**: <project-detected or user-specified board(s)>
+- **Board Source**: <CMakeLists.txt | prj.conf | boards/ overlay | user-specified>
 - **SLOC**: <count> (measured by cloc)
 - **Tool Versions**: cppcheck <ver>, clang-tidy <ver>, lizard <ver>, west <ver>
 - **LLM Passes**: <count> (for subjective dimensions)

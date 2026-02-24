@@ -38,9 +38,9 @@ Complete specification of each grading dimension with detailed scoring criteria,
 
 | Situation | Handling |
 |-----------|----------|
-| No board specified | Try common boards (nrf52840dk_nrf52840, qemu_cortex_m3), use first successful |
-| Multiple build configurations | Evaluate all, use average score weighted by importance |
-| Board not available in SDK | Mark N/A if no alternative board available |
+| No board specified by user | Detect from project config (CMakeLists.txt, prj.conf, board overlays, west.yml). If detection fails, report error — do not try fallback boards. |
+| Multiple boards detected | Evaluate all detected boards, use average score weighted by pass/fail |
+| Board not available in SDK | Report build failure for that board, continue with other boards |
 | Missing prj.conf | Score 0 — critical file |
 | Overlay files present | Apply overlays automatically during build |
 
@@ -214,57 +214,68 @@ grep -rn "k_mutex_init" --include="*.c" <submission_path> | \
 
 ## 4. Resource Efficiency (15%, Automated)
 
-**What it measures**: Flash (ROM) and RAM usage relative to a reference baseline for the same functionality.
+**What it measures**: Flash (ROM) and RAM utilization as a percentage of the board's actual hardware capacity. Board capacity is determined dynamically from build artifacts — not from a fixed table.
 
 **Tools**: `bloaty`, `arm-zephyr-eabi-size`, `west build -t ram_report`, `west build -t rom_report`
 
 **Scoring Criteria**:
 
 ### 100 points
-- <50% of reference baseline (exceptional optimization)
+- <10% of board capacity utilized (exceptional — firmware is tiny relative to available hardware)
 - Minimal unused code, efficient data structures
 
 ### 75 points
-- 50-75% of reference baseline
+- 10-25% of board capacity utilized
 - Good efficiency, standard Zephyr patterns
 
 ### 50 points
-- 75-100% of reference baseline
+- 25-50% of board capacity utilized
 - Acceptable resource usage, room for optimization
 
 ### 25 points
-- 100-150% of reference baseline
-- Wasteful patterns (large stack allocations, unused features)
+- 50-75% of board capacity utilized
+- Wasteful patterns (large stack allocations, unused features enabled via Kconfig)
 
 ### 0 points
-- >150% of reference baseline
-- Bloated binary, excessive memory usage
+- ≥75% of board capacity utilized
+- Approaches hardware limits; risk of running out of flash or RAM on the target board
 
-**Reference Baselines** (by board family):
+**Board Capacity** (determined dynamically, not from a fixed table):
 
-| Board | Baseline Flash (KB) | Baseline RAM (KB) | Example |
-|-------|---------------------|-------------------|---------|
-| nRF52840 | 128 | 16 | Typical Bluetooth app |
-| STM32F4 | 64 | 8 | Standard peripheral app |
-| ESP32 | 256 | 32 | WiFi + BLE app |
-| QEMU Cortex-M3 | 32 | 8 | Basic sample |
+Board flash and RAM capacity are derived from the actual build artifacts in priority order:
+1. `CONFIG_FLASH_SIZE` / `CONFIG_SRAM_SIZE` in `<build_dir>/zephyr/.config`
+2. `reg` properties on flash and sram nodes in `<build_dir>/zephyr/zephyr.dts`
+3. Board YAML definition from the Zephyr SDK boards directory
+
+If capacity cannot be determined by any method, mark that board's resource dimension as N/A. Do NOT use hardcoded fallback values.
 
 **Size Efficiency Formula**:
 
 ```
-efficiency_ratio = submission_size / baseline_size
-score = 100 - (efficiency_ratio - 0.5) * 200
-score = clamp(score, 0, 100)
+# Capacity from build artifacts:
+flash_capacity = <CONFIG_FLASH_SIZE or DTS or board YAML>
+ram_capacity   = <CONFIG_SRAM_SIZE  or DTS or board YAML>
+
+flash_pct = actual_flash / flash_capacity * 100
+ram_pct   = actual_ram   / ram_capacity   * 100
+
+# Score based on utilization (lower % = more efficient):
+flash_score = max(0.0, 100.0 - flash_pct)
+ram_score   = max(0.0, 100.0 - ram_pct)
+board_score = clamp((flash_score * 0.5 + ram_score * 0.5), 0, 100)
+
+# Final score = average board_score across all boards with determined capacity
 ```
 
 **Edge Cases**:
 
 | Situation | Handling |
 |-----------|----------|
-| No baseline available | Use generic baseline for board family, note in report |
+| Capacity undetermined | Mark that board's resource dimension as N/A; redistribute weight |
 | Debug build | Compare debug-to-debug or strip symbols first |
-| Extra features | Adjust baseline for feature delta |
+| Extra features | Note in report; scoring reflects actual utilization of board capacity |
 | SDK version difference | Note if size changes due to SDK update |
+| Multiple boards | Score each board independently; average for final score |
 
 **Tool Commands**:
 

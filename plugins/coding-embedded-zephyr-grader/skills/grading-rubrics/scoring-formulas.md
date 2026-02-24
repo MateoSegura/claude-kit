@@ -169,50 +169,61 @@ score = (avg_score × 0.7) + (max_score × 0.3)
 
 ## Resource Efficiency Scoring
 
-Compares submission size to a reference baseline.
+Measures flash (ROM) and RAM utilization as a percentage of the board's actual hardware capacity. Board capacity is determined dynamically from build artifacts — never from hardcoded tables.
+
+### Capacity Determination (in priority order)
+
+```
+1. <build_dir>/zephyr/.config  →  CONFIG_FLASH_SIZE / CONFIG_SRAM_SIZE
+2. <build_dir>/zephyr/zephyr.dts  →  reg property on flash/sram nodes
+3. Board YAML from Zephyr SDK boards directory
+
+If capacity cannot be determined: mark dimension N/A, redistribute 15% weight
+```
 
 ### Formula
 
 ```
-efficiency_ratio = submission_size / baseline_size
-normalized_ratio = efficiency_ratio - 0.5
+flash_pct = actual_flash / flash_capacity * 100
+ram_pct   = actual_ram   / ram_capacity   * 100
 
-score = 100 - (normalized_ratio × 200)
-score = clamp(score, 0, 100)
+flash_score = max(0.0, 100.0 - flash_pct)
+ram_score   = max(0.0, 100.0 - ram_pct)
+
+resource_score = (flash_score × 0.5) + (ram_score × 0.5)
+resource_score = clamp(resource_score, 0, 100)
 ```
 
 ### Rationale
 
-- If submission is 50% of baseline (0.5×), score = 100
-- If submission equals baseline (1.0×), score = 0
-- If submission is 150% of baseline (1.5×), score = 0
-
-This rewards efficiency while accepting baseline performance.
+- A submission using 0% of capacity would score 100 (theoretical maximum)
+- A submission using 50% of capacity scores 50 for that resource
+- A submission using 100% of capacity scores 0 (at the hardware limit)
+- Flash and RAM are weighted equally (50/50) because both must fit for the firmware to be deployable
 
 ### Example
 
 ```
-Baseline flash: 128 KB
-Submission flash: 96 KB
+Board: nRF52840DK
+From build/zephyr/.config:
+  CONFIG_FLASH_SIZE=1024  →  flash_capacity = 1,048,576 bytes
+  CONFIG_SRAM_SIZE=256    →  ram_capacity   =   262,144 bytes
 
-efficiency_ratio = 96 / 128 = 0.75
-normalized_ratio = 0.75 - 0.5 = 0.25
+Submission sizes:
+  actual_flash = 100,352 bytes
+  actual_ram   =  12,288 bytes
 
-score = 100 - (0.25 × 200)
-      = 100 - 50
-      = 50
+flash_pct = 100352 / 1048576 * 100 = 9.57%
+ram_pct   =  12288 /  262144 * 100 = 4.69%
+
+flash_score = max(0.0, 100.0 - 9.57)  = 90.43
+ram_score   = max(0.0, 100.0 - 4.69)  = 95.31
+
+resource_score = (90.43 × 0.5) + (95.31 × 0.5)
+               = 45.22 + 47.66
+               = 92.88
+               ≈ 93
 ```
-
-### Combined Flash + RAM Score
-
-```
-flash_score = calculate_efficiency(submission_flash, baseline_flash)
-ram_score = calculate_efficiency(submission_ram, baseline_ram)
-
-score = (flash_score × 0.6) + (ram_score × 0.4)
-```
-
-Flash is weighted higher because embedded systems are typically more flash-constrained.
 
 ---
 
