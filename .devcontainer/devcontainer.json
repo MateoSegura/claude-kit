@@ -1,25 +1,17 @@
 {
   "name": "claude-kit",
   "image": "ghcr.io/mateosegura/dev-env-claude-kit:latest",
-
-  // .env loaded automatically via --env-file (GITHUB_TOKEN, IS_SANDBOX)
-  "runArgs": ["--init", "--env-file", ".devcontainer/.env"],
-
+  "postCreateCommand": "chmod +x .devcontainer/ctl.sh && .devcontainer/ctl.sh post-create",
+  "postStartCommand": "chmod +x .devcontainer/ctl.sh && .devcontainer/ctl.sh post-start",
+  "runArgs": [
+    "--init",
+    "--env-file=.devcontainer/.env"
+  ],
   "mounts": [
-    // Inherit host Claude credentials, config, and local plugins
     "source=${localEnv:HOME}/.claude,target=/root/.claude,type=bind,consistency=cached",
-    // Docker-outside-of-Docker: mount host Docker socket
     "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
-    // Persist Go module cache across rebuilds
     "source=claude-kit-gomodcache,target=/go/pkg/mod,type=volume"
   ],
-
-  "postCreateCommand": "/workspace/.devcontainer/ctl.sh post-create",
-  "postStartCommand": "/workspace/.devcontainer/ctl.sh post-start",
-
-  "workspaceFolder": "/workspace",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
-
   "customizations": {
     "vscode": {
       "settings": {
@@ -47,8 +39,5 @@
         "usernamehw.errorlens"
       ]
     }
-  },
-
-  "forwardPorts": [],
-  "features": {}
+  }
 }
