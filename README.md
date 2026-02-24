@@ -114,10 +114,10 @@ Each role requires a different permission model, different tool access, and diff
 
 ### Zephyr RTOS Team
 
-Four plugins covering the full development lifecycle for Zephyr RTOS embedded firmware. The knowledge plugin is auto-loaded as a companion by the other three, injecting kernel APIs, devicetree syntax, hardware targets, and design patterns into their agent context.
+Five plugins covering the full development lifecycle for Zephyr RTOS embedded firmware. The knowledge plugin is auto-loaded as a companion by the other four, injecting kernel APIs, devicetree syntax, hardware targets, and design patterns into their agent context.
 
 ```bash
-claude-kit --kit coding-embedded-zephyr  # loads all four
+claude-kit --kit coding-embedded-zephyr  # loads all five
 ```
 
 | Plugin | Role | README |
@@ -126,13 +126,14 @@ claude-kit --kit coding-embedded-zephyr  # loads all four
 | `coding-embedded-zephyr-engineer` | Engineer | [→ README](plugins/coding-embedded-zephyr-engineer/README.md) |
 | `coding-embedded-zephyr-grader` | Grader | [→ README](plugins/coding-embedded-zephyr-grader/README.md) |
 | `coding-embedded-zephyr-tester` | Tester | [→ README](plugins/coding-embedded-zephyr-tester/README.md) |
+| `coding-embedded-zephyr-debugger` | Debugger | [→ README](plugins/coding-embedded-zephyr-debugger/README.md) |
 
 ### Svelte Frontend Team
 
-Four plugins for Svelte 5 / SvelteKit development. The knowledge plugin is auto-loaded as a companion, providing runes reference, SvelteKit patterns, CSS architecture, accessibility standards, and hardware communication (USB/BLE/LAN/audio/MIDI) to all role plugins.
+Five plugins for Svelte 5 / SvelteKit development. The knowledge plugin is auto-loaded as a companion, providing runes reference, SvelteKit patterns, CSS architecture, accessibility standards, and hardware communication (USB/BLE/LAN/audio/MIDI) to all role plugins.
 
 ```bash
-claude-kit --kit coding-frontend-svelte  # loads all four
+claude-kit --kit coding-frontend-svelte  # loads all five
 ```
 
 | Plugin | Role | README |
@@ -141,6 +142,7 @@ claude-kit --kit coding-frontend-svelte  # loads all four
 | `coding-frontend-svelte-engineer` | Engineer | [→ README](plugins/coding-frontend-svelte-engineer/README.md) |
 | `coding-frontend-svelte-grader` | Grader | [→ README](plugins/coding-frontend-svelte-grader/README.md) |
 | `coding-frontend-svelte-tester` | Tester | [→ README](plugins/coding-frontend-svelte-tester/README.md) |
+| `coding-frontend-svelte-debugger` | Debugger | [→ README](plugins/coding-frontend-svelte-debugger/README.md) |
 
 ### Python Cloud Backend Team
 
