@@ -115,10 +115,9 @@ jobs:
         continue-on-error: true
         run: |
           unset CLAUDECODE
-          claude -p \
+          cat /tmp/semantic-prompt.txt | claude -p \
             --model haiku \
             --allowedTools "Read,Glob,Grep" \
-            < /tmp/semantic-prompt.txt \
             > /tmp/semantic-review.md 2>&1
           cat /tmp/semantic-review.md
 
