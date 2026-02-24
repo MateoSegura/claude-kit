@@ -109,7 +109,7 @@ def expand_kit(kit_name: str, seen: set) -> list:
 
 # ── Launch display ────────────────────────────────────────────────────────────
 
-_ROLE_SUFFIXES = ("knowledge", "engineer", "grader", "tester")
+_ROLE_SUFFIXES = ("knowledge", "engineer", "grader", "tester", "debugger")
 
 def _group_plugins(names: list) -> tuple:
     """Split plugin list into team groups (prefix → roles) and standalone plugins."""
