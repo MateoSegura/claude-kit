@@ -37,7 +37,6 @@ Verify the existence of expected files and directories. Score each as present/ab
 - `tests/` directory with test source files
 - `dts/` or `boards/` directory with devicetree overlays
 - `.github/` or CI configuration
-- `LICENSE` file
 
 ### Step 2: Evaluate test structure
 If tests directory exists:
@@ -104,7 +103,6 @@ Return a JSON result:
     },
     "bonus": {
       "tests_directory": true,
-      "license": false,
       "ci_config": false
     }
   },
