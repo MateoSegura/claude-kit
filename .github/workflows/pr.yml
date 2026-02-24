@@ -19,6 +19,7 @@ jobs:
     runs-on: self-hosted
     outputs:
       plugins_changed: ${{ steps.check.outputs.plugins_changed }}
+      changed_plugins: ${{ steps.list.outputs.changed_plugins }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,6 +34,16 @@ jobs:
           else
             echo "plugins_changed=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: List changed plugin names
+        id: list
+        run: |
+          NAMES=$(git diff --name-only origin/main...HEAD \
+            | grep '^plugins/' \
+            | cut -d/ -f2 \
+            | sort -u \
+            | tr '\n' ' ')
+          echo "changed_plugins=$NAMES" >> "$GITHUB_OUTPUT"
 
       - name: Tier 1 — all plugins
         id: tier1
@@ -64,6 +75,73 @@ jobs:
               issue_number: context.issue.number,
             });
             const existing = comments.find(c => c.body.startsWith('## 🔍 Tier 1 Validation'));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                comment_id: existing.id, body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: context.issue.number, body,
+              });
+            }
+
+  # ── Lightweight Claude semantic check (haiku, <4 min) ──────────────────────
+  # Runs on every PR. Only reviews CHANGED plugins.
+  # Catches things deterministic checks miss: identity coherence, content depth,
+  # domain specificity, cross-agent contradictions, hook appropriateness.
+  # Informational only — never blocks merge.
+  semantic-check:
+    runs-on: self-hosted
+    needs: validate-tier1
+    if: needs.validate-tier1.outputs.plugins_changed == 'true'
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build review prompt
+        id: prompt
+        run: |
+          python3 scripts/build-semantic-prompt.py \
+            ${{ needs.validate-tier1.outputs.changed_plugins }} \
+            > /tmp/semantic-prompt.txt
+          echo "Prompt built for: ${{ needs.validate-tier1.outputs.changed_plugins }}"
+
+      - name: Claude semantic review (haiku)
+        id: review
+        continue-on-error: true
+        run: |
+          unset CLAUDECODE
+          claude -p \
+            --model haiku \
+            --allowedTools "Read,Glob,Grep" \
+            < /tmp/semantic-prompt.txt \
+            > /tmp/semantic-review.md 2>&1
+          cat /tmp/semantic-review.md
+
+      - name: Post semantic review comment
+        if: always() && steps.review.outcome != 'skipped'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let output = '';
+            try {
+              output = fs.readFileSync('/tmp/semantic-review.md', 'utf8');
+            } catch (e) {
+              output = `Review did not produce output: ${e.message}`;
+            }
+            const body = `## 🧠 Semantic Check\n\n` +
+              `_Claude Haiku review of changed plugins — informational only_\n\n` +
+              output;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.includes('## 🧠 Semantic Check'));
             if (existing) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner, repo: context.repo.repo,
