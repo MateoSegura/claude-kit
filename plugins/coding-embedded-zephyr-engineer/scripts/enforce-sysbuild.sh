@@ -28,8 +28,13 @@ if [[ -f "sysbuild.conf" ]] || [[ -f "sysbuild/sysbuild.conf" ]]; then
   exit 0
 fi
 
-# Check if this is a test build (twister, samples, tests directory)
-if echo "$COMMAND" | grep -qE '(twister|samples/|tests/|native_sim|native_posix)'; then
+# Check if this is a test/analysis build (twister, samples, tests, native targets, /tmp/ builds)
+if echo "$COMMAND" | grep -qE '(twister|samples/|tests/|native_sim|native_posix|/tmp/)'; then
+  exit 0
+fi
+
+# Allow --pristine or --dry-run builds (analysis/clean builds)
+if echo "$COMMAND" | grep -qE '(--pristine|--dry-run)'; then
   exit 0
 fi
 

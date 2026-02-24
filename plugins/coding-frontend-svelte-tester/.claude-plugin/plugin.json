@@ -1,5 +1,5 @@
 {
   "name": "coding-frontend-svelte-tester",
   "description": "Testing specialist for Svelte 5 / SvelteKit applications \u2014 writes and runs unit tests (Vitest), component tests (vitest-browser-svelte), E2E tests (Playwright), and accessibility audits (vitest-axe) with behavior-first methodology and 80% coverage target",
-  "version": "0.0.3"
+  "version": "0.0.4"
 }

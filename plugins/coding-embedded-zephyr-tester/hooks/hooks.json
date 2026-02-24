@@ -2,16 +2,6 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a TESTER (writing and running Zephyr tests with twister/ztest). If you are NOT in a testing role (e.g. you are an engineer, grader, or debugger), respond {\"ok\": true} immediately \u2014 this restriction only applies to testing sessions. If you ARE the tester, check: testers must NOT flash hardware or debug firmware. BLOCK: west flash, west debug, nrfjprog, JLinkExe, openocd, pyocd, rm -rf targeting critical paths ($ZEPHYR_BASE, src/, home/), git push --force to main/master, git reset --hard. ALLOW: west build (for test compilation), twister, west twister, rm in build/ or test directories, git push (non-force), all read commands, sudo (with warning). Respond {\"ok\": true} if the command is safe for a tester, or {\"ok\": false, \"reason\": \"BLOCKED: Testers must not flash hardware or debug firmware\"} if blocked.",
-            "model": "haiku"
-          }
-        ]
-      },
-      {
         "matcher": "Write|Edit",
         "hooks": [
           {
@@ -30,11 +20,6 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/validate-test-file.sh",
             "description": "Validate test file structure: check for ZTEST_SUITE, proper includes, testcase.yaml presence"
-          },
-          {
-            "type": "prompt",
-            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a TESTER (writing and running Zephyr tests, twister integration). If you are NOT in a tester role (e.g. you are an engineer, grader, or debugger), respond {\"ok\": true} immediately \u2014 this test quality review only applies to tester sessions. If you ARE the tester, proceed: Review the test code change for quality anti-patterns. Tool input: $ARGUMENTS\n\nIf the file is NOT a C test source file (.c extension in a tests/ directory), respond {\"ok\": true} immediately and skip all checks.\n\nFor C test source files, check for ALL of these anti-patterns:\n\n1. **Missing assertion messages** - zassert_* calls without a diagnostic format string (e.g., bare `zassert_equal(a, b)` without a message)\n2. **Missing mock reset** - FFF fakes used in tests but no RESET_FAKE() or FFF_RESET_HISTORY() in the before/setup function\n3. **Test interdependence** - Tests that rely on state from previous tests instead of setting up their own preconditions\n4. **k_sleep synchronization** - Using k_sleep()/k_msleep() instead of k_sem_take/k_event_wait for test synchronization\n5. **Missing testcase.yaml** - Test directory without a testcase.yaml file (check if one exists nearby)\n6. **Deprecated ztest API** - Using ztest_test_suite()/ztest_run_test_suite() instead of ZTEST_SUITE()\n7. **Magic numbers** - Hardcoded values in assertions without named constants or explanatory comments\n8. **Over-mocking** - Mocking functions that belong to the module under test rather than external dependencies\n9. **Giant test functions** - Test functions exceeding ~40 lines with multiple unrelated assertions\n10. **Missing error path tests** - Only happy-path tests visible, no tests for -EINVAL, -ENODEV, -EIO etc.\n\nSeverity rules:\n- For NEW test files: Report anti-patterns as ERROR\n- For MODIFIED test files: Report anti-patterns as WARNING\n\nIf any anti-patterns are found, respond:\n{\"ok\": false, \"reason\": \"Test anti-pattern found: [describe the issue and suggest the fix]\"}\n\nIf no anti-patterns found or file is not a test file, respond:\n{\"ok\": true}",
-            "description": "Review test code for quality anti-patterns: missing assertions, improper mock reset, test interdependence, magic numbers"
           }
         ]
       }

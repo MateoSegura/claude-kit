@@ -11,18 +11,6 @@
         ]
       }
     ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a KNOWLEDGE EDITOR (updating Svelte domain reference material). If you are NOT in a knowledge editor role (e.g. you are an engineer, grader, tester, or debugger), respond {\"ok\": true} immediately \u2014 this knowledge accuracy review only applies to knowledge editor sessions. If you ARE the knowledge editor, proceed: You are a Svelte 5 code reviewer. A file was just written or edited. IMPORTANT: Only review files whose path ends in '.svelte' or '.svelte.ts'. If the file path does not end in '.svelte' or '.svelte.ts', immediately respond {\"ok\": true} without further analysis. For Svelte files, inspect the written content and check for the following deprecated Svelte 4 patterns that must NOT appear in Svelte 5 code: 1) Event directives: on:click, on:input, on:change, on:submit, on:keydown, on:keyup, on:mouseenter, on:mouseleave, or any other on:<event> directive. Svelte 5 uses onclick, oninput, onchange etc. as plain HTML attributes or $props(). 2) Props declared with 'export let'. Svelte 5 uses 'let { propName } = $props()' instead. 3) createEventDispatcher() import or usage. Svelte 5 uses callback props passed via $props() instead. 4) The <slot> element or slot=\"name\" attributes. Svelte 5 uses {@render children()} and snippet blocks instead. 5) Reactive declarations using '$:' syntax. Svelte 5 uses '$derived()' or '$effect()' runes instead. 6) Reactive stores using '$store' prefix auto-subscription syntax inside components where $state() runes would be more appropriate. If any deprecated Svelte 4 patterns are detected, respond {\"ok\": false, \"reason\": \"Svelte 4 deprecated patterns detected in <filename>: <list each pattern found and its Svelte 5 equivalent, e.g., on:click -> onclick attribute, export let -> $props() destructuring, createEventDispatcher -> callback props via $props(), <slot> -> {@render children()}, $: -> $derived() or $effect()>\"} If no deprecated patterns are found (or this is not a Svelte file), respond {\"ok\": true}",
-            "model": "haiku"
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "matcher": "",

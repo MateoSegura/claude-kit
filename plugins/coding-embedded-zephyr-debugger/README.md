@@ -1,6 +1,6 @@
 # coding-embedded-zephyr-debugger
 
-> **Role:** Debugger · **Version:** 0.0.3
+> **Role:** Debugger · **Version:** 0.0.4
 
 Zephyr RTOS embedded debugger — diagnoses hard faults, memory corruption, kernel panics, stack overflows, peripheral failures, boot/MCUboot issues, network stack failures, and field-return crash dumps with structured evidence-based diagnostic reports.
 

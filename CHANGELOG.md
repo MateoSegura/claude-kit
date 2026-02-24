@@ -3,7 +3,48 @@
 All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
-<!-- Use /bump-plugin to add entries here -->
+
+### Changed
+- **Deterministic hooks for teams** — complete architectural overhaul of hook
+  strategy across all 15 team plugins. Removed ALL prompt-type hooks from
+  PreToolUse and PostToolUse events (41 prompt hooks eliminated). Only
+  deterministic command scripts remain in the hot path. This eliminates hook
+  cross-fire errors, "hook stopped continuation" blocking, and ~250-350
+  unnecessary haiku LLM calls per session when team plugins are loaded together.
+  Role-specific enforcement now uses the 5-layer defense model: permissionMode
+  in agent frontmatter, system prompts, deterministic command scripts,
+  acceptEdits UI, and Stop hooks for session-end verification.
+- **System-maker hook reference updated** — `hooks-reference.md` now documents
+  the "Deterministic Hooks for Teams" strategy including the 5-layer defense
+  model, cross-fire problem explanation, and updated hook type selection guidance
+- **Review checklist updated** — both system-maker and system-updater
+  `review-checklist.md` now enforce H9 (no prompt/agent hooks in Pre/PostToolUse)
+  and H15 (no role-specific restrictions in hot-path hooks), H17 (file-type-gating)
+
+### Fixed
+- `enforce-sysbuild.sh` now whitelists `/tmp/` builds, `--pristine`, and
+  `--dry-run` flags to prevent cross-fire when grader runs analysis builds
+- Deleted 3 orphaned `block-dangerous-commands.sh` scripts from debugger/grader
+  plugins that were unreferenced by hooks.json
+
+### Plugin versions
+- `coding-cloud-python-debugger`: 0.0.3 → 0.0.4
+- `coding-cloud-python-engineer`: 0.0.3 → 0.0.4
+- `coding-cloud-python-grader`: 0.0.3 → 0.0.4
+- `coding-cloud-python-knowledge`: 0.0.2 → 0.0.3
+- `coding-cloud-python-tester`: 0.0.3 → 0.0.4
+- `coding-embedded-zephyr-debugger`: 0.0.3 → 0.0.4
+- `coding-embedded-zephyr-engineer`: 0.0.3 → 0.0.4
+- `coding-embedded-zephyr-grader`: 0.1.1 → 0.1.2
+- `coding-embedded-zephyr-knowledge`: 0.1.1 → 0.1.2
+- `coding-embedded-zephyr-tester`: 0.0.3 → 0.0.4
+- `coding-frontend-svelte-debugger`: 0.0.3 → 0.0.4
+- `coding-frontend-svelte-engineer`: 0.0.3 → 0.0.4
+- `coding-frontend-svelte-grader`: 0.0.3 → 0.0.4
+- `coding-frontend-svelte-knowledge`: 0.0.3 → 0.0.4
+- `coding-frontend-svelte-tester`: 0.0.3 → 0.0.4
+- `system-maker`: 0.2.2 → 0.2.3
+- `system-updater`: 0.0.2 → 0.0.3
 
 ## [0.3.1] - 2026-02-24
 
