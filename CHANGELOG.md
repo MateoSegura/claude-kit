@@ -5,6 +5,45 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.2.0] - 2026-02-24
+
+### Added
+- `coding-cloud-python-knowledge` v1.0.0 — shared domain reference for
+  Python cloud-backend development (asyncio, FastAPI, gRPC, Docker, K8s)
+- `coding-cloud-python-engineer` v1.0.0 — Python cloud-backend engineer
+  (6 agents: feature-builder, api-designer, async-specialist, db-specialist,
+  container-specialist, code-reviewer)
+- `coding-cloud-python-grader` v1.0.0 — Python cloud-backend grader
+  (10 agents covering 8 grading dimensions with quantitative scoring)
+- `coding-cloud-python-tester` v1.0.0 — Python cloud-backend tester
+  (5 agents: unit, integration, e2e, performance, coverage analysis)
+- `coding-cloud-python-debugger` v1.0.0 — Python cloud-backend debugger
+  (7 agents: triage + asyncio, profiler, trace, db-query, gRPC, container)
+- `coding-embedded-zephyr-debugger` v1.0.0 — Zephyr RTOS debugger
+  (7 agents: triage + fault-analyzer, kernel, peripheral, boot, network,
+  postmortem; covers hard faults, stack overflow, kernel panic, MCUboot,
+  BLE/LTE/Thread, and offline crash dump analysis)
+- `coding-frontend-svelte-debugger` v1.0.0 — Svelte 5/SvelteKit debugger
+  (9 agents: triage + compiler/TS, reactivity, SSR/routing, styling,
+  accessibility, hardware/Tauri IPC, build/bundle, test failure)
+
+### Changed
+- `system-maker` v0.1.1 → v0.2.0 — removed `deployer` and `migrator`
+  from standard coding team roles; coding teams now use 4 roles (engineer,
+  grader, tester, debugger); deployment/migration concerns are operational
+- Zephyr RTOS Team expanded from 4 to 5 plugins (added debugger)
+- Svelte Frontend Team expanded from 4 to 5 plugins (added debugger)
+- `scripts/validate-plugins.py` — removed `deployer` and `migrator`
+  from VALID_ROLES
+
+### Fixed
+- Devcontainer: simplified devcontainer.json (#38)
+- Devcontainer: Oh My Zsh with robbyrussell theme and plugins (#36, #37)
+- Devcontainer: avoid wincred credential helper inside Linux container (#35)
+- CLI: load .env via --env-file, move lifecycle to ctl.sh (#34)
+- Devcontainer: add BuildKit registry cache (#33)
+- Devcontainer: replace Docker-in-Docker with host socket mount (#32)
+
 ## [0.1.0] - 2026-02-23
 
 ### Added
