@@ -98,7 +98,8 @@ cmd_start() {
 # ── container lifecycle actions ───────────────────────────────────────────────
 cmd_post_create() {
   # Runs once after the container is first created
-  ln -sf /workspace/claude-kit /usr/local/bin/claude-kit
+  WORKSPACE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+  ln -sf "${WORKSPACE}/claude-kit" /usr/local/bin/claude-kit
   ok "claude-kit linked to /usr/local/bin"
 }
 
