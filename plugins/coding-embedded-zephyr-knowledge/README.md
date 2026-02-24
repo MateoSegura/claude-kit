@@ -1,6 +1,6 @@
 # coding-embedded-zephyr-knowledge
 
-> **Role:** Knowledge companion · **Version:** 0.0.0
+> **Role:** Knowledge companion · **Version:** 0.1.0
 
 Shared domain knowledge for Zephyr RTOS embedded development — kernel APIs, devicetree, hardware targets, design patterns, build system, networking, security, and serialization reference material.
 
@@ -20,10 +20,10 @@ This plugin is **auto-loaded as a companion** by the engineer and tester plugins
 | `security-boot` | MCUboot chain-of-trust, TF-M secure partitions, key provisioning |
 | `testing` | ztest framework, Twister runner, BabbleSim, Renode, coverage tooling |
 | `serialization` | zcbor CDDL schemas, Protobuf in Zephyr, CBOR patterns |
-| `nordic-hardware` | nRF52, nRF53, nRF91 board files, softdevice, SEGGER RTT, nRF Connect SDK |
-| `stm32-hardware` | STM32 board targets, STM32CubeIDE integration, HAL driver usage |
-| `esp32-hardware` | ESP32 port specifics, Espressif IDF integration, wifi/BLE on ESP32 |
-| `nxp-hardware` | i.MX RT, LPC, Kinetis board support, MCUXpresso integration |
+| `hardware-nordic` | nRF52/53/54/91 families, peripherals, power modes, errata, BLE controller, nrfjprog/nrfutil, SEGGER RTT |
+| `hardware-stm32` | STM32 F4/L4/H7/U5/WB families, clock tree configuration, HAL integration, power modes, ST-Link/OpenOCD |
+| `hardware-espressif` | ESP32/S2/S3/C3/C6/H2 families, GPIO matrix, power modes, errata, WiFi/BLE coexistence, esptool, ESP-IDF integration |
+| `hardware-nxp` | i.MX RT, LPC, Kinetis board support, MCUXpresso integration |
 
 ---
 

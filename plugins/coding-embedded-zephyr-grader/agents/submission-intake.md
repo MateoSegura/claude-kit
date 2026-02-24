@@ -1,7 +1,7 @@
 ---
 name: submission-intake
 model: haiku
-description: "Validates Zephyr submission directory structure, strips identifying metadata, creates isolated build directories, and outputs a normalized submission descriptor JSON. Use when a new submission path needs to be ingested and validated before grading begins."
+description: "Validates Zephyr submission directory structure, strips identifying metadata, creates isolated build directories, detects target board(s) from build configuration files, and outputs a normalized submission descriptor JSON. Use when a new submission path needs to be ingested and validated before grading begins."
 tools: Read, Glob, Grep, Bash
 skills: identity, grading-rubrics
 color: "#DAA520"
@@ -36,12 +36,15 @@ Also check for optional but expected files:
 - `README.md` or `README.rst`
 - `tests/` directory
 
-### Step 3: Detect target board
-Use Grep and Read to extract the target board:
-1. Search `CMakeLists.txt` for `set(BOARD ...)` or `BOARD` variable
-2. Search `prj.conf` for board-related configuration
-3. Check for board overlays in `boards/` directory
-4. If no board is detected, default to `qemu_cortex_m3` and add a warning
+### Step 3: Detect target board(s)
+Use Grep and Read to extract the target board(s). Check all sources and accumulate a list:
+1. Search `CMakeLists.txt` for `set(BOARD ...)` pattern — extract the board name
+2. Search `prj.conf` for `CONFIG_BOARD=` value
+3. Check for board overlay files in `boards/` directory — each `<board>.overlay` implies that board
+4. Check `west.yml` for board references if present
+5. If a board was provided as a grade command parameter (comma-separated), include those boards
+6. Deduplicate the collected board names into a unique list
+7. If NO board is detected from any source, return an ERROR descriptor — do NOT default to any simulator target. Grading cannot proceed without knowing the target hardware.
 
 ### Step 4: Enumerate source files
 Use Glob to find all source files (`.c`, `.cpp`, `.h`, `.S`), config files (`.conf`, `Kconfig*`), build files (`CMakeLists.txt`), documentation files (`*.md`, `*.rst`), and test files.
@@ -63,7 +66,10 @@ Return a JSON descriptor with the following structure:
 ```json
 {
   "submission_path": "/absolute/path/to/submission",
-  "board": "qemu_cortex_m3",
+  "boards": ["nrf52840dk_nrf52840"],
+  "board_sources": {
+    "nrf52840dk_nrf52840": ["CMakeLists.txt set(BOARD)", "boards/nrf52840dk_nrf52840.overlay"]
+  },
   "structure_valid": true,
   "files": {
     "sources": ["src/main.c", "src/sensor.c", "src/sensor.h"],
@@ -79,10 +85,37 @@ Return a JSON descriptor with the following structure:
     "total": 8
   },
   "warnings": [
-    ".git/ directory present -- identifying metadata may exist",
-    "No board explicitly set in CMakeLists.txt, defaulting to qemu_cortex_m3"
+    ".git/ directory present -- identifying metadata may exist"
   ],
   "errors": []
+}
+```
+
+If no board is detected, set `structure_valid` to `false` and populate `errors`:
+
+```json
+{
+  "submission_path": "/absolute/path/to/submission",
+  "boards": [],
+  "board_sources": {},
+  "structure_valid": false,
+  "files": {
+    "sources": ["src/main.c"],
+    "configs": ["prj.conf", "CMakeLists.txt"],
+    "overlays": [],
+    "tests": [],
+    "docs": [],
+    "other": []
+  },
+  "file_count": {
+    "sources": 1,
+    "configs": 2,
+    "total": 3
+  },
+  "warnings": [],
+  "errors": [
+    "No target board detected. Cannot grade without a known hardware target. Specify a board via the grade command or add 'set(BOARD <board>)' to CMakeLists.txt."
+  ]
 }
 ```
 
@@ -91,7 +124,8 @@ If the structure is invalid (missing CMakeLists.txt or src/), set `structure_val
 ```json
 {
   "submission_path": "/absolute/path/to/submission",
-  "board": "unknown",
+  "boards": [],
+  "board_sources": {},
   "structure_valid": false,
   "files": {
     "sources": [],

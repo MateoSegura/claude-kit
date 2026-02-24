@@ -1,6 +1,6 @@
 # coding-embedded-zephyr-grader
 
-> **Role:** Grader · **Version:** 0.0.0
+> **Role:** Grader · **Version:** 0.1.0
 
 Objective, blind, quantitative code grading agent for embedded Zephyr RTOS applications. Produces numerical scorecards across 9 weighted dimensions using automated tools (cppcheck, clang-tidy, lizard, west build, checkpatch, arm-zephyr-eabi-size) and structured rubrics. Supports single-submission grading and A/B blind comparison modes.
 
@@ -21,7 +21,7 @@ claude-kit --kit coding-embedded-zephyr
 | `submission-intake` | Validates Zephyr submission directory structure, strips identifying metadata, creates isolated build directories, and outputs a normalized submission descriptor JSON. Use when a new submission path needs to be ingested and validated before grading begins. |
 | `metrics-collector` | Collects code metrics (cyclomatic complexity, NLOC, comment density) and style violations using lizard, cloc, and checkpatch.pl. Produces separate code_metrics_score and style_score. |
 | `resource-analyzer` | Analyzes flash and RAM usage of compiled Zephyr submissions using arm-zephyr-eabi-size, ram_report, and rom_report. Computes resource efficiency against board capacity. Supports A/B comparison mode with Bloaty diffs. |
-| `compilability-checker` | Builds Zephyr submissions against qemu_cortex_m3 and native_sim targets, captures exit codes and warning counts, and scores compilability. |
+| `compilability-checker` | Builds Zephyr submissions against the project-specified hardware target board(s), captures exit codes and warning counts per board, and scores compilability. |
 | `completeness-checker` | Checks submission completeness (required files, test structure, documentation quality) and produces separate completeness and documentation scores. |
 | `static-analyzer` | Runs cppcheck and clang-tidy on Zephyr submissions, parses findings, applies weighted deduplication, normalizes defect density per KLOC, and produces a static analysis score. |
 | `style-checker` | Runs checkpatch.pl on Zephyr submissions to assess coding style compliance, parses violations by type and severity, normalizes per KLOC, and produces a style score. |

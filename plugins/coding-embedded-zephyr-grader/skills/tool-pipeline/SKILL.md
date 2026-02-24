@@ -10,8 +10,8 @@ Reference for the static analysis and metrics collection tools used in automated
 ## Pipeline Overview
 
 ```
-1. Intake → Parse submission, detect board
-2. Compilability Gate → west build (BLOCKING)
+1. Intake → Parse submission, detect board(s) from project configuration
+2. Compilability Gate → west build for each detected board (BLOCKING)
     ├─ Success: Continue to parallel tools
     └─ Failure: Skip resource tools, continue with source-only tools
 
@@ -82,7 +82,7 @@ command -v bloaty >/dev/null 2>&1 || echo "bloaty: MISSING"
 
 | Tool | Command Template | Output Format |
 |------|------------------|---------------|
-| west build | `west build -b <board> -p always <path>` | Build log (text) |
+| west build | `west build -b <board> -p always <path>` | Build log (text). Board is project-detected or user-specified — never a hardcoded default. |
 | cppcheck | `cppcheck --xml --xml-version=2 --enable=all <path> 2>out.xml` | XML |
 | clang-tidy | `clang-tidy -p build --checks='*' <files>` | Text |
 | lizard | `lizard --csv -Ecpre <path> > out.csv` | CSV |

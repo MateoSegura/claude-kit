@@ -5,6 +5,64 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.3.0] - 2026-02-24
+
+### Added
+- **Zephyr knowledge: deep hardware references** — `hardware-nordic/` (7 files)
+  and `hardware-espressif/` (7 files) with comprehensive chip documentation
+  covering families, peripherals, power modes, errata/gotchas, Zephyr support
+  status, and tooling for all nRF52/53/54/91 and ESP32/S2/S3/C3/C6/H2 families
+- **Session-awareness preamble pattern** across all 15 team plugin hook files —
+  every role-specific restriction hook now checks "am I actually this role?"
+  before enforcing, preventing hook cross-fire when plugins are loaded together
+
+### Changed
+- **Zephyr knowledge: hardware skill rename** — `esp32-hardware/` →
+  `hardware-espressif/`, `nordic-hardware/` → `hardware-nordic/`,
+  `nxp-hardware/` → `hardware-nxp/`, `stm32-hardware/` → `hardware-stm32/`
+  (MINOR: breaking rename, but pre-1.0 so no major bump)
+- **Zephyr grader: dynamic board targeting** — grader no longer defaults to
+  `native_sim` or `qemu_cortex_m3`; instead detects actual hardware targets
+  from CMakeLists.txt, prj.conf, board overlays, and west.yml; `board` (string)
+  replaced with `boards` (array) throughout the entire grading pipeline
+- **Zephyr grader: board-specific resource scoring** — resource analyzer now
+  reads CONFIG_FLASH_SIZE/CONFIG_SRAM_SIZE for each target board instead of
+  using hardcoded baselines; scoring formulas use 50/50 flash/RAM weighting
+- **Zephyr engineer: cross-reference updates** — all 3 agents updated to
+  reference renamed hardware skills (`hardware-nordic`, `hardware-espressif`,
+  `hardware-nxp`, `hardware-stm32`)
+- **system-maker**: hook-writer agent, hooks-reference.md, review-checklist.md,
+  arch-designer, arch-reviewer, make-agent, and make-team updated with
+  session-awareness documentation and enforcement rules
+- **system-updater**: change-planner, change-writer, plugin-reviewer,
+  plugin-structure SKILL.md, and review-checklist.md updated with
+  session-awareness guidance
+
+### Removed
+- Orphaned shell scripts cleaned up from 7 plugins — scripts that were
+  replaced by session-awareness prompt hooks but not deleted:
+  `block-dangerous-commands.sh` (3 plugins), `restrict-file-writes.sh` (2),
+  `check-test-file.sh`, `validate-submission-structure.sh`,
+  `block-dangerous-test-commands.sh`, `check-safe-command.sh`
+
+### Plugin versions
+- `coding-embedded-zephyr-knowledge`: 0.0.1 → 0.1.0
+- `coding-embedded-zephyr-grader`: 0.0.1 → 0.1.0
+- `coding-embedded-zephyr-engineer`: 0.0.1 → 0.0.2
+- `coding-embedded-zephyr-debugger`: 0.0.2 → 0.0.3
+- `coding-embedded-zephyr-tester`: 0.0.1 → 0.0.2
+- `coding-cloud-python-debugger`: 0.0.2 → 0.0.3
+- `coding-cloud-python-engineer`: 0.0.1 → 0.0.2
+- `coding-cloud-python-grader`: 0.0.2 → 0.0.3
+- `coding-cloud-python-tester`: 0.0.1 → 0.0.2
+- `coding-frontend-svelte-debugger`: 0.0.2 → 0.0.3
+- `coding-frontend-svelte-engineer`: 0.0.1 → 0.0.2
+- `coding-frontend-svelte-grader`: 0.0.1 → 0.0.2
+- `coding-frontend-svelte-knowledge`: 0.0.1 → 0.0.2
+- `coding-frontend-svelte-tester`: 0.0.1 → 0.0.2
+- `system-maker`: 0.2.0 → 0.2.1
+- `system-updater`: 0.0.1 → 0.0.2
+
 ## [0.2.5] - 2026-02-24
 
 ### Fixed

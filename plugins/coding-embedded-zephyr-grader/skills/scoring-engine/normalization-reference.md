@@ -168,83 +168,86 @@ final_score = (86.25 × 0.7) + (72 × 0.3)
 
 ## Resource Efficiency Normalization
 
-Compares flash (ROM) and RAM usage to reference baselines.
+Measures flash (ROM) and RAM utilization against the board's actual hardware capacity, determined dynamically from build artifacts.
 
 ### Step-by-Step Process
 
-1. **Extract sizes**
+1. **Extract actual sizes from build output**
    ```
-   Submission flash: 98,304 bytes (96 KB)
-   Submission RAM: 12,288 bytes (12 KB)
+   $ arm-zephyr-eabi-size build/zephyr/zephyr.elf
+      text    data     bss     dec     hex filename
+     98304    2048   10240  110592   1b000 build/zephyr/zephyr.elf
 
-   Baseline flash: 131,072 bytes (128 KB)
-   Baseline RAM: 16,384 bytes (16 KB)
-   ```
-
-2. **Calculate efficiency ratios**
-   ```
-   flash_ratio = 98304 / 131072 = 0.75
-   ram_ratio = 12288 / 16384 = 0.75
+   actual_flash = text + data = 98304 + 2048 = 100,352 bytes
+   actual_ram   = data + bss  = 2048 + 10240 = 12,288 bytes
    ```
 
-3. **Map to 0-100 scores**
+2. **Determine board capacity from build artifacts (in priority order)**
    ```
-   flash_score = 100 - ((0.75 - 0.5) × 200)
-               = 100 - (0.25 × 200)
-               = 100 - 50
-               = 50
+   Priority 1: <build_dir>/zephyr/.config
+     CONFIG_FLASH_SIZE=1024   → flash_capacity = 1024 × 1024 = 1,048,576 bytes
+     CONFIG_SRAM_SIZE=256     → ram_capacity   = 256  × 1024 =   262,144 bytes
 
-   ram_score = 100 - ((0.75 - 0.5) × 200)
-             = 100 - (0.25 × 200)
-             = 100 - 50
-             = 50
+   Priority 2: <build_dir>/zephyr/zephyr.dts
+     flash0: flash@0 { reg = <0x0 0x100000>; }   → flash_capacity = 1,048,576 bytes
+     sram0: memory@20000000 { reg = <0x20000000 0x40000>; } → ram_capacity = 262,144 bytes
+
+   Priority 3: Board YAML from Zephyr SDK boards directory
+     flash: 1024   → flash_capacity = 1,048,576 bytes
+     ram:   256    → ram_capacity   =   262,144 bytes
+
+   If capacity cannot be determined by any method: mark dimension as N/A
    ```
 
-4. **Weighted combination**
+3. **Calculate capacity utilization percentages**
    ```
-   final_score = (flash_score × 0.6) + (ram_score × 0.4)
-               = (50 × 0.6) + (50 × 0.4)
-               = 30 + 20
-               = 50
+   flash_pct = actual_flash / flash_capacity * 100
+             = 100352 / 1048576 * 100
+             = 9.57%
+
+   ram_pct   = actual_ram / ram_capacity * 100
+             = 12288 / 262144 * 100
+             = 4.69%
+   ```
+
+4. **Map to 0-100 scores (lower utilization = higher score)**
+   ```
+   flash_score = max(0.0, 100.0 - flash_pct)
+               = max(0.0, 100.0 - 9.57)
+               = 90.43
+
+   ram_score   = max(0.0, 100.0 - ram_pct)
+               = max(0.0, 100.0 - 4.69)
+               = 95.31
+   ```
+
+5. **50/50 weighted combination**
+   ```
+   resource_score = 0.5 * flash_score + 0.5 * ram_score
+                  = 0.5 * 90.43 + 0.5 * 95.31
+                  = 45.22 + 47.66
+                  = 92.88
+                  ≈ 93
    ```
 
 ### Resource Efficiency Curve
 
-| Ratio | Percentage | Score | Interpretation |
-|-------|------------|-------|----------------|
-| 0.25 | 25% | 100 | Exceptional optimization |
-| 0.50 | 50% | 100 | Excellent |
-| 0.75 | 75% | 50 | Acceptable |
-| 1.00 | 100% | 0 | At baseline |
-| 1.25 | 125% | 0 | Above baseline (failing) |
-| 1.50 | 150% | 0 | Bloated (failing) |
-| >1.50 | >150% | 0 | Extremely bloated (failing) |
+| Flash/RAM Utilization | Score | Interpretation |
+|-----------------------|-------|----------------|
+| <10% | ~90-100 | Exceptional — minimal use of board capacity |
+| 25% | 75 | Very efficient |
+| 50% | 50 | Moderate utilization |
+| 75% | 25 | Heavy utilization |
+| 100% | 0 | At capacity limit |
+| >100% | 0 | Exceeds capacity (build would fail) |
 
 ### Flash vs RAM Weighting
 
-Flash is weighted 60%, RAM 40% because:
-- Embedded systems are typically more flash-constrained
-- Flash costs more per byte than RAM in most microcontrollers
-- Flash usage directly impacts BOM cost
+Flash and RAM are weighted equally at 50% each. Both resources matter for embedded deployability: flash determines if the firmware fits on the device, and RAM determines runtime viability.
 
-### Baseline Selection
+### Capacity Determination
 
-Baselines should be established per board family and application type:
-
-| Board | App Type | Flash Baseline | RAM Baseline |
-|-------|----------|----------------|--------------|
-| nRF52840 | BLE peripheral | 128 KB | 16 KB |
-| nRF52840 | BLE central | 256 KB | 32 KB |
-| STM32F4 | Basic GPIO | 32 KB | 8 KB |
-| STM32F4 | USB device | 64 KB | 16 KB |
-| ESP32 | WiFi + BLE | 512 KB | 64 KB |
-| ESP32 | WiFi only | 384 KB | 48 KB |
-
-If no baseline exists, use a conservative estimate based on board specs:
-```
-flash_baseline = total_flash × 0.25
-ram_baseline = total_ram × 0.25
-```
+Board capacity is always derived from actual build artifacts — never from a hardcoded lookup table. This ensures correctness across different board variants, custom hardware, and boards with non-standard memory configurations. If capacity cannot be determined by any of the three methods above, the Resource Efficiency dimension is marked N/A and its 15% weight is redistributed to the other available dimensions.
 
 ---
 
@@ -410,17 +413,13 @@ Per-KLOC: 2 / 0.045 = 44.44 defects/KLOC → score = 0
 Absolute: 100 - (2 × 10) = 80
 ```
 
-### Missing Baselines
+### Undetermined Board Capacity
 
-If no resource baseline exists for the board:
+If board capacity cannot be determined from any of the three sources (build .config, zephyr.dts, board YAML):
 ```
-# Estimate baseline from board specs
-flash_baseline = board_flash × 0.25
-ram_baseline = board_ram × 0.25
-
-# Or mark dimension N/A and note in report
+# Do NOT use hardcoded fallback values or estimates
 resource_efficiency = N/A
-note = "No baseline available for <board>"
+note = "Board capacity undetermined for <board> — dimension skipped, weight redistributed"
 ```
 
 ### Tool Unavailability

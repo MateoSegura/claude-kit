@@ -5,9 +5,9 @@
         "matcher": "Bash",
         "hooks": [
           {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-dangerous-test-commands.sh",
-            "description": "Block west flash, west debug, and destructive commands in tester context — tester should only run tests, not flash/debug"
+            "type": "prompt",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a TESTER (writing and running Zephyr tests with twister/ztest). If you are NOT in a testing role (e.g. you are an engineer, grader, or debugger), respond {\"ok\": true} immediately — this restriction only applies to testing sessions. If you ARE the tester, check: testers must NOT flash hardware or debug firmware. BLOCK: west flash, west debug, nrfjprog, JLinkExe, openocd, pyocd, rm -rf targeting critical paths ($ZEPHYR_BASE, src/, home/), git push --force to main/master, git reset --hard. ALLOW: west build (for test compilation), twister, west twister, rm in build/ or test directories, git push (non-force), all read commands, sudo (with warning). Respond {\"ok\": true} if the command is safe for a tester, or {\"ok\": false, \"reason\": \"BLOCKED: Testers must not flash hardware or debug firmware\"} if blocked.",
+            "model": "haiku"
           }
         ]
       },
@@ -45,7 +45,7 @@
         "hooks": [
           {
             "type": "agent",
-            "prompt": "Verify test deliverables before allowing the agent to stop. Context: $ARGUMENTS\n\nCheck ALL of the following:\n\n1. **testcase.yaml exists** - Every test directory with .c test files must have a testcase.yaml\n2. **ZTEST_SUITE registration** - Every test .c file must contain ZTEST_SUITE() macro\n3. **Assertion messages** - Spot-check that zassert_* calls include diagnostic messages\n4. **Mock resets** - If FFF fakes are used, verify RESET_FAKE and FFF_RESET_HISTORY in before/setup\n5. **No TODO/FIXME** - No unresolved TODO or FIXME comments in new test files\n6. **prj.conf has CONFIG_ZTEST** - Test prj.conf must include CONFIG_ZTEST=y and CONFIG_ZTEST_NEW_API=y\n7. **Platform specification** - testcase.yaml must have platform_allow (at minimum native_sim for unit tests)\n\nUse Read, Grep, and Glob tools to verify these conditions.\n\nIf ALL checks pass, respond:\n{\"ok\": true}\n\nIf ANY check fails, respond:\n{\"ok\": false, \"reason\": \"[Specific issue found and what needs to be fixed]\"}",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if this session involved writing or running Zephyr tests. If NO test files were created, modified, or executed in this session (e.g. this was a grading, engineering, or debugging session), respond {\"ok\": true} immediately — this hook only applies to testing sessions.\n\nIf tests WERE written or run, use Read, Grep, and Glob tools to verify:\n\n1. **testcase.yaml exists** - Every test directory with .c test files must have a testcase.yaml\n2. **ZTEST_SUITE registration** - Every test .c file must contain ZTEST_SUITE() macro\n3. **Assertion messages** - Spot-check that zassert_* calls include diagnostic messages\n4. **Mock resets** - If FFF fakes are used, verify RESET_FAKE and FFF_RESET_HISTORY in before/setup\n5. **No TODO/FIXME** - No unresolved TODO or FIXME comments in new test files\n6. **prj.conf has CONFIG_ZTEST** - Test prj.conf must include CONFIG_ZTEST=y and CONFIG_ZTEST_NEW_API=y\n7. **Platform specification** - testcase.yaml must have platform_allow (at minimum native_sim for unit tests)\n\nIf ALL checks pass, respond:\n{\"ok\": true}\n\nIf ANY check fails, respond:\n{\"ok\": false, \"reason\": \"[Specific issue found and what needs to be fixed]\"}",
             "timeout": 120,
             "description": "Verify test deliverables: testcase.yaml exists, ZTEST_SUITE present, assertions have messages, mocks reset, no TODO/FIXME"
           }

@@ -82,7 +82,22 @@ The four essential hook categories:
 3. **Stop Prompt Hooks** — Work verification before completion
 4. **PostToolUse Command Hooks** — Background test running (async)
 
-See the plugin-structure skill's hooks-reference.md for complete hook type details, decision control, pattern examples, and hook design principles.
+### Session-Awareness for Team Plugins (CRITICAL)
+
+When the plugin is part of a team (has companions, or the build includes multiple roles), hooks from ALL loaded plugins fire for every event. This means a grader's PreToolUse hook fires when the engineer writes code. Without session-awareness, hooks cause **cross-fire** — one role's hooks blocking another role's legitimate operations.
+
+**Every hook in the architecture must be classified as:**
+
+- **Universal safety** — blocks operations NO role should perform (e.g., `rm -rf /`, `git push --force`). These use `command` type with no session-awareness guard.
+- **Role-specific restriction** — blocks operations only THIS role shouldn't perform (e.g., graders can't write source code, debuggers are read-only). These MUST use `prompt` type with a session-awareness preamble that checks whether this role is active before applying restrictions.
+
+**Shell scripts (`command` hooks) cannot determine the active role.** Role-specific blocking hooks MUST be `prompt` type, not `command` type.
+
+**All Stop hooks** in team plugins MUST include session-awareness — they must check whether this role's work was actually performed before enforcing completion requirements.
+
+When specifying hooks in the architecture, mark each hook with its `session_awareness` classification: `"universal"` (no guard needed) or `"role_specific"` (requires prompt hook with session-awareness preamble).
+
+See the plugin-structure skill's hooks-reference.md for complete hook type details, decision control, session-awareness patterns, and hook design principles.
 </hooks_strategy>
 
 <design_patterns_strategy>
@@ -220,6 +235,7 @@ Key fields: `strategy`, `agent_name`, `domain_hierarchy` (REQUIRED), `components
 - The identity MUST be a skill with `user-invocable: false`. Do NOT include CLAUDE.md in the architecture — plugins do not read CLAUDE.md.
 - The `lsp_config` field is REQUIRED. Every coding agent must have LSP server configuration for its primary language(s).
 - The `hooks` array MUST include at least one hook from each of the four categories: dangerous-command-blocking (PreToolUse command), smart-linting (PostToolUse prompt), work-verification (Stop prompt), and async-test-running (PostToolUse command). Mark each hook with its `category`.
+- **SESSION-AWARENESS**: For team plugins (plugins with companions or part of a multi-role build), every role-specific restriction hook MUST be marked `"session_awareness": "role_specific"` and use `prompt` type (not `command`). Universal safety hooks are marked `"session_awareness": "universal"`. All Stop hooks in team plugins MUST include session-awareness. The hook-writer uses these annotations to generate the correct hook types with session-awareness preambles.
 - For coding-type plugins, the skills array MUST include a design-patterns skill at the framework layer. This skill covers domain-specific initialization, concurrency, memory management, communication, and error handling patterns with the structure: SKILL.md (pattern overview, decision matrix, under 200 lines) + patterns-reference.md (detailed patterns with code examples) + anti-patterns.md (common mistakes with BAD/GOOD examples). This skill should be preloaded by code-writing agents.
 - Do not include components speculatively. If you cannot explain why a developer needs it, leave it out.
 - Model assignments follow this rule: opus for complex reasoning and multi-step analysis, sonnet for generation and structured output, haiku for simple validation or format checking.

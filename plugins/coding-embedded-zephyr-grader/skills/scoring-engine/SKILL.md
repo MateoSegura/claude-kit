@@ -121,7 +121,7 @@ New weights: each dimension × 1.0526
 | Static Analysis | `100 - (density / 2.0) × 100` | ≥2.0 defects/KLOC |
 | Code Metrics (CCN) | `100 - penalty_sum` | Avg CCN >30 |
 | Style | `100 - (violations/KLOC / 5.0) × 100` | ≥5 violations/KLOC |
-| Resource Efficiency | `100 - ((ratio - 0.5) × 200)` | ≥150% of baseline |
+| Resource Efficiency | `flash_score = max(0, 100 - flash_pct); ram_score = max(0, 100 - ram_pct); resource_score = 0.5 * flash_score + 0.5 * ram_score` | Board capacity undetermined → N/A |
 
 ## Additional Resources
 

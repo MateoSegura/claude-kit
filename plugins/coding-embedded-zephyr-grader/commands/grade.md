@@ -12,8 +12,9 @@ You orchestrate the grading of a single Zephyr RTOS submission by spawning speci
 Accept these parameters from the user (ask if not provided):
 
 1. **submission_path** (required): Path to the submission directory
-2. **board** (optional): Target board name (e.g., `nrf52840dk_nrf52840`)
-   - If not provided, auto-detect from prj.conf or try common boards
+2. **boards** (optional): Target board name(s), comma-separated for multi-board (e.g., `nrf52840dk_nrf52840` or `nrf52840dk_nrf52840,nucleo_f401re`)
+   - If not provided, auto-detect from project files (CMakeLists.txt, prj.conf, boards/ overlays, west.yml)
+   - If detection fails, grading cannot proceed — report an error to the user and stop
 3. **weight_overrides** (optional): Custom dimension weights as JSON
    - Example: `{"compilability": 0.25, "static_analysis": 0.20}`
 4. **llm_passes** (optional): Number of LLM review passes for consistency (default: 1)
@@ -30,15 +31,17 @@ Accept these parameters from the user (ask if not provided):
 ```json
 {
   "submission_path": "<path>",
-  "board": "<board or null>"
+  "boards": ["<board>", "<board2>"]
 }
 ```
+
+Pass `boards` as an array. If the user provided a comma-separated string, split it into an array before passing. If the user did not specify boards, pass an empty array and let the intake agent detect from project files.
 
 **Output:**
 ```json
 {
   "submission_path": "<absolute_path>",
-  "board": "<detected_board>",
+  "boards": ["<detected_board>"],
   "has_prj_conf": true,
   "has_cmake": true,
   "source_files": ["src/main.c", "src/service.c"],
@@ -46,7 +49,7 @@ Accept these parameters from the user (ask if not provided):
 }
 ```
 
-**Error handling:** If intake fails (missing critical files), stop and report to user.
+**Error handling:** If intake fails (missing critical files OR no board detected), stop and report to user. Do not proceed to compilability if `boards` is empty.
 
 ---
 
@@ -57,25 +60,24 @@ Accept these parameters from the user (ask if not provided):
 **Input:**
 ```json
 {
-  "submission_path": "<path>",
-  "board": "<board>"
+  "descriptor": "<full intake descriptor JSON>"
 }
 ```
+
+Pass the full intake descriptor (which contains `boards`) to the compilability checker. The checker iterates all boards in the descriptor.
 
 **Output:**
 ```json
 {
-  "score": 92.5,
-  "build_success": true,
-  "warnings": 2,
-  "errors": 0,
-  "details": {
-    "warning_list": [...]
-  }
+  "compilability_score": 92.5,
+  "build_succeeded": true,
+  "board_results": [
+    {"board": "nrf52840dk_nrf52840", "exit_code": 0, "succeeded": true}
+  ]
 }
 ```
 
-**Decision:** If `build_success == false`, mark Resource Efficiency as N/A and run remaining tools in best-effort mode.
+**Decision:** If `build_succeeded == false`, mark Resource Efficiency as N/A and run remaining tools in best-effort mode.
 
 ---
 
@@ -94,9 +96,9 @@ Run these agents **in parallel** using multiple Task calls in a single response:
    - Output: `{score, avg_ccn, max_ccn, kloc}`
 
 3. **resource-analyzer** (skip if build failed)
-   - Input: `{submission_path, board, build_dir}`
+   - Input: `{descriptor, compilability_result}`
    - Tools: arm-zephyr-eabi-size, bloaty, ram_report, rom_report
-   - Output: `{score, flash_usage, ram_usage, baseline_flash, baseline_ram}`
+   - Output: `{resource_efficiency_score, board_results}`
 
 4. **style-checker**
    - Input: `{submission_path, source_files}`
@@ -206,7 +208,7 @@ Display a summary:
 === Grading Complete ===
 
 Submission: <path>
-Board: <board>
+Board(s): <boards, comma-separated>
 KLOC: <kloc>
 
 Aggregate Score: <score> / 100
@@ -285,7 +287,7 @@ Intake (seq) → Compilability (seq) → {Automated Tools (par), LLM Reviews (pa
 User: "Grade my BLE peripheral submission at ./ble_app for nRF52840DK"
 
 You:
-1. Confirm parameters (path, board)
+1. Confirm parameters (path, board(s))
 2. Spawn intake agent
 3. Spawn compilability checker
 4. Spawn 4 automated agents + 3 LLM agents in parallel (7 total)

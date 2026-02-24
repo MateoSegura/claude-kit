@@ -16,8 +16,9 @@
         "matcher": "Bash",
         "hooks": [
           {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-dangerous-commands.sh"
+            "type": "prompt",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a TESTER (writing and running Python tests with pytest). If you are NOT in a testing role (e.g. you are an engineer, grader, or debugger), respond {\"ok\": true} immediately — this restriction only applies to testing sessions. If you ARE the tester, check: testers must NOT modify production source or deploy. BLOCK: rm targeting production src/ or app/ directories, docker build/push, kubectl apply/delete, helm install/upgrade, git push --force to main/master, git reset --hard, npm/yarn publish. ALLOW: pytest, pip install (for test dependencies), git push (non-force), rm in test directories, docker logs, all read commands. Respond {\"ok\": true} if the command is safe for a tester, or {\"ok\": false, \"reason\": \"BLOCKED: Testers must not modify production source\"} if blocked.",
+            "model": "haiku"
           }
         ]
       },
@@ -25,8 +26,9 @@
         "matcher": "Write|Edit",
         "hooks": [
           {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-test-file.sh"
+            "type": "prompt",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a TESTER (writing Python test files). If you are NOT in a testing role (e.g. you are an engineer, grader, or debugger), respond {\"ok\": true} immediately — this restriction only applies to testing sessions. If you ARE the tester, check: testers may ONLY write test infrastructure files. ALLOW: test_*.py, conftest.py, pyproject.toml (pytest config), pytest.ini, setup.cfg. BLOCK: database migration files (migrations/, alembic/versions/), deployment configs (deploy/, infra/, terraform/, helm/, k8s/, .github/workflows/), Dockerfiles, docker-compose files, production Python source (.py files that are NOT test_*.py or conftest.py). Respond {\"ok\": true} if the file is allowed for a tester, or {\"ok\": false, \"reason\": \"BLOCKED: Testers may only write test files (test_*.py, conftest.py)\"} if blocked.",
+            "model": "haiku"
           }
         ]
       }
@@ -59,7 +61,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "You are verifying that a Python cloud tester agent has completed its work properly before stopping. Context: $ARGUMENTS.\n\nCheck each of the following criteria:\n1. All test files created — every test module or category mentioned in the task has a corresponding test_*.py file. If the task asked for tests covering multiple categories (unit, integration, contract, performance, etc.), verify at least one test file per category exists.\n2. Representative tests per category — each test file contains more than a trivial number of tests (more than one placeholder). Tests should cover the happy path, at least one error/edge case, and boundary conditions for the feature under test.\n3. TODOs for gaps — where full test coverage was not achievable in this session (e.g., requires a live service not available in CI), a TODO comment or pytest.mark.skip with an explanatory message is present so gaps are visible rather than hidden.\n4. conftest fixtures for all referenced fixtures — every fixture name used in test function arguments exists either in the same file, in a conftest.py in the same directory, or in a parent conftest.py. There should be no dangling fixture references.\n5. No broken imports — all import statements reference modules that exist in the project (standard library, installed packages, or local source). There should be no ImportError-causing imports left in the written files.\n\nRespond with {\"ok\": true} if all criteria are satisfied, or {\"ok\": false, \"reason\": \"<specific description of which criteria failed and what must be done to satisfy them before stopping>\"} if any are not met.",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if this session involved writing or running Python tests. If NO test files were created, modified, or executed in this session (e.g. this was a grading, engineering, or debugging session), respond {\"ok\": true} immediately — this hook only applies to testing sessions.\n\nIf tests WERE written or run, verify:\n1. All test files created — every test module or category mentioned in the task has a corresponding test_*.py file. If the task asked for tests covering multiple categories (unit, integration, contract, performance, etc.), verify at least one test file per category exists.\n2. Representative tests per category — each test file contains more than a trivial number of tests (more than one placeholder). Tests should cover the happy path, at least one error/edge case, and boundary conditions for the feature under test.\n3. TODOs for gaps — where full test coverage was not achievable in this session (e.g., requires a live service not available in CI), a TODO comment or pytest.mark.skip with an explanatory message is present so gaps are visible rather than hidden.\n4. conftest fixtures for all referenced fixtures — every fixture name used in test function arguments exists either in the same file, in a conftest.py in the same directory, or in a parent conftest.py. There should be no dangling fixture references.\n5. No broken imports — all import statements reference modules that exist in the project (standard library, installed packages, or local source). There should be no ImportError-causing imports left in the written files.\n\nRespond with {\"ok\": true} if all criteria are satisfied, or {\"ok\": false, \"reason\": \"<specific description of which criteria failed and what must be done to satisfy them before stopping>\"} if any are not met.",
             "model": "sonnet"
           }
         ]

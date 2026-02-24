@@ -95,8 +95,9 @@ When the change FITS, produce a change plan following these rules:
 
 5. **Hook evolution**: When improving hooks:
    - Never remove existing hooks — add new ones or enhance existing ones
-   - If upgrading a command hook to a prompt hook, keep the command hook as a fallback
    - When adding new events, maintain the existing format exactly
+   - **Session-awareness upgrade**: If the plugin is part of a team (has companions in ctl.json), check ALL existing hooks for session-awareness compliance. Role-specific restriction hooks (e.g., "graders can't write source files", "debuggers are read-only") that use `command` type MUST be upgraded to `prompt` type with session-awareness preambles. Shell scripts cannot determine the active role, so `command` hooks that restrict based on role cause cross-fire when the team is loaded together. Include these upgrades in the change plan as additional recommended changes. All Stop hooks in team plugins must include session-awareness guards.
+   - When upgrading a `command` hook to a `prompt` hook for session-awareness, do NOT keep the command hook as a fallback — the command hook would still fire and block operations. Replace it entirely.
 
 6. **LSP/MCP additions**: When adding language servers or MCP servers:
    - Read the existing config and MERGE — never overwrite

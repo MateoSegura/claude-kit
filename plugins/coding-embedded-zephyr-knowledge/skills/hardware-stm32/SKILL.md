@@ -1,5 +1,5 @@
 ---
-name: coding-embedded-zephyr-knowledge:stm32-hardware
+name: coding-embedded-zephyr-knowledge:hardware-stm32
 description: STM32 hardware support — F4/L4/H7/U5/WB/WL families, clock tree configuration, HAL integration, power modes, ST-Link/OpenOCD debug
 user-invocable: false
 ---
