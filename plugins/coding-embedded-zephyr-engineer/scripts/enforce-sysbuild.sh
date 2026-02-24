@@ -13,7 +13,7 @@ if ! echo "$COMMAND" | grep -qE 'west\s+build'; then
 fi
 
 # Allow if --sysbuild flag is present
-if echo "$COMMAND" | grep -qE '--sysbuild'; then
+if echo "$COMMAND" | grep -qE -- '--sysbuild'; then
   exit 0
 fi
 
@@ -34,7 +34,7 @@ if echo "$COMMAND" | grep -qE '(twister|samples/|tests/|native_sim|native_posix|
 fi
 
 # Allow --pristine or --dry-run builds (analysis/clean builds)
-if echo "$COMMAND" | grep -qE '(--pristine|--dry-run)'; then
+if echo "$COMMAND" | grep -qE -- '(--pristine|--dry-run)'; then
   exit 0
 fi
 
