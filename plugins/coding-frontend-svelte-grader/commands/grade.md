@@ -297,6 +297,12 @@ input: |
 
 ## Step 5: Run report-generator
 
+Compute a timestamped output directory:
+```
+output_dir = {project_root}/reports/<YYYY-MM-DD_HH-MM-SS>/
+```
+Create the directory before spawning the report generator.
+
 Pass the scorecard to the report-generator agent:
 
 ```
@@ -304,17 +310,18 @@ subagent_type: report-generator
 input: |
   Project: {project_name}
   Project root: {project_root}
-  Report output directory: {project_root}/grade-reports/
+  Report output directory: {project_root}/reports/<YYYY-MM-DD_HH-MM-SS>/
 
   Scorecard JSON:
   {paste aggregator JSON output}
 
   Generate:
-  1. Markdown grade report: {project_root}/grade-reports/{project_name}-grade-report.md
-  2. JSON scorecard: {project_root}/grade-reports/{project_name}-scorecard.json
+  1. Markdown grade report: {output_dir}/{project_name}-grade-report.md
+  2. JSON scorecard: {output_dir}/{project_name}-scorecard.json
+  3. Zip archive: {output_dir}/contents.zip (containing all report files)
 
   Follow the templates in report-formats.md exactly.
-  Write both files. Confirm file paths after writing.
+  Write both files, then zip them. Confirm file paths after writing.
 ```
 
 ---
@@ -345,9 +352,8 @@ Top 3 Issues to Fix:
 2. [{severity}] {title} ({dimension})
 3. [{severity}] {title} ({dimension})
 
-Reports written to:
-  {project_root}/grade-reports/{project_name}-grade-report.md
-  {project_root}/grade-reports/{project_name}-scorecard.json
+Reports: {project_root}/reports/<YYYY-MM-DD_HH-MM-SS>/contents.zip
+  Contains: {project_name}-grade-report.md, {project_name}-scorecard.json
 ```
 
 ---
@@ -361,4 +367,4 @@ Reports written to:
 | Reviewer returns invalid JSON | Log warning, use fallback payload, continue |
 | Aggregator fails | Report error, show raw dimension scores, stop before report generation |
 | Report generator fails | Report error, show scorecard JSON in terminal |
-| User cancels mid-run | Save any completed dimension payloads to `{project_root}/grade-reports/.partial-grade.json` |
+| User cancels mid-run | Save any completed dimension payloads to `{project_root}/reports/.partial-grade.json` |

@@ -182,6 +182,15 @@ Identify:
 
 ## Step 5: Run report-generator for Comparative Report
 
+Compute a timestamped output directory:
+```
+output_dir = <parent_directory>/reports/<YYYY-MM-DD_HH-MM-SS>/
+```
+- If comparing two separate directories: parent = parent directory of Project A
+- If comparing git branches: parent = {repo_path}
+
+Create the directory before spawning the report generator.
+
 ```
 subagent_type: report-generator
 input: |
@@ -198,9 +207,7 @@ input: |
   Pre-computed deltas:
   {paste delta analysis}
 
-  Determine output directory:
-  - If comparing two separate directories: use the parent directory of Project A
-  - If comparing git branches: use {repo_path}/grade-reports/
+  Output directory: {output_dir}
 
   Generate these files:
   1. {output_dir}/comparison-{label_a_slug}-vs-{label_b_slug}-report.md
@@ -208,6 +215,7 @@ input: |
   2. {output_dir}/{label_a_slug}-scorecard.json (Project A scorecard)
   3. {output_dir}/{label_b_slug}-scorecard.json (Project B scorecard)
   4. {output_dir}/comparison-{label_a_slug}-vs-{label_b_slug}-scorecard.json (combined)
+  5. {output_dir}/contents.zip (archive of all report files)
 
   In the comparative report:
   - Highlight regressions in {label_b} vs {label_a} explicitly
@@ -215,6 +223,7 @@ input: |
   - List findings present in BOTH projects (shared technical debt)
   - List findings unique to each project
 
+  After writing all files, zip them into contents.zip.
   Output ONLY file write confirmations. No prose.
 ```
 
@@ -247,10 +256,8 @@ Comparison complete: {label_a} vs {label_b}
   IMPROVEMENTS in {label_b}:
     + {dimension}: {score_a} → {score_b} (+{delta} pts)
 
-  Reports written to:
-    {output_dir}/comparison-{a_slug}-vs-{b_slug}-report.md
-    {output_dir}/{a_slug}-scorecard.json
-    {output_dir}/{b_slug}-scorecard.json
+  Reports: {output_dir}/contents.zip
+    Contains: comparison report, individual scorecards
 ```
 
 ---

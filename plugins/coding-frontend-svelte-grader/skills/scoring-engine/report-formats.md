@@ -9,11 +9,15 @@ Complete output templates for the `report-generator` agent. Three report types: 
 File naming convention: `{project-name}-grade-report.md`
 
 ```markdown
-# Svelte/SvelteKit Grade Report
+# Svelte/SvelteKit — Code Quality Report
 
-**Project:** {project_name}
-**Graded:** {graded_at}
-**Grader Version:** coding-frontend-svelte-grader
+| | |
+|---|---|
+| **Project** | {project_name} |
+| **Date** | {graded_at} |
+| **Branch** | `{git_branch}` |
+| **Commit** | `{git_commit_short}` |
+| **Working Tree** | {git_clean_or_dirty} |
 
 ---
 
@@ -315,13 +319,14 @@ Full per-dimension findings are in the individual grade reports:
 
 ## Report File Placement
 
-The report-generator should write reports to a `grade-reports/` directory at the project root (or wherever the user specifies). Default paths:
+The report-generator writes reports to a timestamped `reports/` subdirectory at the project root, then zips everything for easy transfer. Default paths:
 
 | Report Type | Default Path |
 |-------------|-------------|
-| Markdown Grade Report | `./grade-reports/{project-name}-grade-report.md` |
-| JSON Scorecard | `./grade-reports/{project-name}-scorecard.json` |
-| Comparative Report (MD) | `./grade-reports/comparison-{a}-vs-{b}-report.md` |
-| Comparative JSON | `./grade-reports/comparison-{a}-vs-{b}-scorecard.json` |
+| Markdown Grade Report | `./reports/<YYYY-MM-DD_HH-MM-SS>/{project-name}-grade-report.md` |
+| JSON Scorecard | `./reports/<YYYY-MM-DD_HH-MM-SS>/{project-name}-scorecard.json` |
+| Comparative Report (MD) | `./reports/<YYYY-MM-DD_HH-MM-SS>/comparison-{a}-vs-{b}-report.md` |
+| Comparative JSON | `./reports/<YYYY-MM-DD_HH-MM-SS>/comparison-{a}-vs-{b}-scorecard.json` |
+| Zip Archive | `./reports/<YYYY-MM-DD_HH-MM-SS>/contents.zip` |
 
-The `restrict-writes.sh` hook validates that Write operations target these paths. Attempting to write to source files (`.svelte`, `.ts`, `.js`, `.css`) is blocked.
+Attempting to write to source files (`.svelte`, `.ts`, `.js`, `.css`) is blocked.

@@ -4,6 +4,24 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **Grader report output convention** — all 3 grader plugins now write reports
+  to `reports/<YYYY-MM-DD_HH-MM-SS>/` (was `grade-reports/`) and zip all files
+  into `contents.zip` for easy transfer to other machines
+  - `coding-embedded-zephyr-grader`: 0.1.3 → 0.1.4
+  - `coding-frontend-svelte-grader`: 0.0.5 → 0.0.6
+  - `coding-cloud-python-grader`: 0.0.5 → 0.0.6
+- **Grader report quality** — all 3 grader plugins now include git context
+  (branch, commit hash, clean/dirty status) in report headers. Zephyr grader
+  HTML template redesigned with professional typography, clean layout, and
+  print-friendly CSS (replaces gradient-heavy design)
+- **Python grader file output** — `grade` command now writes report.md and
+  scorecard.json to disk (was terminal-only), matching zephyr/svelte behavior
+
+### Added
+- `.claude/rules/cross-team-consistency.md` — enforces checking all 3 teams
+  when fixing bugs in any single team plugin, preventing silent drift
+
 ### Fixed
 - `coding-embedded-zephyr-engineer`: 0.0.4 → 0.0.5
   - PostToolUse hook scripts (`validate-kconfig.sh`, `validate-dts-overlay.sh`)

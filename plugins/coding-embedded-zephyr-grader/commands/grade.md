@@ -177,6 +177,12 @@ Run these agents **in parallel**:
 
 ### Phase 6: Report Generation
 
+Compute a timestamped output directory:
+```
+output_dir = <submission_path>/reports/<YYYY-MM-DD_HH-MM-SS>/
+```
+Create the directory before spawning the report generator.
+
 **Spawn:** `report-generator` agent
 
 **Input:**
@@ -185,6 +191,7 @@ Run these agents **in parallel**:
   "submission_info": <from intake>,
   "dimension_scores": <from all analyzers>,
   "aggregate": <from aggregator>,
+  "output_dir": "<submission_path>/reports/<YYYY-MM-DD_HH-MM-SS>/",
   "output_formats": ["markdown", "json", "html"]
 }
 ```
@@ -192,9 +199,10 @@ Run these agents **in parallel**:
 **Output:**
 ```json
 {
-  "markdown_path": "/path/to/report.md",
-  "json_path": "/path/to/scorecard.json",
-  "html_path": "/path/to/report.html"
+  "markdown_path": "/path/to/reports/2026-02-24_14-30-00/sub001-report.md",
+  "json_path": "/path/to/reports/2026-02-24_14-30-00/sub001-report.json",
+  "html_path": "/path/to/reports/2026-02-24_14-30-00/sub001-report.html",
+  "zip_path": "/path/to/reports/2026-02-24_14-30-00/contents.zip"
 }
 ```
 
@@ -220,10 +228,8 @@ Top Issues:
 2. <issue>
 3. <issue>
 
-Reports Generated:
-- Markdown: <path>
-- JSON: <path>
-- HTML: <path>
+Reports: <submission_path>/reports/<YYYY-MM-DD_HH-MM-SS>/contents.zip
+  Contains: report.md, report.json, report.html
 ```
 
 Offer to open the report or provide next steps.
