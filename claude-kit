@@ -304,12 +304,19 @@ def cmd_list() -> None:
 
 # ── cmd_update ────────────────────────────────────────────────────────────────
 
-def _show_changelog(changelog_path: pathlib.Path) -> None:
-    """Parse CHANGELOG.md and display the latest release entry."""
+def _show_changelog(changelog_path: pathlib.Path,
+                    since_tag: str | None = None) -> None:
+    """Parse CHANGELOG.md and display release entries newer than *since_tag*.
+
+    If *since_tag* is ``None`` only the latest release entry is shown.
+    """
     try:
         text = changelog_path.read_text()
     except OSError:
         return
+
+    # Normalise tag: "v0.3.1" → "0.3.1" for matching against changelog headers.
+    since_ver = since_tag.lstrip("v") if since_tag else None
 
     lines = text.splitlines()
     entry_lines: list = []
@@ -317,11 +324,12 @@ def _show_changelog(changelog_path: pathlib.Path) -> None:
 
     for line in lines:
         if line.startswith("## ["):
-            if in_entry:
-                break  # stop at the next version header
             ver_name = line.split("]")[0].replace("## [", "").strip()
             if ver_name.lower() == "unreleased":
-                continue  # skip the unreleased section
+                continue
+            # Stop when we reach the version the user already had.
+            if since_ver and ver_name == since_ver:
+                break
             in_entry = True
             entry_lines.append(line)
         elif in_entry:
@@ -365,13 +373,24 @@ def cmd_update() -> None:
     p(f"  {col(C.DIM, '─' * 40)}")
     p()
 
-    old_versions: dict = {}
-    if PLUGINS_DIR.exists():
-        for d in sorted(PLUGINS_DIR.iterdir()):
-            if d.is_dir():
-                old_versions[d.name] = plugin_version(d)
-
     old_hash = _git(["rev-parse", "HEAD"]) or "?"
+    # Use the nearest ancestor tag as the version baseline so the diff
+    # matches the changelog.  If we read from the filesystem, commits
+    # pulled between releases (tag A → untagged → tag B) would already
+    # reflect intermediate bumps, hiding changes listed in the changelog.
+    old_tag = _git(["describe", "--tags", "--abbrev=0"])
+    old_versions: dict = {}
+    if old_tag and PLUGINS_DIR.exists():
+        for d in sorted(PLUGINS_DIR.iterdir()):
+            if not d.is_dir():
+                continue
+            blob = _git(["show", f"{old_tag}:plugins/{d.name}/.claude-plugin/plugin.json"])
+            if blob:
+                try:
+                    old_versions[d.name] = json.loads(blob).get("version", "?")
+                except Exception:
+                    old_versions[d.name] = plugin_version(d)
+            # Plugin didn't exist at old tag — will show as "(new)"
 
     p(f"  {col(C.CY, 'Pulling from origin...')}")
     p()
@@ -449,10 +468,10 @@ def cmd_update() -> None:
             p()
             p(f"    {col(C.Y, '↑')} {col(C.W, 'statusline-command.sh')}  {col(C.Y, 'updated')}")
 
-    # Show changelog summary
+    # Show changelog summary (all entries since the tag the user was on)
     changelog = INSTALL_DIR / "CHANGELOG.md"
     if changelog.exists():
-        _show_changelog(changelog)
+        _show_changelog(changelog, since_tag=old_tag)
 
     p()
     p(f"  {col(C.G, 'Done.')}")
