@@ -1,6 +1,6 @@
 # core-spec
 
-> **Role:** System · **Version:** 0.0.0
+> **Role:** System · **Version:** 0.0.1
 
 Spec-driven development for long-running Claude Code sessions — write the spec first, derive implementation phases from it, track progress via file-based state, and recover context after compaction through hooks and agents.
 

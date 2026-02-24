@@ -50,5 +50,8 @@ jobs:
       - name: CLI smoke tests
         run: bash scripts/test-cli.sh
 
+      - name: Plugin consistency checks
+        run: bash scripts/test-plugin-consistency.sh
+
       - name: Tier 1 — changed plugins
         run: python3 scripts/validate-plugins.py --changed --json
