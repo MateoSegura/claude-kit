@@ -1,6 +1,6 @@
 # coding-embedded-zephyr-knowledge
 
-> **Role:** Knowledge companion · **Version:** 0.1.1
+> **Role:** Knowledge companion · **Version:** 0.1.2
 
 Shared domain knowledge for Zephyr RTOS embedded development — kernel APIs, devicetree, hardware targets, design patterns, build system, networking, security, and serialization reference material.
 

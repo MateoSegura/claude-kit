@@ -11,47 +11,13 @@
         ]
       }
     ],
-    "PreToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a DEBUGGER (investigating crashes, analyzing logs, running GDB, inspecting registers). If you are NOT in a debugging role (e.g. you are an engineer, tester, or grader), respond {\"ok\": true} immediately — this restriction only applies to debugging sessions. If you ARE the debugger, you must NOT write or edit any files. Debugger agents are strictly read-only — investigate and diagnose only. Respond {\"ok\": false, \"reason\": \"BLOCKED: Debugger agents are read-only. Use the engineer plugin to apply fixes.\"}.",
-            "model": "haiku"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a DEBUGGER (investigating crashes, analyzing logs, running GDB, inspecting registers). If you are NOT in a debugging role (e.g. you are an engineer, tester, or grader), respond {\"ok\": true} immediately — this restriction only applies to debugging sessions. If you ARE the debugger, check: debuggers must ONLY run read-only diagnostic commands. BLOCK: rm/delete operations, git push/commit/reset --hard, west flash (debugger inspects, does NOT deploy), sed -i, patch, tee to files, dd to /dev/, npm/pip install. ALLOW: cat, head, grep, find, ls, git log/diff/status/show, west build (for analysis), GDB commands, addr2line, objdump, readelf, nm, size, JLinkExe (read-only), openocd (for debugging only). Respond {\"ok\": true} if the command is safe for a debugger, or {\"ok\": false, \"reason\": \"BLOCKED: Debuggers must only run read-only diagnostic commands\"} if blocked.",
-            "model": "haiku"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a DEBUGGER. If you are NOT in a debugging role, respond {\"ok\": true} immediately. If you ARE the debugger, check: (1) GDB output has meaningful data (thread list, backtrace, registers), not just connection errors. (2) addr2line/objdump resolved to actual source (not ??:0). (3) Probe commands connected successfully. (4) Flag Error/FAILED/Connection refused. (5) Flag empty output. Respond {\"ok\": true} if usable data, {\"ok\": false, \"reason\": \"...\"} if tool failure.",
-            "model": "haiku"
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "matcher": "",
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Context: $ARGUMENTS. FIRST: Determine if this session involved debugging or diagnosing a Zephyr issue (investigating crashes, analyzing logs, running GDB, inspecting registers). If NO debugging work was performed in this session (e.g. this was a grading, engineering, or testing session), respond {\"ok\": true} immediately — this hook only applies to debugging sessions. If debugging WAS performed, verify ALL required: (1) TRIAGE: failure domain classified with confidence. (2) INVESTIGATION: at least one specialist invoked. (3) EVIDENCE: every conclusion traces to artifact (register value, log line, memory address, config entry). (4) ROOT CAUSE: stated with confidence, OR ranked candidates listed. (5) FIX REC: actionable recommendation given. (6) NO MODIFICATIONS: no Write/Edit/flash operations. Respond {\"ok\": true} if complete, {\"ok\": false, \"reason\": \"Missing: ...\"} if incomplete.",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if this session involved debugging or diagnosing a Zephyr issue (investigating crashes, analyzing logs, running GDB, inspecting registers). If NO debugging work was performed in this session (e.g. this was a grading, engineering, or testing session), respond {\"ok\": true} immediately \u2014 this hook only applies to debugging sessions. If debugging WAS performed, verify ALL required: (1) TRIAGE: failure domain classified with confidence. (2) INVESTIGATION: at least one specialist invoked. (3) EVIDENCE: every conclusion traces to artifact (register value, log line, memory address, config entry). (4) ROOT CAUSE: stated with confidence, OR ranked candidates listed. (5) FIX REC: actionable recommendation given. (6) NO MODIFICATIONS: no Write/Edit/flash operations. Respond {\"ok\": true} if complete, {\"ok\": false, \"reason\": \"Missing: ...\"} if incomplete.",
             "model": "sonnet"
           }
         ]

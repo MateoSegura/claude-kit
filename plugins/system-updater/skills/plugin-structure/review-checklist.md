@@ -87,15 +87,16 @@ For EACH skill's SKILL.md file, check ALL of these:
 | H5 | At least one `PostToolUse` hook exists | WARNING |
 | H6 | At least one `Stop` hook exists | WARNING |
 | H7 | At least one `command`-type hook is used somewhere | WARNING |
-| H8 | At least one `prompt`-type hook is used somewhere | WARNING |
-| H9 | At least one `agent`-type hook is used somewhere | SUGGESTION |
+| H8 | At least one `prompt`-type or `agent`-type hook is used in Stop event (for session-end verification) | WARNING |
+| H9 | No `prompt`-type or `agent`-type hooks in PreToolUse or PostToolUse events (causes cross-fire in team loading — use command hooks only in hot path) | CRITICAL |
 | H10 | All `command`-type hooks reference scripts that exist (map `${CLAUDE_PLUGIN_ROOT}/scripts/<name>` to `scripts/<name>` in build dir) | CRITICAL |
 | H11 | All `prompt`-type hooks end with verdict format instruction (prompt text contains `"ok"` somewhere) | WARNING |
 | H12 | All `agent`-type hooks have a `"timeout"` field | WARNING |
 | H13 | All script files referenced by hooks have a shebang line (`#!/bin/bash` or `#!/usr/bin/env bash`) | WARNING |
 | H14 | PreToolUse command hooks use `exit 2` for blocking (grep the script source) | WARNING |
-| H15 | Role-specific blocking hooks (grader/debugger/tester restrictions) use `prompt` type with session-awareness preamble, NOT `command` type. A role-specific hook is one that restricts operations based on the active role (e.g., "graders must not write source files", "debuggers are read-only"). Check the prompt text for a "FIRST: Determine if you are currently operating as a [ROLE]" guard. | CRITICAL |
+| H15 | No role-specific restrictions in PreToolUse or PostToolUse hooks. Role enforcement (debugger read-only, grader report-only, tester test-only) belongs in system prompts + permissionMode + Stop hooks, NOT in hot-path hooks that cause cross-fire when teams are loaded together. | CRITICAL |
 | H16 | Stop hooks in team plugins (plugins with companions or part of a role set) include session-awareness — the prompt checks whether this role's work was actually performed before enforcing completion requirements. Look for "If NO [role] work was performed" or equivalent guard. | WARNING |
+| H17 | PostToolUse command scripts are file-type-gated — they check the file extension early and `exit 0` for non-matching file types, preventing unnecessary processing when fired from other roles' tool uses. | WARNING |
 
 ## Category 7: Cross-Reference Integrity
 

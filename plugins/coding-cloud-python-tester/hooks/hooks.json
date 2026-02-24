@@ -11,28 +11,6 @@
         ]
       }
     ],
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a TESTER (writing and running Python tests with pytest). If you are NOT in a testing role (e.g. you are an engineer, grader, or debugger), respond {\"ok\": true} immediately \u2014 this restriction only applies to testing sessions. If you ARE the tester, check: testers must NOT modify production source or deploy. BLOCK: rm targeting production src/ or app/ directories, docker build/push, kubectl apply/delete, helm install/upgrade, git push --force to main/master, git reset --hard, npm/yarn publish. ALLOW: pytest, pip install (for test dependencies), git push (non-force), rm in test directories, docker logs, all read commands. Respond {\"ok\": true} if the command is safe for a tester, or {\"ok\": false, \"reason\": \"BLOCKED: Testers must not modify production source\"} if blocked.",
-            "model": "haiku"
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a TESTER (writing Python test files). If you are NOT in a testing role (e.g. you are an engineer, grader, or debugger), respond {\"ok\": true} immediately \u2014 this restriction only applies to testing sessions. If you ARE the tester, check: testers may ONLY write test infrastructure files. ALLOW: test_*.py, conftest.py, pyproject.toml (pytest config), pytest.ini, setup.cfg. BLOCK: database migration files (migrations/, alembic/versions/), deployment configs (deploy/, infra/, terraform/, helm/, k8s/, .github/workflows/), Dockerfiles, docker-compose files, production Python source (.py files that are NOT test_*.py or conftest.py). Respond {\"ok\": true} if the file is allowed for a tester, or {\"ok\": false, \"reason\": \"BLOCKED: Testers may only write test files (test_*.py, conftest.py)\"} if blocked.",
-            "model": "haiku"
-          }
-        ]
-      }
-    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",
@@ -40,11 +18,6 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/lint-test-file.sh"
-          },
-          {
-            "type": "prompt",
-            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a TESTER (writing and running tests, coverage analysis). If you are NOT in a tester role (e.g. you are an engineer, grader, or debugger), respond {\"ok\": true} immediately \u2014 this test quality review only applies to tester sessions. If you ARE the tester, proceed: You are a senior Python test engineer reviewing a test file that was just written or edited. Check for the following issues:\n1. Missing async markers \u2014 any test function calling an async function or using 'await' must be decorated with @pytest.mark.asyncio (or the equivalent async test marker). Flag any 'async def test_' functions that lack this marker.\n2. Incorrect fixture scope \u2014 fixtures that create expensive resources (database connections, containers, HTTP clients) should use scope='session' or scope='module', not the default function scope. Flag fixtures that appear expensive but use the default scope.\n3. Missing assertions \u2014 any test function that contains no assert statement (including pytest.raises, assert_called, assertAlmostEqual, etc.) is meaningless. Flag test functions with zero assertions.\n4. Bare exception handling \u2014 'except Exception: pass' or 'except: pass' silently swallow failures and must not appear in test code. Flag any bare or pass-through exception blocks.\n5. Hardcoded test data \u2014 email addresses, UUIDs, passwords, API keys, or database URLs hardcoded inline in tests instead of using fixtures or factories. Flag these and suggest moving them to conftest.py fixtures.\n6. Missing pytest.mark categorisation \u2014 tests that exercise network, database, cloud APIs, or slow operations should be marked with an appropriate pytest.mark (e.g., @pytest.mark.integration, @pytest.mark.slow, @pytest.mark.cloud). Flag unmarked tests that clearly belong to one of these categories.\n\nRespond with {\"ok\": true} if none of these issues are present, or {\"ok\": false, \"reason\": \"<concise list of specific violations found with line-level guidance on how to fix each one>\"} if any issues are found.",
-            "model": "haiku"
           },
           {
             "type": "command",

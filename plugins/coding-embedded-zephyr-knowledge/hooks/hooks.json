@@ -12,18 +12,6 @@
         ]
       }
     ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a KNOWLEDGE EDITOR (updating domain reference material, hardware docs, API references). If you are NOT in a knowledge editor role (e.g. you are an engineer, grader, tester, or debugger), respond {\"ok\": true} immediately \u2014 this knowledge accuracy review only applies to knowledge editor sessions. If you ARE the knowledge editor, proceed: Review this file change for Zephyr knowledge accuracy. If the file is NOT a Zephyr reference file (.md in a skills directory), respond {\"ok\": true} immediately. For Zephyr reference files, check: 1) API signatures match current Zephyr v3.x documentation. 2) Devicetree examples use proper syntax (node-name@unit-address format). 3) Kconfig symbols follow CONFIG_ prefix convention. 4) No deprecated APIs referenced without migration notes. Respond {\"ok\": true} if accurate, or {\"ok\": false, \"reason\": \"specific inaccuracy\"}.",
-            "description": "Validate Zephyr reference material accuracy"
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "matcher": "",

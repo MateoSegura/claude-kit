@@ -592,9 +592,9 @@ Use this to decide which hook type is appropriate:
 
 Every production plugin should include hooks from these categories. Choose the appropriate type for each.
 
-### Pattern: PostToolUse on Write|Edit — Smart Domain-Aware Linting (prompt type)
+### Pattern: PostToolUse on Write|Edit — Deterministic File Validation (command type)
 
-After every file write/edit, use a prompt hook for domain-aware evaluation. This catches issues that regex-based linters miss: wrong API usage patterns, missing error handling, convention violations.
+After every file write/edit, use a command hook to run deterministic validation. The script checks the file extension first and exits 0 immediately for non-matching types, making it safe for team loading.
 
 ```json
 {
@@ -603,8 +603,8 @@ After every file write/edit, use a prompt hook for domain-aware evaluation. This
       "matcher": "Write|Edit",
       "hooks": [
         {
-          "type": "prompt",
-          "prompt": "Review this code change for domain-specific issues. Tool: $ARGUMENTS. Check for: 1) Missing error handling 2) Convention violations 3) Security issues 4) Common domain mistakes. Respond {\"ok\": true} or {\"ok\": false, \"reason\": \"...\"}"
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/scripts/validate-file.sh"
         }
       ]
     }
@@ -612,7 +612,24 @@ After every file write/edit, use a prompt hook for domain-aware evaluation. This
 }
 ```
 
-Customize the prompt for the domain. For an embedded plugin: "Check for missing NULL pointer checks, bare ISR operations, and unprotected shared state." For a web plugin: "Check for XSS vulnerabilities, missing input validation, and unhandled promise rejections."
+The script should be file-type-gated:
+
+```bash
+#!/bin/bash
+set -euo pipefail
+INPUT=$(cat)
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
+
+# Only validate relevant file types — exit 0 for everything else
+if ! echo "$FILE_PATH" | grep -qE '\.(c|h)$'; then
+  exit 0
+fi
+
+# Domain-specific validation here (syntax, structure, naming)
+# Use grep, jq, or other deterministic tools — NOT LLM calls
+```
+
+**IMPORTANT for team plugins**: Do NOT use `prompt`-type hooks in PostToolUse. They fire on every tool use across ALL loaded plugins, causing cross-fire errors and unnecessary LLM calls. Domain-aware semantic checking belongs in the Stop hook instead.
 
 ### Pattern: PreToolUse on Bash — Dangerous Command Blocking (command type)
 
@@ -755,78 +772,65 @@ Verify required tools and environment are available when a session starts.
 
 ---
 
-## Session-Awareness for Multi-Plugin Teams
+## Deterministic Hooks for Teams — The Cross-Fire Problem and Solution
 
-When multiple plugins from the same domain team are loaded simultaneously (e.g., engineer + grader + tester + debugger + knowledge), **ALL hooks from ALL loaded plugins fire for every event**. This means a grader's PreToolUse hook fires when the engineer writes code, and a debugger's Stop hook fires when the tester ends a session.
+When multiple plugins from the same domain team are loaded simultaneously (e.g., engineer + grader + tester + debugger + knowledge), **ALL hooks from ALL loaded plugins fire for every event**. There is no plugin scoping mechanism — hooks are merged globally and execute in parallel, with "deny wins" conflict resolution.
 
-Without session-awareness guards, this causes **hook cross-fire** — hooks from one role incorrectly block or interfere with operations from another role. This is the single most common source of hook failures in team deployments.
+### The Cross-Fire Problem
 
-### The Problem: Hook Cross-Fire
+Consider a team with 5 plugins loaded. When the engineer writes a `.py` file:
 
-Consider a team with an engineer and a grader loaded simultaneously:
+1. The engineer's PostToolUse prompt hook fires — evaluates anti-patterns (**correct**)
+2. The grader's PreToolUse prompt hook fires — asks haiku "are you a grader?" (**wrong role**)
+3. The debugger's PreToolUse prompt hook fires — asks haiku "are you a debugger?" (**wrong role**)
+4. The tester's PreToolUse prompt hook fires — asks haiku "are you a tester?" (**wrong role**)
+5. The knowledge plugin's PostToolUse prompt hook fires — checks accuracy (**wrong context**)
 
-1. The grader has a PreToolUse hook on `Write|Edit` that blocks writes to source files (graders should only write reports)
-2. The engineer tries to write a `.py` file — the grader's hook fires and BLOCKS the write
-3. Result: the engineer cannot do its job because the grader's hook doesn't know which role is active
+**Result**: 4 out of 5 hooks fire unnecessarily. Each prompt hook = 1 haiku LLM call = 0.5-2.5s latency + tokens. Over a typical session with 50+ tool uses, this adds 250-350 unnecessary LLM calls, costing ~$0.50-2.00 and adding cumulative minutes of latency. Worse, haiku cannot reliably self-identify roles from conversation context — it sometimes answers "yes I am the grader" when running as the engineer, causing false blocks and "hook stopped continuation" errors.
 
-This affects ALL hook events:
-- **PreToolUse**: Role-specific blocking hooks prevent other roles from using tools
-- **PostToolUse**: Role-specific validation hooks reject valid operations from other roles
-- **Stop**: Role-specific completion checks fail because the session wasn't performing that role's work
+### The Solution: No Prompt Hooks in the Hot Path
 
-### The Solution: Session-Awareness Guards
+**Rule: PreToolUse and PostToolUse must use ONLY `command`-type hooks (deterministic shell scripts). No `prompt` or `agent` hooks in these events.**
 
-Every role-specific hook MUST include a **session-awareness preamble** that checks whether the hook's role is actually active before applying restrictions. Only prompt-type hooks can determine the active role (by reading conversation context). Shell scripts (command hooks) cannot determine the active role.
+Prompt and agent hooks are reserved for:
+- **Stop hooks** — fire once at session end, so latency and cost are acceptable. Session-awareness preambles work here because the LLM has the full conversation to reason about.
+- **SessionStart hooks** — fire once, environment checks only.
+
+Role-specific enforcement (debugger is read-only, grader writes only reports, tester writes only tests) is handled by the **5-layer defense model** instead of hot-path hooks:
+
+### 5-Layer Defense Model
+
+| Layer | Mechanism | When | Cost |
+|-------|-----------|------|------|
+| 1 | `permissionMode: plan` in agent frontmatter | Every tool call | Zero — platform-level UI gate |
+| 2 | System prompt declaring role constraints | Agent initialization | Zero — part of the prompt |
+| 3 | Deterministic command scripts (universal safety) | PreToolUse/PostToolUse | Microseconds — shell script |
+| 4 | `acceptEdits` UI for write operations | Every file write | Zero — user reviews diffs |
+| 5 | Stop hooks (prompt/agent type with session-awareness) | Session end (once) | One LLM call per plugin |
+
+Layers 1-4 prevent violations in real-time. Layer 5 catches anything that slipped through at session end.
+
+### What Goes Where
+
+| Event | Allowed Hook Types | Purpose |
+|-------|--------------------|---------|
+| **PreToolUse** | `command` only | Universal safety: block dangerous commands, protect files |
+| **PostToolUse** | `command` only (sync or async) | Deterministic validation: lint files, validate syntax, run tests |
+| **Stop** | `prompt` or `agent` | Comprehensive session-end verification with session-awareness |
+| **SessionStart** | `command` only | Environment checks: verify tools installed |
 
 ### Universal vs Role-Specific Hooks
 
-Not all hooks need session-awareness. Categorize each hook:
+- **Universal safety hooks** (PreToolUse `command`): Block operations that NO role should perform (`rm -rf /`, `git push --force`, writes to `.env`). These are safe for team loading — they apply the same restriction to all roles.
+- **Deterministic validator hooks** (PostToolUse `command`): File-type-gated scripts that check syntax/structure. These exit 0 immediately for non-matching file types, so they're harmless when fired from other roles.
+- **Role-specific enforcement**: Handled by system prompts + permissionMode + Stop hooks. NOT by PreToolUse/PostToolUse hooks.
 
-- **Universal safety hooks**: Block operations that NO role should perform (e.g., `rm -rf /`, `git push --force`, writing to `.env` files). These stay as `command` hooks with NO session-awareness guard — they apply unconditionally.
-- **Role-specific restriction hooks**: Block operations that only a SPECIFIC role should not perform (e.g., graders shouldn't write source code, debuggers shouldn't modify files, testers shouldn't write to `src/`). These MUST be `prompt` hooks with session-awareness guards.
+### Pattern 11: Session-Aware Stop Hook (the only place for role checks)
 
-### Critical Rule: Role-Specific Blocking Requires Prompt Hooks
-
-If a hook restricts operations based on the active role, it **MUST** be a `prompt` hook (not `command`). Shell scripts have no way to determine which role is active in the conversation. Only the LLM can infer the active role from conversation context.
-
-**Wrong** — command hook that blocks all writes (affects all roles):
-```json
-{
-  "type": "command",
-  "command": "${CLAUDE_PLUGIN_ROOT}/scripts/restrict-file-writes.sh",
-  "description": "Restrict grader to report files only"
-}
-```
-
-**Right** — prompt hook with session-awareness:
-```json
-{
-  "type": "prompt",
-  "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a GRADER (running dimension reviews, computing scores, generating grade reports). If you are NOT in a grading role (e.g. you are an engineer, tester, or debugger), respond {\"ok\": true} immediately — this restriction only applies to grading sessions. If you ARE the grader, check: the file being written must be a report output file (.md, .json, .html). Writing source code files is FORBIDDEN for the grader. Respond {\"ok\": true} if the write is allowed, or {\"ok\": false, \"reason\": \"BLOCKED: Grader must not write source files\"} if blocked.",
-  "model": "haiku"
-}
-```
-
-### Pattern 11: Session-Aware Role-Specific Hook (PreToolUse prompt)
-
-The canonical pattern for role-specific blocking hooks in team plugins:
-
-```json
-{
-  "matcher": "Write|Edit",
-  "hooks": [
-    {
-      "type": "prompt",
-      "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a [ROLE_NAME] ([brief description of role activities]). If you are NOT in a [role] role (e.g. you are an [list other roles]), respond {\"ok\": true} immediately — this restriction only applies to [role] sessions. If you ARE the [role], check: [specific restrictions for this role]. Respond {\"ok\": true} if the operation is allowed, or {\"ok\": false, \"reason\": \"BLOCKED: [specific reason]\"} if blocked.",
-      "model": "haiku"
-    }
-  ]
-}
-```
-
-### Pattern 12: Session-Aware Stop Hook (completion verification)
-
-Stop hooks that verify role-specific work completion must also be session-aware, since ALL plugins' Stop hooks fire at session end regardless of which role was active:
+Stop hooks fire once at session end. Session-awareness preambles are appropriate here because:
+- Cost is one LLM call per plugin (not per tool use)
+- The LLM has the full conversation to reason about the active role
+- False positives just mean a benign `{"ok": true}` response
 
 ```json
 {
@@ -845,12 +849,12 @@ Stop hooks that verify role-specific work completion must also be session-aware,
 
 When designing hooks for a plugin that will be loaded as part of a team:
 
-1. **Classify each hook** as universal safety or role-specific restriction
-2. **Universal safety hooks** → `command` type, no session-awareness needed
-3. **Role-specific restriction hooks** → `prompt` type with session-awareness preamble
-4. **All Stop hooks** → Add session-awareness preamble (checks whether this role's work was performed)
-5. **All PostToolUse prompt hooks** that assume a specific role → Add session-awareness preamble
-6. **Test mentally**: "If all 5 team plugins are loaded and the engineer runs a command, will this hook incorrectly block it?"
+1. **PreToolUse**: Only `command`-type universal safety hooks (block dangerous commands, protect files)
+2. **PostToolUse**: Only `command`-type deterministic validators (linters, syntax checkers) + async background scripts
+3. **Stop**: `prompt` or `agent` type with session-awareness preamble for role-specific verification
+4. **No prompt/agent hooks in PreToolUse or PostToolUse** — these cause cross-fire when teams are loaded
+5. **File-gate all PostToolUse scripts**: Scripts must check file extension early and `exit 0` for non-matching types
+6. **Test mentally**: "If all 5 team plugins are loaded and the engineer writes a file, will any hook block it or cause an error?"
 
 ---
 
