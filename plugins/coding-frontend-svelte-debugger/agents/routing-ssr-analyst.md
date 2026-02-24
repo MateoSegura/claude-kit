@@ -3,7 +3,7 @@ name: routing-ssr-analyst
 model: opus
 description: "Diagnoses SvelteKit routing failures, SSR hydration mismatches, load function errors, form action failures, hook execution order issues, adapter configuration problems (adapter-node, adapter-static), and prerendering errors."
 tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
-skills: identity, design-patterns, diagnostic-heuristics, output-format, sveltekit-patterns
+skills: identity, design-patterns, diagnostic-heuristics, output-format, coding-frontend-svelte-knowledge:sveltekit-patterns
 permissionMode: plan
 color: "#4A90D9"
 ---

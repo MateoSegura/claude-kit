@@ -3,7 +3,7 @@ name: hardware-ipc-analyst
 model: opus
 description: "Diagnoses hardware integration failures through Tauri 2 IPC — USB/Serial/HID connection drops, BLE GATT characteristic errors, LAN/mDNS discovery failures, Audio/MIDI device enumeration problems. Reads and interprets Tauri Rust backend panic traces and IPC invoke/listen/emit event flow. Does NOT modify Rust code."
 tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
-skills: identity, design-patterns, diagnostic-heuristics, output-format, desktop-targets, hardware-abstraction, usb-serial-hid, ble-communication, lan-discovery, audio-midi-devices
+skills: identity, design-patterns, diagnostic-heuristics, output-format, coding-frontend-svelte-knowledge:desktop-targets, coding-frontend-svelte-knowledge:hardware-abstraction, coding-frontend-svelte-knowledge:usb-serial-hid, coding-frontend-svelte-knowledge:ble-communication, coding-frontend-svelte-knowledge:lan-discovery, coding-frontend-svelte-knowledge:audio-midi-devices
 permissionMode: plan
 color: "#DAA520"
 ---
