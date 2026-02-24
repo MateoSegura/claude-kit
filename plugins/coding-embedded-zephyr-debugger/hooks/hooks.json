@@ -16,8 +16,8 @@
         "matcher": "Write|Edit",
         "hooks": [
           {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-write-tools.sh"
+            "type": "prompt",
+            "prompt": "BLOCKED: You are a debugger agent — strictly read-only. Do not write or edit any files. Investigate and diagnose only. Use the engineer plugin to apply fixes."
           }
         ]
       },

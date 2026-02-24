@@ -17,9 +17,9 @@
         "matcher": "Write|Edit",
         "hooks": [
           {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-write-edit.sh",
-            "description": "Unconditionally block all Write and Edit tool invocations — read-only debugger"
+            "type": "prompt",
+            "prompt": "BLOCKED: You are a debugger agent — strictly read-only. Do not write or edit any files. Investigate and diagnose only. Use the engineer plugin to apply fixes.",
+            "description": "Soft reminder that debugger agents must not write or edit files"
           }
         ]
       },
