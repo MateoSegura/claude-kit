@@ -4,6 +4,8 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-02-24
+
 ### Fixed
 - **Zephyr grader**: Removed SPDX/licensing from grading criteria entirely — checkpatch.pl
   now runs with `--ignore SPDX_LICENSE_TAG`, licensing violations are explicitly excluded
