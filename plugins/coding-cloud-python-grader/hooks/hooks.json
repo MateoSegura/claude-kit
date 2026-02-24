@@ -1,0 +1,65 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-environment.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-dangerous-commands.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-write-tools.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You are a grading session monitor. A Bash command was just executed by the Python grader. Event context: $ARGUMENTS. Evaluate whether this command is read-only and analysis-focused as required by the grader role. A command is acceptable if it: reads files (cat, head, tail, less, grep, find, ls, wc, stat), runs static analysis tools (mypy, ruff, pyright, flake8, pylint, bandit), or runs pytest in collection-only or non-write mode. A command is NOT acceptable if it: installs packages, writes or modifies files, makes network requests, runs git write operations, or has any persistent side effects. Respond {\"ok\": true} if the command was read-only and appropriate for a grading session, or {\"ok\": false, \"reason\": \"<specific description of the inappropriate side effect or write operation>\"}.",
+            "model": "haiku"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/run-static-analysis.sh",
+            "async": true,
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You are a grading report completeness verifier for a cloud Python code grader. The grader is about to stop. Event context: $ARGUMENTS. Verify that the grading report satisfies ALL of the following requirements before allowing the session to end:\n\n1. ALL applicable grading dimensions are present and scored (e.g., correctness, code quality, type safety, test coverage, documentation, security, performance — or a defined subset declared upfront with justification for any omissions).\n\n2. EVERY finding in the report includes ALL four of: (a) the grading dimension it belongs to, (b) a severity level (critical / major / minor / info), (c) a precise file and line reference (file.py:42 format), and (d) a clear description with evidence (the actual code excerpt or tool output that supports the finding).\n\n3. An overall numeric score (e.g., 0-100 or letter grade) is present and its calculation is traceable — the score must be consistent with the individual dimension scores and the severity distribution of findings.\n\n4. The severity distribution is reasonable — a high overall score must not coexist with multiple critical or major findings without explicit justification.\n\n5. The report does not contain placeholder sections, TODO markers, or unfilled template fields.\n\nRespond {\"ok\": true} if ALL five requirements are satisfied, or {\"ok\": false, \"reason\": \"<specific description of which requirement is unmet and what must be added or corrected>\"}.",
+            "model": "sonnet"
+          }
+        ]
+      }
+    ]
+  }
+}

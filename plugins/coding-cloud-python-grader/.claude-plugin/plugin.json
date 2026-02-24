@@ -1,0 +1,5 @@
+{
+  "name": "coding-cloud-python-grader",
+  "description": "Python cloud-backend grader — blind quantitative code review across 8 dimensions: async correctness, type safety, security, observability, API contracts, performance risk, test coverage, and K8s hygiene",
+  "version": "1.0.0"
+}

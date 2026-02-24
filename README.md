@@ -64,28 +64,31 @@ Claude Code is a powerful single-agent system. But a single agent trying to be a
 
 claude-kit solves this with **specialized agent teams** — multiple Claude agents, each expert at one thing, working together in a single session.
 
-### The Four-Role Team Model
+### The Team Role Model
 
-Every domain team in claude-kit has exactly four roles:
+Every domain team in claude-kit has a core set of roles:
 
 ```
 Knowledge ──► Engineer
      └──────► Grader
      └──────► Tester
+     └──────► Debugger
 ```
 
 | Role | Responsibility | Key design principle |
 |------|---------------|---------------------|
 | **Knowledge** | Domain reference — APIs, patterns, hardware specs | No agents, no commands. Pure skill injection. |
-| **Engineer** | Active implementation — writes, builds, debugs | Loads knowledge as companion. Hooks enforce hard constraints. |
+| **Engineer** | Active implementation — writes, builds, scaffolds | Loads knowledge as companion. Hooks enforce hard constraints. |
 | **Grader** | Blind quantitative review — scores code across weighted dimensions | Isolated from engineer context. Never writes code. |
 | **Tester** | Test engineering — writes tests, runs coverage, validates CI | Own test knowledge. Never touches production code. |
+| **Debugger** | Failure diagnosis — triages crashes, profiles, traces | Read-only. Never writes or modifies code. |
 
-**Why four?** Each role requires a different permission model, different tool access, and different hard constraints:
+Each role requires a different permission model, different tool access, and different hard constraints:
 
 - The **engineer** needs write access and aggressive build-and-fix loops
 - The **grader** needs read-only access and must be blind to who wrote the code
 - The **tester** needs write access but only to test files, never source files
+- The **debugger** needs read-only access to logs, traces, and code for diagnosis
 - The **knowledge** plugin provides shared domain context without polluting any role's instructions
 
 ### How Claude's Architecture Makes This Work
@@ -138,6 +141,22 @@ claude-kit --kit coding-frontend-svelte  # loads all four
 | `coding-frontend-svelte-engineer` | Engineer | [→ README](plugins/coding-frontend-svelte-engineer/README.md) |
 | `coding-frontend-svelte-grader` | Grader | [→ README](plugins/coding-frontend-svelte-grader/README.md) |
 | `coding-frontend-svelte-tester` | Tester | [→ README](plugins/coding-frontend-svelte-tester/README.md) |
+
+### Python Cloud Backend Team
+
+Five plugins covering the full development lifecycle for Python cloud-backend microservices (FastAPI, gRPC, asyncio, SQLAlchemy 2.0, Docker, Kubernetes). The knowledge plugin is auto-loaded as a companion by the other four, injecting asyncio patterns, distributed systems reference, container orchestration, and design patterns into their agent context.
+
+```bash
+claude-kit --kit coding-cloud-python  # loads all five
+```
+
+| Plugin | Role | README |
+|--------|------|--------|
+| `coding-cloud-python-knowledge` | Knowledge | [→ README](plugins/coding-cloud-python-knowledge/README.md) |
+| `coding-cloud-python-engineer` | Engineer | [→ README](plugins/coding-cloud-python-engineer/README.md) |
+| `coding-cloud-python-grader` | Grader | [→ README](plugins/coding-cloud-python-grader/README.md) |
+| `coding-cloud-python-tester` | Tester | [→ README](plugins/coding-cloud-python-tester/README.md) |
+| `coding-cloud-python-debugger` | Debugger | [→ README](plugins/coding-cloud-python-debugger/README.md) |
 
 ### System Plugins
 

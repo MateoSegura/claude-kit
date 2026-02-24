@@ -48,8 +48,6 @@ Format: `<type>-<domain>-<tech>-<role>` where all segments are lowercase, hyphen
 - `grader` — blind, objective code evaluation with quantitative scoring
 - `tester` — writes and runs tests, coverage analysis
 - `debugger` — diagnoses failures, reads logs/traces/dumps
-- `deployer` — CI/CD, flashing, releasing, infrastructure
-- `migrator` — upgrades versions, ports between platforms
 
 **NOT selectable as a team role** (handled separately):
 - `knowledge` — shared domain reference material, created automatically in Phase 2.5 if missing
@@ -197,8 +195,9 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
    - grader — blind, objective code evaluation with quantitative scoring
    - tester — writes and runs tests, coverage analysis
    - debugger — diagnoses failures, reads logs/traces/dumps
-   - deployer — CI/CD, flashing, releasing, infrastructure
-   - migrator — upgrades versions, ports between platforms
+
+   Note: Deployment, CI/CD, and migration concerns are operational — not
+   part of the coding team. Future team types may cover these areas.
 
    Note: "knowledge" is handled automatically — if no knowledge plugin exists
    for this domain, one will be created first in Phase 2.5.

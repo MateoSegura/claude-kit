@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-dangerous-commands.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "A file is about to be written or edited. The file path and content are: $ARGUMENTS. Check if this file is a Dockerfile, docker-compose file, or Kubernetes manifest (any .yaml/.yml file containing 'kind:', 'apiVersion:', 'containers:', or named like deployment.yaml, service.yaml, ingress.yaml, configmap.yaml, secret.yaml, etc.). If it is one of these sensitive infrastructure files, verify that the change is intentional and does not introduce obvious misconfigurations: hardcoded secrets or passwords in environment variables, hostPort usage, privileged: true without justification, missing resource limits/requests on containers, image tags using 'latest' in a production context, or overly permissive RBAC rules. If no issues are found, or if the file is not a Dockerfile or K8s manifest, respond {\"ok\": true}. If a significant misconfiguration risk is present, respond {\"ok\": false, \"reason\": \"<specific issue found and recommended fix>\"}.",
+            "model": "haiku"
+          }
+        ]
+      }
+    ]
+  }
+}

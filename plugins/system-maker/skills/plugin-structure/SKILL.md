@@ -83,7 +83,7 @@ Located at `.claude-plugin/ctl.json` (alongside plugin.json). Read by `ctl.sh`, 
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `role` | string | no | Plugin archetype. Standard values: `engineer`, `grader`, `tester`, `debugger`, `deployer`, `migrator`, `knowledge` |
+| `role` | string | no | Plugin archetype. Standard values: `engineer`, `grader`, `tester`, `debugger`, `knowledge` |
 | `companions` | string[] | no | Companion plugin names to auto-load. Example: `["coding-embedded-zephyr-knowledge"]` |
 
 ### ctl.json Example
