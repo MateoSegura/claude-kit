@@ -5,6 +5,18 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.2.3] - 2026-02-24
+
+### Changed
+- Statusline redesigned with dot gauge progress bar (`●●●●●○○○○○○○○○○○`),
+  session cost display, token K/M suffixes, lines added/removed, and
+  color-coded tiers (cyan/green/yellow/red by context usage)
+- Single `jq` call replaces ~10 separate invocations for better performance
+- Removed `bc` dependency — token formatting uses pure `awk`
+
+### Added
+- Mermaid markdown preview extension in devcontainer config
+
 ## [0.2.2] - 2026-02-24
 
 ### Changed
