@@ -160,22 +160,6 @@ claude-kit --kit coding-cloud-python  # loads all five
 | `coding-cloud-python-tester` | Tester | [→ README](plugins/coding-cloud-python-tester/README.md) |
 | `coding-cloud-python-debugger` | Debugger | [→ README](plugins/coding-cloud-python-debugger/README.md) |
 
-### Python Cloud Backend Team
-
-Five plugins covering the full development lifecycle for Python cloud-backend microservices (FastAPI, gRPC, asyncio, SQLAlchemy 2.0, Docker, Kubernetes). The knowledge plugin is auto-loaded as a companion by the other four, injecting asyncio patterns, distributed systems reference, container orchestration, and design patterns into their agent context.
-
-```bash
-claude-kit --kit coding-cloud-python  # loads all five
-```
-
-| Plugin | Role | README |
-|--------|------|--------|
-| `coding-cloud-python-knowledge` | Knowledge | [→ README](plugins/coding-cloud-python-knowledge/README.md) |
-| `coding-cloud-python-engineer` | Engineer | [→ README](plugins/coding-cloud-python-engineer/README.md) |
-| `coding-cloud-python-grader` | Grader | [→ README](plugins/coding-cloud-python-grader/README.md) |
-| `coding-cloud-python-tester` | Tester | [→ README](plugins/coding-cloud-python-tester/README.md) |
-| `coding-cloud-python-debugger` | Debugger | [→ README](plugins/coding-cloud-python-debugger/README.md) |
-
 ### System Plugins
 
 Meta-plugins for building and maintaining the plugin ecosystem itself.
@@ -212,7 +196,7 @@ plugins/<name>/
 
 **Companion auto-loading:** A plugin declares companions in `ctl.json`. claude-kit loads them first, before the requesting plugin. The engineer always gets the knowledge plugin's skills injected before its own agents launch.
 
-See [`docs/plugin-spec.md`](docs/plugin-spec.md) for the complete specification.
+See [`docs/plugin-spec.md`](docs/plugin-spec.md) for the complete specification and [`docs/how-it-works.md`](docs/how-it-works.md) for how Claude Code's configuration hierarchy works with plugins.
 
 ---
 
