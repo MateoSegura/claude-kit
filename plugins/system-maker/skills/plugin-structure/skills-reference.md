@@ -339,7 +339,7 @@ The agent is named `<type>-<domain>-<tech>-<role>`. The domain is the broad disc
 - `coding-cloud-golang-engineer` (NOT `coding-cloud-golang-kubernetes-engineer` — K8s is a target)
 
 Standard domains: embedded, cloud, frontend, backend, mobile, ml, devops.
-Standard roles: engineer, grader, tester, debugger, deployer, migrator. Both are ALWAYS explicit.
+Standard roles: engineer, grader, tester, debugger. Both are ALWAYS explicit.
 
 ### Architecture Consequence
 

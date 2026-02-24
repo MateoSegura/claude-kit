@@ -34,7 +34,7 @@ Key characteristics:
    ```
    Identify the broad domain (embedded, cloud, frontend, backend, mobile, ml, devops)
    Identify the specific tech/framework (zephyr, linux, golang, react, pytorch, etc.)
-   Determine the role (engineer, grader, tester, debugger, deployer, migrator)
+   Determine the role (engineer, grader, tester, debugger)
    Format as: <type>-<domain>-<tech>-<role>
    Validate against regex: ^[a-z]+-[a-z][-a-z]*$
    ```

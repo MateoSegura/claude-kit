@@ -29,7 +29,7 @@ You will receive:
 5. Provide sensible defaults for every question — what you would choose if the user skips it. The defaults should reflect the most common choice for the given domain.
 6. **TEAM_MODE only** — If TEAM_MODE is true, classify each question as **shared** or **delta**:
    - **Shared questions** apply to ALL roles in the team. These cover domain-wide concerns: coding style, build system, target platforms, language versions, existing repos, documentation sources, MCP servers, CI/CD, and general agent behavior preferences. Shared answers are passed to every plugin's architecture designer.
-   - **Delta questions** are specific to ONE role. They cover role-unique concerns that differ between roles. Examples: grader needs rubric/scoring questions, debugger needs debug tool/trace questions, tester needs test framework/coverage questions, deployer needs release/flash process questions, engineer may need additional scope questions. Generate 2-5 delta questions per role from the ROLES list. Only generate deltas for roles where the domain creates genuinely different requirements — if two roles would have identical delta questions, omit the duplicates.
+   - **Delta questions** are specific to ONE role. They cover role-unique concerns that differ between roles. Examples: grader needs rubric/scoring questions, debugger needs debug tool/trace questions, tester needs test framework/coverage questions, engineer may need additional scope questions. Generate 2-5 delta questions per role from the ROLES list. Only generate deltas for roles where the domain creates genuinely different requirements — if two roles would have identical delta questions, omit the duplicates.
    - A question is shared if its answer would be the same regardless of which role plugin uses it. A question is delta if the answer depends on which role is being built.
 </process>
 
@@ -203,8 +203,6 @@ Note: The example shows 2 shared + 3 delta questions for illustration. Your actu
 - **grader**: Evaluation dimensions, scoring format, rubric strictness, blind review preferences
 - **tester**: Test frameworks, coverage targets, test types (unit/integration/E2E), CI integration
 - **debugger**: Debug tools, trace/log preferences, hardware debug probes, crash analysis approach
-- **deployer**: Release process, signing requirements, OTA update strategy, environment management
-- **migrator**: Version upgrade strategy, backward compatibility requirements, migration testing approach
 
 Only generate deltas for roles present in the ROLES list.
 </team_mode_output>
