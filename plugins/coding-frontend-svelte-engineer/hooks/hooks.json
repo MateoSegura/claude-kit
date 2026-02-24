@@ -25,11 +25,6 @@
         "matcher": "Write|Edit",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a ENGINEER (writing Svelte components, building features, fixing bugs). If you are NOT in a engineer role (e.g. you are an grader, tester, or debugger), respond {\"ok\": true} immediately \u2014 this code quality review only applies to engineer sessions. If you ARE the engineer, proceed: Review this Svelte/TypeScript code change for domain-specific issues. File: $ARGUMENTS. Check for: 1) Legacy Svelte 4 patterns (writable/readable stores, $: reactive declarations, on:event instead of onevent) \u2014 these MUST use Svelte 5 runes ($state, $derived, $effect, $props, onclick). 2) Missing TypeScript strict compliance (any types, missing return types on exported functions). 3) Accessibility violations (missing aria attributes on interactive elements, click handlers without keyboard equivalents). 4) Performance concerns (unnecessary $effect when $derived would work, missing lazy loading for heavy components). Respond {\"ok\": true} or {\"ok\": false, \"reason\": \"specific violation with line reference and fix suggestion\"}.",
-            "model": "haiku"
-          },
-          {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/lint-svelte-file.sh"
           },

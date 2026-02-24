@@ -1,38 +1,6 @@
 {
   "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a GRADER (running dimension reviews, computing scores, generating grade reports). If you are NOT in a grading role (e.g. you are an engineer, tester, or debugger), respond {\"ok\": true} immediately — this restriction only applies to grading sessions. If you ARE the grader, check: the file being written must be a report output file (.md, .json, .html, .txt). Writing source code files (.c, .h, .py, .conf, .cmake, .overlay, .dts, .dtsi, .sh) is FORBIDDEN for the grader — show fix suggestions as code examples inside the report instead. Respond {\"ok\": true} if the write is allowed, or {\"ok\": false, \"reason\": \"BLOCKED: Grader must not write source files\"} if blocked.",
-            "model": "haiku"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a GRADER (running dimension reviews, computing scores, generating grade reports). If you are NOT in a grading role (e.g. you are an engineer, tester, or debugger), respond {\"ok\": true} immediately — this restriction only applies to grading sessions. If you ARE the grader, check: graders must ONLY run read-only analysis commands. BLOCK: rm/delete operations, git push/commit/write operations, west flash, sed -i, shell output redirection to source files, make install. ALLOW: cat, head, grep, find, ls, wc, stat, git log/diff/status/show, west build (for analysis), cppcheck, lizard, cloc, size, readelf, objdump. Respond {\"ok\": true} if the command is safe for a grader, or {\"ok\": false, \"reason\": \"BLOCKED: Graders must only run read-only commands\"} if blocked.",
-            "model": "haiku"
-          }
-        ]
-      }
-    ],
     "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a GRADER (running dimension reviews, computing scores, generating grade reports). If you are NOT in a grading role (e.g. you are an engineer, tester, or debugger), respond {\"ok\": true} immediately — this validation only applies to grading sessions. If you ARE the grader, validate the report output: (1) File is NOT inside a submission directory (submissions are read-only), (2) All numeric scores are in 0-100 range with supporting evidence, (3) No qualitative-only judgments without data/metrics, (4) If the file contains dimension scores, each has clear justification. Respond {\"ok\": true} if all checks pass, or {\"ok\": false, \"reason\": \"specific issue\"} if validation fails.",
-            "model": "haiku"
-          }
-        ]
-      },
       {
         "matcher": "Bash",
         "hooks": [
@@ -52,7 +20,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Context: $ARGUMENTS. FIRST: Determine if this session involved grading a Zephyr codebase (running dimension reviewers, computing scores, generating grade reports). If NO grading work was performed in this session, respond {\"ok\": true} immediately — this hook only applies to grading sessions.\n\nIf grading WAS performed, verify:\n\nFor Single Submission Mode:\n1. All 9 dimensions scored (0-100) or explicitly marked N/A with justification\n2. Aggregate score computed using the weighted formula\n3. All 3 output formats generated: Markdown report, JSON structured data, HTML formatted report\n4. Every dimension score includes supporting evidence (metrics, tool outputs, code examples)\n5. LLM-evaluated dimensions (Clarity, Documentation, Error Handling) have confidence levels assigned\n\nFor A/B Comparison Mode, additionally verify:\n6. Both submissions scored independently with full dimension breakdowns\n7. Side-by-side comparison table showing dimension-by-dimension differences\n8. Recommendation with clear reasoning about which submission is superior\n\nRespond {\"ok\": true} if all verification checks pass.\nRespond {\"ok\": false, \"reason\": \"specific missing element\"} if work is incomplete.",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if this session involved grading a Zephyr codebase (running dimension reviewers, computing scores, generating grade reports). If NO grading work was performed in this session, respond {\"ok\": true} immediately \u2014 this hook only applies to grading sessions.\n\nIf grading WAS performed, verify:\n\nFor Single Submission Mode:\n1. All 9 dimensions scored (0-100) or explicitly marked N/A with justification\n2. Aggregate score computed using the weighted formula\n3. All 3 output formats generated: Markdown report, JSON structured data, HTML formatted report\n4. Every dimension score includes supporting evidence (metrics, tool outputs, code examples)\n5. LLM-evaluated dimensions (Clarity, Documentation, Error Handling) have confidence levels assigned\n\nFor A/B Comparison Mode, additionally verify:\n6. Both submissions scored independently with full dimension breakdowns\n7. Side-by-side comparison table showing dimension-by-dimension differences\n8. Recommendation with clear reasoning about which submission is superior\n\nRespond {\"ok\": true} if all verification checks pass.\nRespond {\"ok\": false, \"reason\": \"specific missing element\"} if work is incomplete.",
             "description": "Verify all grading dimensions scored and reports generated"
           }
         ]

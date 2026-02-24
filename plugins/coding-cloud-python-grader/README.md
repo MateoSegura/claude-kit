@@ -1,6 +1,6 @@
 # coding-cloud-python-grader
 
-> **Role:** Grader · **Version:** 0.0.3
+> **Role:** Grader · **Version:** 0.0.4
 
 Blind quantitative code grading for Python cloud-backend services. Scores code across 8 weighted dimensions: async correctness, type safety, security, observability, API contracts, performance risk, test coverage, and K8s hygiene.
 

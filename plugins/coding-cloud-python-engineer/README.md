@@ -1,6 +1,6 @@
 # coding-cloud-python-engineer
 
-> **Role:** Engineer · **Version:** 0.0.3
+> **Role:** Engineer · **Version:** 0.0.4
 
 Python cloud-backend engineer — scaffolds microservices, writes FastAPI endpoints, gRPC methods, Alembic migrations, background workers, and K8s manifests for modern distributed systems.
 
