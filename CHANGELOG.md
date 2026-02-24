@@ -4,6 +4,28 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-02-24
+
+### Added
+- **Plugin consistency checks** (`test-plugin-consistency.sh`): 5 deterministic
+  checks on every push — version badge matching, agent skill cross-reference
+  resolution, hook type safety (no prompt/agent in PreToolUse/PostToolUse),
+  frontmatter field naming, and CHANGELOG version accuracy
+- **Per-PR Claude semantic review** (`semantic-check` job in pr.yml): lightweight
+  Claude Haiku review on every PR that changes plugins — checks identity
+  coherence, domain specificity, content depth, cross-agent contradictions, and
+  hook appropriateness. Posts informational PR comment, never blocks merge
+- **Prompt builder** (`build-semantic-prompt.py`): generates focused review
+  prompts from changed plugin metadata for the semantic-check CI job
+
+### Fixed
+- `claude-kit update` version diff baseline: compare against nearest git tag
+  instead of HEAD, so version arrows match changelog entries even when
+  intermediate commits were pulled between releases
+- `_show_changelog` now shows ALL release entries since the user's last tag,
+  not just the latest — users who skip releases see the full history
+- `core-spec` README version badge (0.0.0 → 0.0.1)
+
 ## [0.3.2] - 2026-02-24
 
 ### Fixed
