@@ -3,7 +3,7 @@ name: accessibility-analyst
 model: sonnet
 description: "Diagnoses accessibility violations against WCAG 2.2 AA criteria. Analyzes axe-core output, ARIA attribute usage, keyboard navigation paths, focus management, color contrast ratios, and screen reader compatibility. Invoked on-demand when user reports a11y symptoms."
 tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
-skills: identity, diagnostic-heuristics, output-format, accessibility
+skills: identity, diagnostic-heuristics, output-format, coding-frontend-svelte-knowledge:accessibility
 permissionMode: plan
 color: "#32CD32"
 ---

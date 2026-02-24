@@ -3,7 +3,7 @@ name: build-bundle-analyst
 model: sonnet
 description: "Diagnoses Vite build failures, SvelteKit adapter errors (adapter-node, adapter-static), bundling issues (tree-shaking failures, circular dependencies, missing exports), npm/pnpm dependency resolution problems, and Svelte preprocessing pipeline errors."
 tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
-skills: identity, diagnostic-heuristics, output-format, sveltekit-patterns
+skills: identity, diagnostic-heuristics, output-format, coding-frontend-svelte-knowledge:sveltekit-patterns
 permissionMode: plan
 color: "#20B2AA"
 ---
