@@ -33,9 +33,9 @@ If not found, set score to N/A with reason "checkpatch.pl not available (ZEPHYR_
 ### Step 2: Run checkpatch.pl on each source file
 For each .c and .h file in the submission:
 ```bash
-$ZEPHYR_BASE/scripts/checkpatch.pl --no-tree --terse -f <file> 2>&1
+$ZEPHYR_BASE/scripts/checkpatch.pl --no-tree --terse --ignore SPDX_LICENSE_TAG -f <file> 2>&1
 ```
-Collect all output.
+Collect all output. The `--ignore SPDX_LICENSE_TAG` flag is mandatory — licensing and SPDX headers are not part of code quality grading.
 
 ### Step 3: Parse violations
 Parse checkpatch output lines matching patterns:
@@ -110,4 +110,5 @@ Return a JSON result:
 - Set a 2-minute timeout on checkpatch for the entire submission. Style checking should be fast.
 - Always report both raw and weighted counts so scores can be audited.
 - Do not penalize Zephyr-specific patterns that checkpatch may flag incorrectly (e.g., Zephyr macro conventions).
+- NEVER penalize SPDX license identifiers, copyright headers, or licensing-related violations. These are not code quality concerns. If checkpatch reports SPDX_LICENSE_TAG despite the --ignore flag, discard those violations entirely before scoring.
 </constraints>
