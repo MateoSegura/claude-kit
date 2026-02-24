@@ -5,6 +5,19 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.2.1] - 2026-02-24
+
+### Added
+- `docs/how-it-works.md` — configuration hierarchy guide with Mermaid diagrams
+  explaining how Claude Code's 4-scope config (managed, user, project shared,
+  project local) works for individuals and organizations, and how claude-kit
+  plugins layer on top via `--plugin-dir`
+- `install.sh` now auto-installs Claude Code CLI if `claude` is not found,
+  using the official installer (`curl -fsSL https://claude.ai/install.sh | bash`)
+
+### Fixed
+- Removed duplicate Python Cloud Backend Team section in README
+
 ## [0.2.0] - 2026-02-24
 
 ### Added
