@@ -48,7 +48,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Evaluate whether this development session is complete. Context: $ARGUMENTS. Check: 1) Were all requested features/fixes implemented? 2) Are there TODO comments or placeholder implementations left behind? 3) Were TypeScript types properly defined (no 'any' types)? 4) Were accessibility attributes added to interactive elements? 5) Was performance considered (lazy loading, code splitting for new routes)? 6) Are there any console.log statements that should be removed? Respond {\"ok\": true} if work appears complete, or {\"ok\": false, \"reason\": \"specific incomplete items\"}.",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if this session involved writing or editing Svelte/TypeScript source code as an engineering task (implementing features, fixing bugs, refactoring). If NO source code was written or edited in this session (e.g. this was a grading, testing, or debugging session), respond {\"ok\": true} immediately — this hook only applies to engineering sessions. If source code WAS written, check: 1) Were all requested features/fixes implemented? 2) Are there TODO comments or placeholder implementations left behind? 3) Were TypeScript types properly defined (no 'any' types)? 4) Were accessibility attributes added to interactive elements? 5) Was performance considered (lazy loading, code splitting for new routes)? 6) Are there any console.log statements that should be removed? Respond {\"ok\": true} if work appears complete, or {\"ok\": false, \"reason\": \"specific incomplete items\"}.",
             "model": "haiku"
           }
         ]

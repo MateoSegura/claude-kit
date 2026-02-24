@@ -68,7 +68,7 @@ Output the structured JSON report with all findings.
 
 Read `skills/plugin-structure/review-checklist.md` for the complete check tables (Categories 1-11 with all check IDs, descriptions, and severity levels).
 
-Execute EVERY check from EVERY category for ALL applicable files. The checklist covers: Structure (S1-S11), JSON Validity (J1-J9), Agent Frontmatter (A1-A12), Command Frontmatter (C1-C6), Skill Frontmatter (K1-K5), Hooks Correctness (H1-H14), Cross-References (X1-X5), Content Quality (Q1-Q17), Anti-Patterns (P1-P10), Knowledge Plugin (KN1-KN5), Companion (CO1-CO5).
+Execute EVERY check from EVERY category for ALL applicable files. The checklist covers: Structure (S1-S11), JSON Validity (J1-J9), Agent Frontmatter (A1-A12), Command Frontmatter (C1-C6), Skill Frontmatter (K1-K5), Hooks Correctness (H1-H16), Cross-References (X1-X5), Content Quality (Q1-Q17), Anti-Patterns (P1-P10), Knowledge Plugin (KN1-KN5), Companion (CO1-CO5).
 </checklist>
 
 <grading>

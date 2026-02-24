@@ -103,11 +103,53 @@ Quick example:
 For the complete event list, all hook fields, decision control mechanisms, environment variables, and matcher syntax, see the plugin-structure skill's hooks-reference.md.
 </format_essentials>
 
+<session_awareness>
+## Session-Awareness for Team Plugins
+
+When a plugin is part of a domain team (has companions, or is one of engineer/grader/tester/debugger/knowledge), its hooks fire alongside ALL other team plugins' hooks. This means a grader's PreToolUse hook fires when the engineer writes code. Without session-awareness guards, this causes **hook cross-fire** — hooks from one role incorrectly blocking operations from another role.
+
+### Classification Rule
+
+Before writing each hook, classify it:
+
+1. **Universal safety hooks** — block operations that NO role should perform (e.g., `rm -rf /`, `git push --force`, writing to `.env`). These stay as `command` hooks with NO session-awareness guard.
+
+2. **Role-specific restriction hooks** — block operations that only THIS role should not perform (e.g., graders can't write source files, debuggers can't modify anything, testers can't write to `src/`). These MUST be `prompt` hooks with a session-awareness preamble.
+
+### Session-Awareness Preamble Pattern
+
+Every role-specific prompt hook MUST start with this preamble pattern:
+
+```
+"FIRST: Determine if you are currently operating as a [ROLE] ([brief activity description]).
+If you are NOT in a [role] role (e.g. you are an [other roles]),
+respond {\"ok\": true} immediately — this restriction only applies to [role] sessions.
+If you ARE the [role], check: [specific restrictions]..."
+```
+
+### Stop Hooks
+
+ALL Stop hooks in team plugins MUST include session-awareness — they must check whether this role's work was actually performed in the session before enforcing completion requirements. Use this preamble:
+
+```
+"FIRST: Determine if this session involved [role-specific work].
+If NO [role] work was performed in this session, respond {\"ok\": true} immediately.
+If [role] work WAS performed, verify: [completion checks]..."
+```
+
+### Shell Scripts Cannot Be Role-Aware
+
+Shell script (`command` type) hooks have NO way to determine the active role. If a hook needs to restrict based on role, it MUST be a `prompt` hook. Never use a `command` hook for role-specific restrictions.
+
+See the plugin-structure skill's hooks-reference.md "Session-Awareness for Multi-Plugin Teams" section for complete details and patterns.
+</session_awareness>
+
 <constraints>
 - Write `hooks.json` to `BUILD_DIR/hooks/hooks.json`. Write scripts to `BUILD_DIR/scripts/`. Create directories with `mkdir -p` first.
 - The hooks.json MUST use event-based keys (`PreToolUse`, `PostToolUse`, `Stop`, etc.) as top-level keys under `"hooks"`. Do NOT use the old flat array format.
 - Hook types are `command`, `prompt`, or `agent`. Choose the right type using the decision tree from hooks-reference.md.
 - Every production plugin should have at minimum: a PreToolUse command hook for dangerous command blocking, a PostToolUse prompt hook for domain-aware linting, and a Stop prompt hook for work completeness verification.
+- **SESSION-AWARENESS**: For team plugins (plugins with companions or part of a role set), every role-specific restriction hook MUST be a `prompt` type with a session-awareness preamble — NOT a `command` type. Shell scripts cannot determine the active role. Every Stop hook in a team plugin MUST include session-awareness. See the `<session_awareness>` section above.
 - Prompt hooks MUST include the verdict format instruction: `Respond {"ok": true} or {"ok": false, "reason": "..."}`
 - Agent hooks should include a `"timeout"` field (default 120 seconds). They are expensive — use sparingly.
 - Async command hooks MUST set `"async": true` and should include a `"timeout"` field.

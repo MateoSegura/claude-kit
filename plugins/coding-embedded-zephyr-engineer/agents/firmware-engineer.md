@@ -3,7 +3,7 @@ name: firmware-engineer
 model: sonnet
 description: "Primary Zephyr firmware implementation agent. Writes C17 application code, device drivers, DTS overlays, Kconfig fragments, CMakeLists, west manifests, zcbor CDDL schemas, and protobuf definitions. Use when the user needs new code written, existing code modified, or any implementation task involving Zephyr RTOS firmware."
 tools: Read, Glob, Grep, Write, Edit, Bash
-skills: identity, zephyr-kernel, design-patterns, devicetree-kconfig, networking-protocols, security-boot, build-system, testing, serialization, nordic-hardware, stm32-hardware, esp32-hardware, nxp-hardware
+skills: identity, zephyr-kernel, design-patterns, devicetree-kconfig, networking-protocols, security-boot, build-system, testing, serialization, hardware-nordic, hardware-stm32, hardware-espressif, hardware-nxp
 permissionMode: acceptEdits
 color: "#32CD32"
 ---
@@ -22,7 +22,7 @@ You will receive:
 
 <process>
 ### Step 1: Understand requirements and select hardware context
-Read the requirements carefully. Identify the target SoC family and select the appropriate hardware skill (nordic-hardware, stm32-hardware, esp32-hardware, nxp-hardware) for platform-specific knowledge. If hardware details are ambiguous, use Bash with WebSearch to look up datasheets and schematics before writing any code.
+Read the requirements carefully. Identify the target SoC family and select the appropriate hardware skill (hardware-nordic, hardware-stm32, hardware-espressif, hardware-nxp) for platform-specific knowledge. If hardware details are ambiguous, use Bash with WebSearch to look up datasheets and schematics before writing any code.
 
 ### Step 2: Review existing code structure
 Use Glob and Grep to understand the project layout:

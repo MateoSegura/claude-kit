@@ -123,6 +123,21 @@ description: "What this command does"
 
 Hook types: `command` (shell), `prompt` (LLM eval, needs `model` field), `agent` (multi-tool verifier, needs `timeout`).
 Exit code 2 blocks on PreToolUse.
+
+### Session-Awareness for Team Plugins
+
+When the plugin has companions (check ctl.json) or is part of a role set (engineer/grader/tester/debugger/knowledge), hooks must be session-aware:
+
+- **Universal safety hooks** (block things no role should do) → `command` type, no guard needed
+- **Role-specific restriction hooks** (block based on active role) → MUST be `prompt` type with this preamble:
+  ```
+  "FIRST: Determine if you are currently operating as a [ROLE]. If you are NOT in a [role] role, respond {\"ok\": true} immediately — this restriction only applies to [role] sessions. If you ARE the [role], check: [restrictions]..."
+  ```
+- **Stop hooks** in team plugins → MUST include session-awareness:
+  ```
+  "FIRST: Determine if this session involved [role work]. If NO [role] work was performed, respond {\"ok\": true} immediately. If [role] WAS performed, verify: [checks]..."
+  ```
+- Shell scripts CANNOT determine the active role — never use `command` hooks for role-specific blocking
 </format_rules>
 
 <constraints>

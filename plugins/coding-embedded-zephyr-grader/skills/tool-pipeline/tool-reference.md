@@ -35,7 +35,7 @@ west build -b nrf52840dk_nrf52840 -p always ble_peripheral/ -- -DCONFIG_DEBUG=y
 
 **Build to specific directory:**
 ```bash
-west build -b qemu_cortex_m3 -p always -d build_qemu sample_app/
+west build -b nrf52840dk_nrf52840 -p always -d build_nrf52840dk_nrf52840 sample_app/
 ```
 
 ### Output
@@ -389,8 +389,10 @@ Report flash (text) and RAM (data+bss) usage of compiled binary.
 
 ### Command Syntax
 ```bash
-arm-zephyr-eabi-size build/zephyr/zephyr.elf
+arm-zephyr-eabi-size <build_dir>/zephyr/zephyr.elf
 ```
+
+Where `<build_dir>` is the board-specific build directory for each successfully compiled target (e.g., `build_nrf52840dk_nrf52840`). Run once per successfully compiled board.
 
 ### Flags
 
@@ -404,19 +406,19 @@ arm-zephyr-eabi-size build/zephyr/zephyr.elf
 
 **Berkeley format (default):**
 ```bash
-arm-zephyr-eabi-size build/zephyr/zephyr.elf
+arm-zephyr-eabi-size build_nrf52840dk_nrf52840/zephyr/zephyr.elf
 ```
 
 **System V format (detailed):**
 ```bash
-arm-zephyr-eabi-size -A build/zephyr/zephyr.elf
+arm-zephyr-eabi-size -A build_nrf52840dk_nrf52840/zephyr/zephyr.elf
 ```
 
 ### Output
 **Berkeley format:**
 ```
    text    data     bss     dec     hex filename
-  98304    2048   10240  110592   1b000 build/zephyr/zephyr.elf
+  98304    2048   10240  110592   1b000 build_nrf52840dk_nrf52840/zephyr/zephyr.elf
 ```
 
 **Interpretation:**
@@ -471,8 +473,10 @@ Detailed binary size analysis with hierarchical breakdowns.
 
 ### Command Syntax
 ```bash
-bloaty --csv -d sections build/zephyr/zephyr.elf > bloaty.csv
+bloaty --csv -d sections <build_dir>/zephyr/zephyr.elf > bloaty.csv
 ```
+
+Where `<build_dir>` is the board-specific build directory for a successful compilation (e.g., `build_nrf52840dk_nrf52840`).
 
 ### Flags
 
@@ -487,17 +491,17 @@ bloaty --csv -d sections build/zephyr/zephyr.elf > bloaty.csv
 
 **Analyze by section:**
 ```bash
-bloaty --csv -d sections build/zephyr/zephyr.elf > bloaty_sections.csv
+bloaty --csv -d sections build_nrf52840dk_nrf52840/zephyr/zephyr.elf > bloaty_sections.csv
 ```
 
 **Analyze by symbol:**
 ```bash
-bloaty --csv -d symbols build/zephyr/zephyr.elf > bloaty_symbols.csv
+bloaty --csv -d symbols build_nrf52840dk_nrf52840/zephyr/zephyr.elf > bloaty_symbols.csv
 ```
 
 **Hierarchical (section -> symbol):**
 ```bash
-bloaty --csv -d sections,symbols build/zephyr/zephyr.elf > bloaty_detailed.csv
+bloaty --csv -d sections,symbols build_nrf52840dk_nrf52840/zephyr/zephyr.elf > bloaty_detailed.csv
 ```
 
 ### Output

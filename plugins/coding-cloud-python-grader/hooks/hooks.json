@@ -16,8 +16,9 @@
         "matcher": "Bash",
         "hooks": [
           {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-dangerous-commands.sh"
+            "type": "prompt",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a GRADER (running dimension reviews, computing scores, generating grade reports). If you are NOT in a grading role (e.g. you are an engineer, tester, or debugger), respond {\"ok\": true} immediately — this restriction only applies to grading sessions. If you ARE the grader, check: graders must ONLY run read-only analysis commands. BLOCK: rm/delete operations, git push/commit/write operations, pip/pip3/uv/poetry/conda/apt install, docker build/push/run, kubectl apply/delete, helm install/upgrade, make, sudo, sed -i, shell output redirection to source files, pytest --cov-report=xml/html (writes files). ALLOW: cat, head, grep, find, ls, wc, stat, git log/diff/status/show, ruff check, mypy, pyright, flake8, pylint, bandit, pytest --collect-only, pytest (without --cov-report to file). Respond {\"ok\": true} if the command is safe for a grader, or {\"ok\": false, \"reason\": \"BLOCKED: Graders must only run read-only commands\"} if blocked.",
+            "model": "haiku"
           }
         ]
       },
@@ -25,8 +26,9 @@
         "matcher": "Write|Edit",
         "hooks": [
           {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/restrict-file-writes.sh"
+            "type": "prompt",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a GRADER (running dimension reviews, computing scores, generating grade reports). If you are NOT in a grading role (e.g. you are an engineer, tester, or debugger), respond {\"ok\": true} immediately — this restriction only applies to grading sessions. If you ARE the grader, check: the file being written must be a report output file (.md, .json, .html, .txt). Writing source code files (.py, .pyi, .yaml, .yml, .toml, .cfg, .ini, .conf, .sh) is FORBIDDEN for the grader — show fix suggestions as code examples inside the report instead. Respond {\"ok\": true} if the write is allowed, or {\"ok\": false, \"reason\": \"BLOCKED: Grader must not write source files\"} if blocked.",
+            "model": "haiku"
           }
         ]
       }
@@ -37,7 +39,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "You are a grading session monitor. A Bash command was just executed by the Python grader. Event context: $ARGUMENTS. Evaluate whether this command is read-only and analysis-focused as required by the grader role. A command is acceptable if it: reads files (cat, head, tail, less, grep, find, ls, wc, stat), runs static analysis tools (mypy, ruff, pyright, flake8, pylint, bandit), or runs pytest in collection-only or non-write mode. A command is NOT acceptable if it: installs packages, writes or modifies files, makes network requests, runs git write operations, or has any persistent side effects. Respond {\"ok\": true} if the command was read-only and appropriate for a grading session, or {\"ok\": false, \"reason\": \"<specific description of the inappropriate side effect or write operation>\"}.",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a GRADER. If you are NOT in a grading role, respond {\"ok\": true} immediately. If you ARE the grader, evaluate whether this Bash command is read-only and analysis-focused as required by the grader role. A command is acceptable if it: reads files (cat, head, tail, less, grep, find, ls, wc, stat), runs static analysis tools (mypy, ruff, pyright, flake8, pylint, bandit), or runs pytest in collection-only or non-write mode. A command is NOT acceptable if it: installs packages, writes or modifies files, makes network requests, runs git write operations, or has any persistent side effects. Respond {\"ok\": true} if the command was read-only and appropriate for a grading session, or {\"ok\": false, \"reason\": \"<specific description of the inappropriate side effect or write operation>\"}.",
             "model": "haiku"
           },
           {
@@ -55,7 +57,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "You are a grading report completeness verifier for a cloud Python code grader. The grader is about to stop. Event context: $ARGUMENTS. Verify that the grading report satisfies ALL of the following requirements before allowing the session to end:\n\n1. ALL applicable grading dimensions are present and scored (e.g., correctness, code quality, type safety, test coverage, documentation, security, performance — or a defined subset declared upfront with justification for any omissions).\n\n2. EVERY finding in the report includes ALL four of: (a) the grading dimension it belongs to, (b) a severity level (critical / major / minor / info), (c) a precise file and line reference (file.py:42 format), and (d) a clear description with evidence (the actual code excerpt or tool output that supports the finding).\n\n3. An overall numeric score (e.g., 0-100 or letter grade) is present and its calculation is traceable — the score must be consistent with the individual dimension scores and the severity distribution of findings.\n\n4. The severity distribution is reasonable — a high overall score must not coexist with multiple critical or major findings without explicit justification.\n\n5. The report does not contain placeholder sections, TODO markers, or unfilled template fields.\n\nRespond {\"ok\": true} if ALL five requirements are satisfied, or {\"ok\": false, \"reason\": \"<specific description of which requirement is unmet and what must be added or corrected>\"}.",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if this session involved grading a Python codebase (running dimension reviewers, computing scores, generating grade reports). If NO grading work was performed in this session, respond {\"ok\": true} immediately — this hook only applies to grading sessions.\n\nIf grading WAS performed, verify:\n\n1. ALL applicable grading dimensions are present and scored (e.g., correctness, code quality, type safety, test coverage, documentation, security, performance — or a defined subset declared upfront with justification for any omissions).\n\n2. EVERY finding in the report includes ALL four of: (a) the grading dimension it belongs to, (b) a severity level (critical / major / minor / info), (c) a precise file and line reference (file.py:42 format), and (d) a clear description with evidence (the actual code excerpt or tool output that supports the finding).\n\n3. An overall numeric score (e.g., 0-100 or letter grade) is present and its calculation is traceable — the score must be consistent with the individual dimension scores and the severity distribution of findings.\n\n4. The severity distribution is reasonable — a high overall score must not coexist with multiple critical or major findings without explicit justification.\n\n5. The report does not contain placeholder sections, TODO markers, or unfilled template fields.\n\nRespond {\"ok\": true} if ALL five requirements are satisfied, or {\"ok\": false, \"reason\": \"<specific description of which requirement is unmet and what must be added or corrected>\"}.",
             "model": "sonnet"
           }
         ]

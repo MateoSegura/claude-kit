@@ -946,6 +946,9 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
    - hooks.json uses event-based keys (PreToolUse, PostToolUse, Stop) — NOT flat array
    - Do NOT create CLAUDE.md — use skills for all plugin context
    - Every agent MUST include 'identity' in its skills: list
+   - SESSION-AWARENESS: If KNOWLEDGE_MODE is true (plugin has companions), role-specific
+     restriction hooks MUST use prompt type with session-awareness preambles — shell scripts
+     cannot determine the active role. All Stop hooks in companion plugins need session-awareness.
 
    Step 1: Spawn 4 writers in PARALLEL (single response, 4 Task calls):
 
@@ -973,7 +976,12 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
    Task(subagent_type: 'hook-writer', prompt: 'Write hooks/hooks.json and scripts/.
    Use event-based keys (PreToolUse/PostToolUse/Stop). Use ALL 3 hook types: command (blocking), prompt (linting), agent (verification).
    PreToolUse: block dangerous domain commands. PostToolUse: domain anti-pattern linting. Stop: verify deliverables.
-   AGENT_NAME: <name> BUILD_DIR: <dir> APPROVED_ARCH: <arch>')
+   SESSION-AWARENESS: If this plugin has companions (KNOWLEDGE_MODE=true), classify each hook:
+   - Universal safety (no role should do this) → command type, no guard
+   - Role-specific restriction (only this role restricted) → prompt type with session-awareness preamble
+   - Stop hooks → include session-awareness (check if role work was performed)
+   Shell scripts CANNOT determine the active role — never use command hooks for role-specific blocking.
+   AGENT_NAME: <name> BUILD_DIR: <dir> APPROVED_ARCH: <arch> KNOWLEDGE_MODE: <mode>')
 
    Step 2: Wait for all 4 writers. If any fail, retry that single writer once.
 

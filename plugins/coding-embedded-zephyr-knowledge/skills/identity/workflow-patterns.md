@@ -20,7 +20,7 @@ When a role plugin's agent lists a skill from this plugin in its `skills:` front
 Role plugin agents should list knowledge skills after their own identity skill:
 
 ```yaml
-skills: identity, coding-embedded-zephyr-knowledge:zephyr-api, coding-embedded-zephyr-knowledge:design-patterns
+skills: identity, coding-embedded-zephyr-knowledge:zephyr-kernel, coding-embedded-zephyr-knowledge:design-patterns
 ```
 
 The SKILL.md entry point is auto-loaded. Reference files (API docs, examples, pattern catalogs) are loaded on demand via the Read tool when the agent needs deeper detail.
@@ -41,7 +41,7 @@ The SKILL.md entry point is auto-loaded. Reference files (API docs, examples, pa
 2. Write `SKILL.md` with API overview, key structs, initialization sequence
 3. Write reference files for sub-APIs (e.g., `cdc-acm.md`, `mass-storage.md`)
 4. Include Kconfig dependencies and common configuration snippets
-5. Cross-reference from related skills (e.g., link USB from `nrf-hardware` if nRF has USB)
+5. Cross-reference from related skills (e.g., link USB from `hardware-nordic` if nRF has USB)
 
 ### Updating Existing Content
 

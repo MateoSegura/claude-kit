@@ -1,5 +1,5 @@
 ---
-name: coding-embedded-zephyr-knowledge:nxp-hardware
+name: coding-embedded-zephyr-knowledge:hardware-nxp
 description: NXP hardware support — i.MX RT crossover MCUs, LPC Cortex-M33, Kinetis, FlexSPI NOR boot, MCUXpresso SDK, security features (EdgeLock, HAB)
 user-invocable: false
 ---
@@ -22,7 +22,7 @@ i.MX RT devices execute code directly from external flash (XIP).
 &flexspi {
     status = "okay";
     reg = <0x402a8000 0x4000>, <0x60000000 0x800000>;
-    
+
     flash0: flash@0 {
         compatible = "nxp,imx-flexspi-nor";
         size = <DT_SIZE_M(8)>;

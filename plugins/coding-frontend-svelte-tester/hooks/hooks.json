@@ -5,8 +5,9 @@
         "matcher": "Bash",
         "hooks": [
           {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-safe-command.sh"
+            "type": "prompt",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a TESTER (writing and running tests with vitest/playwright). If you are NOT in a testing role (e.g. you are an engineer, grader, or debugger), respond {\"ok\": true} immediately — this restriction only applies to testing sessions. If you ARE the tester, check: testers must NOT destroy production source or publish packages. BLOCK: rm targeting src/, lib/, routes/, components/ (non-test directories), git push --force (allow --force-with-lease), git reset --hard, git clean -f, npm/pnpm/yarn publish, shell output redirection to production source files (.svelte, .ts, .js in src/ or lib/ — excluding .test. and .spec. files), dd/mkfs/shred. ALLOW: vitest, playwright, npm install, git push (non-force), rm in test directories, all read commands. Respond {\"ok\": true} if the command is safe for a tester, or {\"ok\": false, \"reason\": \"BLOCKED: Testers must not destroy production source\"} if blocked.",
+            "model": "haiku"
           }
         ]
       }
@@ -39,7 +40,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Evaluate whether the tester has completed all required work and should be allowed to stop. Context: $ARGUMENTS. Verify all of the following: 1) All requested test files were written and saved (not just planned). 2) Written test files contain meaningful assertions — not just TODO stubs or empty describe blocks. 3) All written tests were executed at least once and their pass/fail status is known and reported to the user. 4) If a coverage target (80%) was specified or checked, coverage was analyzed and the result was reported. 5) No test files contain Svelte 4 patterns (on:click event handlers, export let prop declarations, createEventDispatcher, slot elements, $: reactive declarations) — only Svelte 5 runes are allowed. 6) All test files use TypeScript (lang='ts' in svelte test setup, or .ts file extension). Respond {\"ok\": true} if all criteria are met, or {\"ok\": false, \"reason\": \"description of what remains incomplete\"} to force continuation.",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if this session involved writing or running tests. If NO test files were created, modified, or executed in this session (e.g. this was a grading, engineering, or debugging session), respond {\"ok\": true} immediately — this hook only applies to testing sessions. If tests WERE written or run, verify: 1) All requested test files were written and saved (not just planned). 2) Written test files contain meaningful assertions — not just TODO stubs or empty describe blocks. 3) All written tests were executed at least once and their pass/fail status is known and reported to the user. 4) If a coverage target (80%) was specified or checked, coverage was analyzed and the result was reported. 5) No test files contain Svelte 4 patterns (on:click event handlers, export let prop declarations, createEventDispatcher, slot elements, $: reactive declarations) — only Svelte 5 runes are allowed. 6) All test files use TypeScript (lang='ts' in svelte test setup, or .ts file extension). Respond {\"ok\": true} if all criteria are met, or {\"ok\": false, \"reason\": \"description of what remains incomplete\"} to force continuation.",
             "model": "haiku"
           }
         ]

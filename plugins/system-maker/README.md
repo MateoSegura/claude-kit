@@ -1,6 +1,6 @@
 # system-maker
 
-> **Role:** System · **Version:** 0.2.0
+> **Role:** System · **Version:** 0.2.1
 
 Agent Maker — guides users through designing and building Claude Code domain-expert plugins (single or full teams) via structured multi-phase workflows with parallel subagent execution.
 

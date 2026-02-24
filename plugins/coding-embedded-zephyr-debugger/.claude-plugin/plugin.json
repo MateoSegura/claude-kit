@@ -1,5 +1,5 @@
 {
   "name": "coding-embedded-zephyr-debugger",
-  "description": "Zephyr RTOS embedded debugger \u2014 diagnoses hard faults, memory corruption, kernel panics, stack overflows, peripheral failures, boot/MCUboot issues, network stack failures, and field-return crash dumps with structured evidence-based diagnostic reports",
-  "version": "0.0.2"
+  "description": "Zephyr RTOS embedded debugger — diagnoses hard faults, memory corruption, kernel panics, stack overflows, peripheral failures, boot/MCUboot issues, network stack failures, and field-return crash dumps with structured evidence-based diagnostic reports",
+  "version": "0.0.3"
 }

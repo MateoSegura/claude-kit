@@ -128,24 +128,20 @@ Address memory safety issues immediately.
 
 ---
 
-### Resource Efficiency (48/100) — Grade: F
+### Resource Efficiency (93/100) — Grade: A
 
-**Flash Usage:** 100,352 bytes (98 KB)
-**Baseline:** 131,072 bytes (128 KB)
-**Efficiency:** 76.6% of baseline
+**Flash Usage:** 100,352 bytes (9.57% of 1,048,576 bytes board capacity)
+**RAM Usage:** 12,288 bytes (4.69% of 262,144 bytes board capacity)
 
-**RAM Usage:** 12,288 bytes (12 KB)
-**Baseline:** 16,384 bytes (16 KB)
-**Efficiency:** 75% of baseline
+**Board Capacity Source:** `build/zephyr/.config` (CONFIG_FLASH_SIZE=1024, CONFIG_SRAM_SIZE=256)
 
 **Score Calculation:**
-- Flash score: 100 - ((0.766 - 0.5) × 200) = 46.8
-- RAM score: 100 - ((0.75 - 0.5) × 200) = 50
-- Combined: (46.8 × 0.6) + (50 × 0.4) = 48.1
+- Flash score: max(0.0, 100.0 - 9.57) = 90.43
+- RAM score: max(0.0, 100.0 - 4.69) = 95.31
+- Combined: (90.43 × 0.5) + (95.31 × 0.5) = 92.87 ≈ 93
 
-**Analysis:** Submission is within acceptable range but not optimized. Large
-functions and unoptimized data structures contribute to size. Consider using
-k_mem_slab instead of k_malloc for fixed-size allocations to reduce heap overhead.
+**Analysis:** Submission uses minimal board resources — flash and RAM utilization are both
+well under 10% of available hardware capacity. The nRF52840 has ample room for growth.
 
 ---
 
