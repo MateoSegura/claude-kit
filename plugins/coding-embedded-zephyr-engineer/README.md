@@ -1,6 +1,6 @@
 # coding-embedded-zephyr-engineer
 
-> **Role:** Engineer · **Version:** 0.0.4
+> **Role:** Engineer · **Version:** 0.0.5
 
 Zephyr RTOS embedded systems development agent — master-level firmware specialist with cloud-native patterns, runtime-driven initialization, full hardware portability, secure boot integration, and comprehensive architecture design patterns.
 

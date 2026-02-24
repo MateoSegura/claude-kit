@@ -1,6 +1,6 @@
 # coding-frontend-svelte-grader
 
-> **Role:** Grader · **Version:** 0.0.4
+> **Role:** Grader · **Version:** 0.0.5
 
 Objective, blind, quantitative code grading agent for Svelte 5 / SvelteKit applications — scores across 8 weighted dimensions with automated and semantic analysis, supporting single-submission and A/B comparison modes.
 

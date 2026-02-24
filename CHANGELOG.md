@@ -4,6 +4,30 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- `coding-embedded-zephyr-engineer`: 0.0.4 → 0.0.5
+  - PostToolUse hook scripts (`validate-kconfig.sh`, `validate-dts-overlay.sh`)
+    crashed on Edit operations — Edit tool provides `new_string` not `content`,
+    causing `grep` to fail on empty input under `set -euo pipefail`
+  - Stop hook JSON format prefix added
+- Stop hook "JSON validation failed" errors across all 14 team plugins — prompt-type
+  Stop hooks returned narrative text instead of valid JSON. Added explicit
+  `RESPOND WITH ONLY A JSON OBJECT` prefix to every prompt-type and agent-type
+  Stop hook across all 3 teams (zephyr, svelte, python)
+  - `coding-cloud-python-debugger`: 0.0.4 → 0.0.5
+  - `coding-cloud-python-engineer`: 0.0.4 → 0.0.5
+  - `coding-cloud-python-grader`: 0.0.4 → 0.0.5
+  - `coding-cloud-python-tester`: 0.0.4 → 0.0.5
+  - `coding-embedded-zephyr-debugger`: 0.0.4 → 0.0.5
+  - `coding-embedded-zephyr-grader`: 0.1.2 → 0.1.3
+  - `coding-embedded-zephyr-knowledge`: 0.1.2 → 0.1.3
+  - `coding-embedded-zephyr-tester`: 0.0.4 → 0.0.5
+  - `coding-frontend-svelte-debugger`: 0.0.5 → 0.0.6
+  - `coding-frontend-svelte-engineer`: 0.0.4 → 0.0.5
+  - `coding-frontend-svelte-grader`: 0.0.4 → 0.0.5
+  - `coding-frontend-svelte-knowledge`: 0.0.4 → 0.0.5
+  - `coding-frontend-svelte-tester`: 0.0.4 → 0.0.5
+
 ## [0.3.3] - 2026-02-24
 
 ### Added
