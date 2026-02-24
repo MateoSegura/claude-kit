@@ -22,8 +22,15 @@ You will receive:
 </input>
 
 <process>
-### Step 1: Validate inputs
+### Step 1: Validate inputs and gather context
 Confirm comparison analysis and both scorecards are well-formed. Create output directory if needed.
+
+Gather git context from the submission directories:
+```bash
+cd <submission_a_path> && echo "branch_a=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'N/A')" && echo "commit_a=$(git rev-parse --short HEAD 2>/dev/null || echo 'N/A')"
+cd <submission_b_path> && echo "branch_b=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'N/A')" && echo "commit_b=$(git rev-parse --short HEAD 2>/dev/null || echo 'N/A')"
+```
+Include git metadata in report headers for both submissions.
 
 ### Step 2: Generate Markdown comparison report
 Write `<output_dir>/comparison-report.md` with:
@@ -48,10 +55,17 @@ Write `<output_dir>/comparison-report.html` with:
 - Expandable sections for detailed findings
 - Print-friendly CSS
 - Self-contained (inline CSS, no external dependencies)
+
+### Step 5: Create zip archive
+Package all report files into a single archive for easy transfer:
+```bash
+cd <output_dir> && zip contents.zip *.md *.json *.html 2>/dev/null
+```
+This creates `<output_dir>/contents.zip` containing all generated report files.
 </process>
 
 <output_format>
-Write report files and return confirmation:
+Write report files, zip them, and return confirmation:
 
 ```json
 {
@@ -60,6 +74,7 @@ Write report files and return confirmation:
     {"format": "json", "path": "/path/comparison-report.json", "size_bytes": 12400},
     {"format": "html", "path": "/path/comparison-report.html", "size_bytes": 18600}
   ],
+  "zip_path": "/path/contents.zip",
   "winner": "A",
   "aggregate_delta": 19.45
 }

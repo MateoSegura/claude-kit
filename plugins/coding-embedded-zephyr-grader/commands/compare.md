@@ -146,6 +146,12 @@ Grade both submissions **independently and in parallel** by spawning two complet
 
 ### Phase 5: Report Generation
 
+Compute a timestamped output directory:
+```
+output_dir = <parent_directory_of_submissions>/reports/<YYYY-MM-DD_HH-MM-SS>/
+```
+Create the directory before spawning the report generator.
+
 **Spawn:** `comparison-report-generator` agent
 
 **Input:**
@@ -154,6 +160,7 @@ Grade both submissions **independently and in parallel** by spawning two complet
   "submission_a": <full scorecard>,
   "submission_b": <full scorecard>,
   "comparison_analysis": <from Phase 4>,
+  "output_dir": "<parent>/reports/<YYYY-MM-DD_HH-MM-SS>/",
   "output_formats": ["markdown", "json", "html"]
 }
 ```
@@ -161,9 +168,10 @@ Grade both submissions **independently and in parallel** by spawning two complet
 **Output:**
 ```json
 {
-  "markdown_path": "/path/to/comparison.md",
-  "json_path": "/path/to/comparison.json",
-  "html_path": "/path/to/comparison.html"
+  "markdown_path": "/path/to/reports/2026-02-24_14-30-00/comparison-report.md",
+  "json_path": "/path/to/reports/2026-02-24_14-30-00/comparison-report.json",
+  "html_path": "/path/to/reports/2026-02-24_14-30-00/comparison-report.html",
+  "zip_path": "/path/to/reports/2026-02-24_14-30-00/contents.zip"
 }
 ```
 
@@ -198,10 +206,8 @@ Largest Advantages:
 2. <dimension>: +<delta>
 3. <dimension>: +<delta>
 
-Reports Generated:
-- Markdown: <path>
-- JSON: <path>
-- HTML: <path>
+Reports: <parent>/reports/<YYYY-MM-DD_HH-MM-SS>/contents.zip
+  Contains: comparison-report.md, comparison-report.json, comparison-report.html
 ```
 
 Offer to open comparison report.

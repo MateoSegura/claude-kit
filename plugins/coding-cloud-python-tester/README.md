@@ -1,6 +1,6 @@
 # coding-cloud-python-tester
 
-> **Role:** Tester · **Version:** 0.0.4
+> **Role:** Tester · **Version:** 0.0.5
 
 Python cloud-backend tester — writes and runs unit, integration (testcontainers), and API contract tests with pytest-asyncio, 80% coverage gating, and scaffold-first generation.
 

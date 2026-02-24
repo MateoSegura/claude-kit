@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Context: $ARGUMENTS. FIRST: Determine if this session involved creating or modifying knowledge reference files (markdown files in skills directories). If NO knowledge reference files were created or modified in this session, respond {\"ok\": true} immediately \u2014 this hook only applies to knowledge authoring sessions. If knowledge files WERE modified, check: 1) New or modified reference files contain substantive content (not stubs). 2) Code examples use Svelte 5 runes exclusively (no Svelte 4 patterns). 3) No TODO/FIXME markers left in reference content. Respond {\"ok\": true} if complete, or {\"ok\": false, \"reason\": \"specific issue\"}.",
+            "prompt": "RESPOND WITH ONLY A JSON OBJECT. No other text, no explanation, no markdown. Format: {\"ok\": true} or {\"ok\": false, \"reason\": \"brief description\"}\n\nContext: $ARGUMENTS. FIRST: Determine if this session involved creating or modifying knowledge reference files (markdown files in skills directories). If NO knowledge reference files were created or modified in this session, respond {\"ok\": true} immediately \u2014 this hook only applies to knowledge authoring sessions. If knowledge files WERE modified, check: 1) New or modified reference files contain substantive content (not stubs). 2) Code examples use Svelte 5 runes exclusively (no Svelte 4 patterns). 3) No TODO/FIXME markers left in reference content. Respond {\"ok\": true} if complete, or {\"ok\": false, \"reason\": \"specific issue\"}.",
             "model": "haiku"
           }
         ]

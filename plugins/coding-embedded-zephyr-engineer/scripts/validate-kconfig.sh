@@ -6,7 +6,13 @@ set -euo pipefail
 
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
-CONTENT=$(echo "$INPUT" | jq -r '.tool_input.content // empty')
+# Write tool provides content; Edit tool provides new_string
+CONTENT=$(echo "$INPUT" | jq -r '.tool_input.content // .tool_input.new_string // empty')
+
+# If no content available (e.g. Edit with only old_string), skip validation
+if [[ -z "$CONTENT" ]]; then
+  exit 0
+fi
 
 # Only validate .conf and Kconfig files
 if ! echo "$FILE_PATH" | grep -qE '\.(conf|Kconfig)$'; then

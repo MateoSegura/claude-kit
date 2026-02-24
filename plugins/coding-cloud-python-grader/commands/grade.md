@@ -112,16 +112,49 @@ Assign grade letter:
 - 60–69: D
 - < 60: F
 
-### Step 6: Produce Unified Report
+### Step 6: Gather Git Context
 
-Output the report in this exact structure:
+Collect git metadata from the service directory:
+```bash
+cd <service_path> && \
+  echo "branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'N/A')" && \
+  echo "commit=$(git rev-parse --short HEAD 2>/dev/null || echo 'N/A')" && \
+  echo "dirty=$(git diff --quiet 2>/dev/null && echo 'clean' || echo 'dirty')" && \
+  echo "remote=$(git remote get-url origin 2>/dev/null || echo 'N/A')"
+```
 
----
+### Step 7: Write Report Files
+
+Compute a timestamped output directory:
+```
+output_dir = <service_path>/reports/<YYYY-MM-DD_HH-MM-SS>/
+```
+Create the directory before writing.
+
+Write three files to the output directory:
+
+1. **`{output_dir}/report.md`** — Full markdown report with the structure below
+2. **`{output_dir}/scorecard.json`** — Machine-readable JSON from the score-synthesizer output (include a `git` object with branch, commit, dirty, remote fields)
+3. **`{output_dir}/contents.zip`** — Archive containing both files above
+
+Create the zip:
+```bash
+cd <output_dir> && zip contents.zip report.md scorecard.json 2>/dev/null
+```
+
+#### Markdown report structure:
 
 ```
-# Code Review Report — <service name or path>
-Reviewed: <timestamp>
-Scope: <N files>
+# Python Cloud Service — Code Quality Report
+
+| | |
+|---|---|
+| **Service** | <service name or path> |
+| **Date** | <timestamp> |
+| **Scope** | <N files> |
+| **Branch** | `<git_branch>` |
+| **Commit** | `<git_commit_short>` |
+| **Working Tree** | <git_clean_or_dirty> |
 
 ## Final Score: <score>/100 — Grade <letter>
 
@@ -172,6 +205,26 @@ Scope: <N files>
 - APPROVE WITH CONDITIONS — No Critical findings. High findings tracked in issues.
 - REQUEST CHANGES — X Critical finding(s) must be resolved before merge.
 - REJECT — Score below 60. Significant rework required.
+```
+
+### Step 7: Present Summary to User
+
+Display a brief terminal summary:
+
+```
+=== Code Review Complete ===
+
+Service: <service name or path>
+Score: <score>/100 — Grade <letter>
+Merge: <APPROVE|APPROVE WITH CONDITIONS|REQUEST CHANGES|REJECT>
+
+Top 3 Issues:
+1. [SEVERITY] title (dimension)
+2. [SEVERITY] title (dimension)
+3. [SEVERITY] title (dimension)
+
+Reports: <service_path>/reports/<YYYY-MM-DD_HH-MM-SS>/contents.zip
+  Contains: report.md, scorecard.json
 ```
 
 ---
