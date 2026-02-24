@@ -8,22 +8,22 @@ All notable changes to claude-kit will be documented in this file.
 ## [0.2.0] - 2026-02-24
 
 ### Added
-- `coding-cloud-python-knowledge` v1.0.0 — shared domain reference for
+- `coding-cloud-python-knowledge` v0.0.1 — shared domain reference for
   Python cloud-backend development (asyncio, FastAPI, gRPC, Docker, K8s)
-- `coding-cloud-python-engineer` v1.0.0 — Python cloud-backend engineer
+- `coding-cloud-python-engineer` v0.0.1 — Python cloud-backend engineer
   (6 agents: feature-builder, api-designer, async-specialist, db-specialist,
   container-specialist, code-reviewer)
-- `coding-cloud-python-grader` v1.0.0 — Python cloud-backend grader
+- `coding-cloud-python-grader` v0.0.1 — Python cloud-backend grader
   (10 agents covering 8 grading dimensions with quantitative scoring)
-- `coding-cloud-python-tester` v1.0.0 — Python cloud-backend tester
+- `coding-cloud-python-tester` v0.0.1 — Python cloud-backend tester
   (5 agents: unit, integration, e2e, performance, coverage analysis)
-- `coding-cloud-python-debugger` v1.0.0 — Python cloud-backend debugger
+- `coding-cloud-python-debugger` v0.0.1 — Python cloud-backend debugger
   (7 agents: triage + asyncio, profiler, trace, db-query, gRPC, container)
-- `coding-embedded-zephyr-debugger` v1.0.0 — Zephyr RTOS debugger
+- `coding-embedded-zephyr-debugger` v0.0.1 — Zephyr RTOS debugger
   (7 agents: triage + fault-analyzer, kernel, peripheral, boot, network,
   postmortem; covers hard faults, stack overflow, kernel panic, MCUboot,
   BLE/LTE/Thread, and offline crash dump analysis)
-- `coding-frontend-svelte-debugger` v1.0.0 — Svelte 5/SvelteKit debugger
+- `coding-frontend-svelte-debugger` v0.0.1 — Svelte 5/SvelteKit debugger
   (9 agents: triage + compiler/TS, reactivity, SSR/routing, styling,
   accessibility, hardware/Tauri IPC, build/bundle, test failure)
 
