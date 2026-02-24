@@ -1,6 +1,6 @@
 # coding-cloud-python-debugger
 
-> **Role:** Debugger · **Version:** 1.0.0
+> **Role:** Debugger · **Version:** 0.0.1
 
 Python cloud-backend debugger — diagnoses asyncio failures, profiles CPU/memory, analyzes distributed traces, debugs database queries, traces gRPC call chains, and investigates container/pod crashes.
 
