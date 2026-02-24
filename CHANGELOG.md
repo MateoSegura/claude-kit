@@ -4,6 +4,8 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-02-24
+
 ### Fixed
 - **coding-frontend-svelte-debugger** (0.0.4 → 0.0.5): fix 7 agent files missing
   `coding-frontend-svelte-knowledge:` companion prefix on skill references — all
@@ -46,7 +48,7 @@ All notable changes to claude-kit will be documented in this file.
 - `coding-embedded-zephyr-grader`: 0.1.1 → 0.1.2
 - `coding-embedded-zephyr-knowledge`: 0.1.1 → 0.1.2
 - `coding-embedded-zephyr-tester`: 0.0.3 → 0.0.4
-- `coding-frontend-svelte-debugger`: 0.0.3 → 0.0.4
+- `coding-frontend-svelte-debugger`: 0.0.3 → 0.0.5
 - `coding-frontend-svelte-engineer`: 0.0.3 → 0.0.4
 - `coding-frontend-svelte-grader`: 0.0.3 → 0.0.4
 - `coding-frontend-svelte-knowledge`: 0.0.3 → 0.0.4
