@@ -1,6 +1,6 @@
 # coding-frontend-svelte-knowledge
 
-> **Role:** Knowledge companion · **Version:** 0.0.2
+> **Role:** Knowledge companion · **Version:** 0.0.3
 
 Shared domain reference for Svelte 5 / SvelteKit frontend development — runes, component patterns, CSS architecture, accessibility, human-centered design, desktop targets, and hardware communication (USB, BLE, LAN, audio/MIDI, IoT).
 

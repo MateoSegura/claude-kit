@@ -5,6 +5,35 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.3.1] - 2026-02-24
+
+### Fixed
+- Complete session-awareness coverage: added role-checking preambles to ALL
+  remaining PostToolUse `Write|Edit` prompt hooks across 10 plugins — engineers,
+  testers, knowledge editors, and system-maker all had PostToolUse hooks that
+  would cross-fire when loaded in a team session (e.g., grader's report
+  validation hook blocking engineer's code edits)
+- Zephyr grader: converted PreToolUse `Write|Edit` from command type
+  (`restrict-file-writes.sh`) to prompt type with session-awareness — the
+  command hook hard-blocked engineers from writing `.c` files
+- Zephyr grader: converted PreToolUse `Bash` from command type
+  (`block-dangerous-commands.sh`) to prompt type with session-awareness
+- Deleted 2 orphaned grader scripts replaced by prompt hooks
+
+### Plugin versions
+- `coding-cloud-python-engineer`: 0.0.2 → 0.0.3
+- `coding-cloud-python-knowledge`: 0.0.1 → 0.0.2
+- `coding-cloud-python-tester`: 0.0.2 → 0.0.3
+- `coding-embedded-zephyr-engineer`: 0.0.2 → 0.0.3
+- `coding-embedded-zephyr-grader`: 0.1.0 → 0.1.1
+- `coding-embedded-zephyr-knowledge`: 0.1.0 → 0.1.1
+- `coding-embedded-zephyr-tester`: 0.0.2 → 0.0.3
+- `coding-frontend-svelte-engineer`: 0.0.2 → 0.0.3
+- `coding-frontend-svelte-grader`: 0.0.2 → 0.0.3
+- `coding-frontend-svelte-knowledge`: 0.0.2 → 0.0.3
+- `coding-frontend-svelte-tester`: 0.0.2 → 0.0.3
+- `system-maker`: 0.2.1 → 0.2.2
+
 ## [0.3.0] - 2026-02-24
 
 ### Added
