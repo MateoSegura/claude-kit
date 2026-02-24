@@ -5,6 +5,15 @@ All notable changes to claude-kit will be documented in this file.
 ## [Unreleased]
 <!-- Use /bump-plugin to add entries here -->
 
+## [0.2.2] - 2026-02-24
+
+### Changed
+- All documentation consolidated into README — configuration hierarchy
+  (with 7 Mermaid diagrams), agent team architecture, plugin structure,
+  and developer workflow are now in one place
+- Deleted `docs/` directory (research notes, plugin-spec, how-it-works,
+  old working specs)
+
 ## [0.2.1] - 2026-02-24
 
 ### Added
