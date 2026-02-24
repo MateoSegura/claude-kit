@@ -31,9 +31,13 @@ if ! command -v python3 &>/dev/null; then
 fi
 
 if ! command -v claude &>/dev/null; then
-  err "Claude Code CLI ('claude') is required but not found."
-  err "Install it first: https://claude.ai/code"
-  exit 1
+  info "Claude Code CLI ('claude') not found — installing ..."
+  curl -fsSL https://claude.ai/install.sh | bash
+  if ! command -v claude &>/dev/null; then
+    err "Claude Code installation failed. Install manually: https://claude.ai/code"
+    exit 1
+  fi
+  ok "Claude Code installed"
 fi
 
 # ── Install jq if missing ────────────────────────────────────────────────────
