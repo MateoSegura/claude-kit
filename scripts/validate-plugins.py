@@ -25,7 +25,7 @@ VALID_PLUGIN_JSON_FIELDS = {"name", "description", "version"}
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
 VALID_ROLES = {
     "engineer", "grader", "tester", "knowledge",
-    "system", "debugger", "deployer", "migrator",
+    "system", "debugger",
 }
 SKILL_MD_LINE_LIMIT = 500
 

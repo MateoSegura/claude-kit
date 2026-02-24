@@ -52,8 +52,6 @@ Format: `<type>-<domain>-<tech>-<role>` where all segments are lowercase, hyphen
 - `grader` — blind, objective code evaluation with quantitative scoring
 - `tester` — writes and runs tests, coverage analysis
 - `debugger` — diagnoses failures, reads logs/traces/dumps
-- `deployer` — CI/CD, flashing, releasing, infrastructure
-- `migrator` — upgrades versions, ports between platforms
 - `knowledge` — shared domain reference material (APIs, hardware targets, design patterns) reused across role plugins/boards
 
 **Good names:**
@@ -141,7 +139,7 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
 2. From the user's description, derive the agent name:
    - Identify the broad domain (embedded, cloud, frontend, backend, mobile, ml, devops)
    - Identify the specific technology/framework within that domain (zephyr, linux, golang, react, pytorch, etc.)
-   - Determine the role (engineer, grader, tester, debugger, deployer, migrator)
+   - Determine the role (engineer, grader, tester, debugger)
    - Combine as `<AGENT_TYPE>-<domain>-<tech>-<role>` using hyphens
    - Verify it matches the naming regex `^[a-z]+-[a-z][-a-z]*$`
 
@@ -155,8 +153,6 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
    - grader — blind, objective code evaluation with quantitative scoring
    - tester — writes and runs tests, coverage analysis
    - debugger — diagnoses failures, reads logs/traces
-   - deployer — CI/CD, flashing, releasing
-   - migrator — upgrades versions, ports between platforms
    ```
 
 3. Present the proposed name for confirmation using AskUserQuestion:

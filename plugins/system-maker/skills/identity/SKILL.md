@@ -120,7 +120,7 @@ All plugin names MUST match `^[a-z]+-[a-z][-a-z]*$` using the format `<type>-<do
 - `coding_embedded_zephyr` — wrong (underscores, missing role)
 
 Standard domains: embedded, cloud, frontend, backend, mobile, ml, devops.
-Standard roles: engineer, grader, tester, debugger, deployer, migrator.
+Standard roles: engineer, grader, tester, debugger.
 System plugins (`system-maker`, `system-updater`) don't require domain/tech/role.
 The `claude-kit validate` command enforces the regex. Non-compliant names will fail.
 

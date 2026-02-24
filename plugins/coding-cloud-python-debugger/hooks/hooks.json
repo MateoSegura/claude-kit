@@ -1,0 +1,65 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-debug-environment.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-dangerous-commands.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'BLOCKED: Debugger agents do not write or edit files.' >&2; exit 2"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You are a security and safety reviewer for a cloud Python debugger session. Review the bash command and its output provided in $ARGUMENTS. Check two things: (1) Confirm the command was read-only and analysis-focused (e.g., kubectl logs/describe/get, docker logs/inspect, EXPLAIN ANALYZE, py-spy, memray, grpcurl, psql SELECT). If it performed a write or destructive operation that was not caught pre-execution, flag it. (2) Scan the output for sensitive data that should be redacted before being used further — specifically: passwords, API tokens, secret keys, database connection strings with credentials, private keys, bearer tokens, or AWS/GCP/Azure credentials. If sensitive data is present, name the type and location so it can be handled carefully. Respond {\"ok\": true} if the command was read-only and no sensitive data is exposed, or {\"ok\": false, \"reason\": \"...\"}  with a clear description of what was wrong.",
+            "model": "haiku"
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/validate-debug-output.sh",
+            "async": true,
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You are a completeness verifier for a cloud Python debugging investigation. Review the conversation and work done so far, provided in $ARGUMENTS. A complete debugging investigation MUST contain all five of the following elements before the agent stops: (1) PROBLEM CLASSIFICATION — the category of issue (e.g., memory leak, connection failure, deadlock, performance regression, configuration error); (2) EVIDENCE CHAIN — the specific logs, metrics, traces, or diagnostic outputs that were collected and what each one demonstrates; (3) ROOT CAUSE IDENTIFICATION — a precise statement of the underlying cause, not just symptoms; (4) IMPACT ASSESSMENT — which services, users, or data are affected and to what degree; (5) RECOMMENDED FIX — a concrete, actionable remediation described in enough detail to implement, but NOT implemented by the agent (debugger role is analysis only, not modification). If any of the five elements is missing or only partially addressed, respond {\"ok\": false, \"reason\": \"Missing required investigation element(s): <list which ones are absent or incomplete and what evidence is still needed>\"}. If all five are present and substantiated, respond {\"ok\": true}.",
+            "model": "sonnet"
+          }
+        ]
+      }
+    ]
+  }
+}

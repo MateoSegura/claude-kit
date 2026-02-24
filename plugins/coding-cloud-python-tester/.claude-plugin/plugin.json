@@ -1,0 +1,5 @@
+{
+  "name": "coding-cloud-python-tester",
+  "description": "Python cloud-backend tester — writes and runs unit, integration (testcontainers), and API contract tests with pytest-asyncio, 80% coverage gating, and scaffold-first generation",
+  "version": "1.0.0"
+}

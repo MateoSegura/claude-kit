@@ -1,0 +1,5 @@
+{
+  "name": "coding-cloud-python-knowledge",
+  "description": "Shared domain reference for modern Python cloud-backend development — asyncio, FastAPI, gRPC, Docker, Kubernetes, distributed systems patterns, and design patterns.",
+  "version": "1.0.0"
+}
