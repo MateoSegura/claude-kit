@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Check if any build directories have uncommitted work before stopping.
 # Called by the Stop hook to warn about potential lost work.
-# NOTE: Build directory pattern /tmp/claude-kit-build-* matches the convention defined in commands/make-agent.md Phase 2
+# NOTE: Build directory pattern /tmp/claude-kit-build-* matches the convention defined in commands/make-member.md Phase 2
 
 set -euo pipefail
 

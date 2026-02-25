@@ -1,8 +1,8 @@
 # system-updater
 
-> **Role:** System · **Version:** 0.1.0
+> **Role:** System · **Version:** 0.2.0
 
-Agent Updater — guides users through enhancing existing Claude Code plugins via a structured 7-phase workflow with fitness checking, surgical change planning, and staging-based safe implementation.
+Member Updater — guides users through enhancing existing Claude Code plugins via structured workflows with fitness checking, surgical change planning, and staging-based safe implementation. Supports single-plugin updates and batched team-wide updates.
 
 ```bash
 claude-kit --kit system-updater
@@ -27,4 +27,5 @@ claude-kit --kit system-updater
 
 | Command | What it does |
 |---------|-------------|
-| `/system-updater:update-agent` | Plugin enhancement orchestrator. Guides through a 7-phase workflow (plugin selection → analysis → fitness check → approval → implementation → deep review → finalization) with timestamped backups and staging-based safety. |
+| `/system-updater:update-member` | Plugin enhancement orchestrator. Guides through a 7-phase workflow (plugin selection → analysis → fitness check → approval → implementation → deep review → finalization) with timestamped backups and staging-based safety. |
+| `/system-updater:update-team` | Team update orchestrator. Updates all members of a domain team (or a subset) in one session with shared intent, parallel analysis, per-plugin fitness checking, batched implementation, and sequential review. |
