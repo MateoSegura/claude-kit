@@ -107,8 +107,8 @@ Return ONLY a JSON object. No markdown wrapping, no commentary. The orchestrator
 
 ```json
 {
-  "plugin_name": "coding-embedded-zephyr-engineer",
-  "build_dir": "/tmp/claude-kit-build-coding-embedded-zephyr-engineer",
+  "plugin_name": "embedded-zephyr-engineer",
+  "build_dir": "/tmp/claude-kit-build-embedded-zephyr-engineer",
   "overall_grade": "B",
   "summary": "45/52 checks passed. 0 critical, 5 warnings, 2 suggestions.",
   "total_checks": 52,

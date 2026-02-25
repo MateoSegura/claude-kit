@@ -45,7 +45,7 @@ Located at `.claude-plugin/plugin.json`. This is the ONLY file that goes inside 
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `name` | string | Plugin identifier, kebab-case format `<type>-<domain>-<tech>-<role>` (e.g., "coding-embedded-zephyr-engineer") |
+| `name` | string | Plugin identifier, kebab-case format `<domain>-<tech>-<role>` (e.g., "embedded-zephyr-engineer") |
 | `description` | string | Human-readable plugin description |
 | `version` | string | Semantic version (e.g., "1.0.0") |
 
@@ -57,7 +57,7 @@ Only these three fields are safe. Do NOT add `role`, `keywords`, `companions`, `
 
 ```json
 {
-  "name": "coding-embedded-zephyr-engineer",
+  "name": "embedded-zephyr-engineer",
   "description": "Domain-expert coding agent for Zephyr RTOS embedded systems",
   "version": "1.0.0"
 }
@@ -70,12 +70,12 @@ Located at `.claude-plugin/ctl.json` (alongside plugin.json). Read by claude-kit
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `role` | string | no | Plugin archetype. Standard values: `engineer`, `grader`, `tester`, `knowledge`, `system` |
-| `companions` | string[] | no | Companion plugin names to auto-load. Example: `["coding-embedded-zephyr-knowledge"]` |
+| `companions` | string[] | no | Companion plugin names to auto-load. Example: `["embedded-zephyr-knowledge"]` |
 
 ```json
 {
   "role": "engineer",
-  "companions": ["coding-embedded-zephyr-knowledge"]
+  "companions": ["embedded-zephyr-knowledge"]
 }
 ```
 

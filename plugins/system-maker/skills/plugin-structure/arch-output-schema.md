@@ -25,12 +25,12 @@ This is the complete JSON schema and example for the arch-designer agent's outpu
 ```json
 {
   "strategy": "progressive",
-  "agent_name": "coding-embedded-zephyr-engineer",
+  "agent_name": "embedded-zephyr-engineer",
   "agent_name_rationale": "Zephyr RTOS is the framework layer. ESP32 is a hardware target — one of many. The agent generalizes to all Zephyr-supported boards.",
   "knowledge_mode": true,
-  "knowledge_plugin": "coding-embedded-zephyr-knowledge",
+  "knowledge_plugin": "embedded-zephyr-knowledge",
   "knowledge_skills": ["zephyr-kernel", "devicetree-kconfig", "design-patterns"],
-  "companions": ["coding-embedded-zephyr-knowledge"],
+  "companions": ["embedded-zephyr-knowledge"],
   "domain_hierarchy": {
     "framework_layer": {
       "name": "Zephyr RTOS",
@@ -49,7 +49,7 @@ This is the complete JSON schema and example for the arch-designer agent's outpu
     },
     "generalization_proof": "Adding nRF52 support requires ONLY creating skills/nrf52-hardware/. Zero changes to agents, commands, hooks, or core skills."
   },
-  "directory_tree": "coding-embedded-zephyr-engineer/\n├── .claude-plugin/\n│   └── plugin.json\n├── .lsp.json\n├── commands/\n│   └── develop.md\n├── agents/\n│   ├── code-writer.md\n│   └── debug-assistant.md\n├── skills/\n│   ├── identity/\n│   │   ├── SKILL.md\n│   │   ├── coding-standards.md\n│   │   └── workflow-patterns.md\n│   └── esp32-hardware/\n│       ├── SKILL.md\n│       └── reference.md\n├── hooks/\n│   └── hooks.json\n└── scripts/\n    ├── block-dangerous.sh\n    └── lint-after-write.sh",
+  "directory_tree": "embedded-zephyr-engineer/\n├── .claude-plugin/\n│   └── plugin.json\n├── .lsp.json\n├── commands/\n│   └── develop.md\n├── agents/\n│   ├── code-writer.md\n│   └── debug-assistant.md\n├── skills/\n│   ├── identity/\n│   │   ├── SKILL.md\n│   │   ├── coding-standards.md\n│   │   └── workflow-patterns.md\n│   └── esp32-hardware/\n│       ├── SKILL.md\n│       └── reference.md\n├── hooks/\n│   └── hooks.json\n└── scripts/\n    ├── block-dangerous.sh\n    └── lint-after-write.sh",
   "components": {
     "commands": [
       {

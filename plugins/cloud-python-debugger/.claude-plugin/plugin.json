@@ -1,0 +1,5 @@
+{
+  "name": "cloud-python-debugger",
+  "description": "Python cloud-backend debugger \u2014 diagnoses asyncio failures, profiles CPU/memory, analyzes distributed traces, debugs database queries, traces gRPC call chains, and investigates container/pod crashes",
+  "version": "0.1.0"
+}

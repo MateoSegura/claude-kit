@@ -18,10 +18,10 @@ Skills are REFERENCE material (facts, patterns, API signatures). Commands are IN
 
 <input>
 You will receive:
-- `AGENT_NAME`: The agent name (e.g., `coding-embedded-zephyr-engineer`)
+- `AGENT_NAME`: The agent name (e.g., `embedded-zephyr-engineer`)
 - `APPROVED_ARCH`: The approved unified architecture with component manifest
 - `USER_ANSWERS`: User's questionnaire responses
-- `BUILD_DIR`: Path to write files (e.g., `/tmp/claude-kit-build-coding-embedded-zephyr-engineer`)
+- `BUILD_DIR`: Path to write files (e.g., `/tmp/claude-kit-build-embedded-zephyr-engineer`)
 </input>
 
 <process>
@@ -64,7 +64,7 @@ For complete command format specification and examples, see the plugin-structure
 <design_pattern_skills>
 ## Design Pattern Skills
 
-When writing a design-patterns skill for a coding-type plugin, follow this specific structure to maximize usefulness for code-writing agents:
+When writing a design-patterns skill for a domain-type plugin, follow this specific structure to maximize usefulness for code-writing agents:
 
 ### Structure Requirements
 
@@ -171,7 +171,7 @@ When KNOWLEDGE_MODE is true:
 </knowledge_mode_handling>
 
 <constraints>
-- **Skill `name:` in frontmatter MUST be `AGENT_NAME:skill-name`** (e.g., `coding-embedded-zephyr-engineer:design-patterns`). The `AGENT_NAME` prefix ensures skills are unambiguous when multiple plugins are loaded. The `skill-name` portion must match the directory name.
+- **Skill `name:` in frontmatter MUST be `AGENT_NAME:skill-name`** (e.g., `embedded-zephyr-engineer:design-patterns`). The `AGENT_NAME` prefix ensures skills are unambiguous when multiple plugins are loaded. The `skill-name` portion must match the directory name.
 - Write skill files to `BUILD_DIR/skills/<skill-name>/`. Use `mkdir -p BUILD_DIR/skills/<skill-name>` (and `mkdir -p BUILD_DIR/skills/<skill-name>/scripts` if scripts are needed) before writing files.
 - Write command files to `BUILD_DIR/commands/`. Use `mkdir -p BUILD_DIR/commands` before writing.
 - **SKILL.md must stay under 500 lines.** This is a hard limit. Move detailed API references, exhaustive examples, and long tables into supporting files. SKILL.md is the concise entry point — the cheat sheet — not the encyclopedia.

@@ -439,7 +439,7 @@ Example:
 
 - File location: `.claude-plugin/plugin.json`
 - `name` field must match plugin directory name
-- `name` must match regex: `^[a-z]+-[a-z][-a-z]*$` (format: `<type>-<domain>-<tech>-<role>`)
+- `name` must match regex: `^[a-z]+-[a-z][-a-z]*$` (format: `<domain>-<tech>-<role>`)
 - `version` uses semantic versioning: `major.minor.patch`
 - **Only 3 fields allowed**: `name`, `description`, `version` — nothing else
 
@@ -707,7 +707,7 @@ When generating plugin files, verify:
 - [ ] Script paths use `${CLAUDE_PLUGIN_ROOT}/scripts/`
 - [ ] All scripts are executable (chmod +x)
 - [ ] All JSON files are valid (test with json.tool)
-- [ ] Plugin name matches regex `^[a-z]+-[a-z][-a-z]*$` (format: `<type>-<domain>-<tech>-<role>`)
+- [ ] Plugin name matches regex `^[a-z]+-[a-z][-a-z]*$` (format: `<domain>-<tech>-<role>`)
 - [ ] No CLAUDE.md file exists in plugin
 - [ ] Skill names in agent frontmatter match skill directory names exactly
 

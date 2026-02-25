@@ -1,24 +1,24 @@
 # Workflow Patterns for Plugin Creation
 
-This document provides step-by-step workflow patterns for the 11-phase plugin creation process, including parallel subagent dispatch patterns and error recovery strategies.
+This document provides step-by-step workflow patterns for the 10-phase plugin creation process, including parallel subagent dispatch patterns and error recovery strategies.
 
-## Overview of the 11-Phase Process
+## Overview of the 10-Phase Process
 
 The plugin creation workflow follows a structured pipeline:
 
 ```
-Phase 1-2: Discovery → Phase 3: Analysis → Phase 4: Questionnaire →
-Phase 5-7: Design → Phase 8: Implementation → Phase 9: Assembly →
-Phase 10: Review → Phase 11: Finalization
+Phase 1: Discovery → Phase 2: Analysis → Phase 3: Questionnaire →
+Phase 4-6: Design → Phase 7: Implementation → Phase 8: Assembly →
+Phase 9: Review → Phase 10: Finalization
 ```
 
 Key characteristics:
-- **3 parallel phases**: Domain Analysis (Phase 3), Architecture Design (Phase 5 - optional), Implementation (Phase 8)
-- **2 conditional phases**: Architecture Review (Phase 6 - only for "Compare all" strategy)
-- **1 iterative phase**: Deep Review (Phase 10 - automated fix and re-review loop)
+- **3 parallel phases**: Domain Analysis (Phase 2), Architecture Design (Phase 4 - optional), Implementation (Phase 7)
+- **2 conditional phases**: Architecture Review (Phase 5 - only for "Compare all" strategy)
+- **1 iterative phase**: Deep Review (Phase 9 - automated fix and re-review loop)
 - **Total runtime**: 3-7 minutes depending on strategy choice and review findings
 
-## Phase 1-2: Discovery and Name Derivation
+## Phase 1: Discovery and Name Derivation
 
 ### Pattern: Validate Before Creating
 
@@ -35,7 +35,7 @@ Key characteristics:
    Identify the broad domain (embedded, cloud, frontend, backend, mobile, ml, devops)
    Identify the specific tech/framework (zephyr, linux, golang, react, pytorch, etc.)
    Determine the role (engineer, grader, tester, debugger)
-   Format as: <type>-<domain>-<tech>-<role>
+   Format as: <domain>-<tech>-<role>
    Validate against regex: ^[a-z]+-[a-z][-a-z]*$
    ```
 
@@ -402,7 +402,7 @@ The orchestrator (make-agent command) generates these files directly — no suba
     Critical: 2 | Warnings: 2 | Suggestions: 5"
    ```
 
-4. **If grade is A and zero critical/warning findings**: Skip to Phase 11.
+4. **If grade is A and zero critical/warning findings**: Skip to Phase 10.
 
 5. **If findings exist**: Proceed to automated fixes.
 
@@ -479,7 +479,7 @@ After fixes:
 - Prevents infinite loops
 - If issues persist after 2 passes, user decides
 
-## Phase 11: Finalization
+## Phase 10: Finalization
 
 ### Pattern: Staged Copy with Verification
 
@@ -609,7 +609,7 @@ AskUserQuestion: "Build dir exists. Overwrite | Choose different name | Abort?"
 
 ### Target Directory Conflicts
 
-**Handled in Phase 11:**
+**Handled in Phase 10:**
 
 ```bash
 ls -d $CLAUDE_KIT_OUTPUT_DIR/<name> && echo "EXISTS" || echo "CLEAR"
@@ -686,43 +686,43 @@ With parallelization vs without:
 
 ## Summary Decision Tree
 
-### Phase 1-2: Should I proceed?
+### Phase 1: Should I proceed?
 - [ ] Name matches regex?
 - [ ] Generalization considered?
 - [ ] No conflicting existing plugin (or user confirmed overwrite)?
 - [ ] Build directory created?
 
-→ Yes to all: Proceed to Phase 3
+→ Yes to all: Proceed to Phase 2
 
-### Phase 3-4: Do I have enough information?
+### Phase 2-3: Do I have enough information?
 - [ ] Domain map complete (or acceptable with gaps)?
 - [ ] User answered questionnaire (or used defaults)?
 
-→ Yes: Proceed to Phase 5
+→ Yes: Proceed to Phase 4
 
-### Phase 5-7: Is architecture approved?
+### Phase 4-6: Is architecture approved?
 - [ ] User chose strategy?
 - [ ] Architecture generated?
 - [ ] User approved architecture (or requested changes applied)?
 
-→ Yes: Proceed to Phase 8
+→ Yes: Proceed to Phase 7
 
-### Phase 8-9: Are files written?
+### Phase 7-8: Are files written?
 - [ ] All 4 writers succeeded (or failures recovered)?
 - [ ] plugin.json generated?
 - [ ] .lsp.json generated (if applicable)?
 - [ ] File tree matches architecture?
 
-→ Yes: Proceed to Phase 10
+→ Yes: Proceed to Phase 9
 
-### Phase 10: Quality gate passed?
+### Phase 9: Quality gate passed?
 - [ ] Review grade is A or B?
 - [ ] Critical findings fixed?
 - [ ] Warnings fixed or accepted?
 
-→ Yes: Proceed to Phase 11
+→ Yes: Proceed to Phase 10
 
-### Phase 11: Ready to install?
+### Phase 10: Ready to install?
 - [ ] User approved finalization?
 - [ ] Target directory conflict resolved (if any)?
 - [ ] Copy succeeded?
@@ -736,11 +736,11 @@ With parallelization vs without:
 
 This pattern ensures domain knowledge is centralized before role-specific plugins are created.
 
-**Trigger**: Creating a coding-type plugin where the role is NOT `knowledge`.
+**Trigger**: Creating a domain-type plugin where the role is NOT `knowledge`.
 
 **Flow**:
 1. Derive knowledge plugin name: replace role segment with `knowledge`
-   - `coding-embedded-zephyr-engineer` → `coding-embedded-zephyr-knowledge`
+   - `embedded-zephyr-engineer` → `embedded-zephyr-knowledge`
 2. Check if knowledge plugin exists in `$CLAUDE_KIT_OUTPUT_DIR/`
 3. If exists: set KNOWLEDGE_MODE=true, catalog its skills
 4. If missing: offer to create it first via abbreviated workflow
