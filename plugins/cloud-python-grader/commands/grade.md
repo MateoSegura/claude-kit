@@ -1,6 +1,6 @@
 ---
 name: cloud-python-grader:grade
-allowed-tools: Read, Glob, Grep, Bash, Task
+allowed-tools: Read, Glob, Grep, Bash, Task, TeamCreate, TeamDelete, SendMessage
 description: Full-service on-demand code review. Accepts a service path or file glob, grades all 8 dimensions via parallel subagents, and produces a unified report with weighted final score, per-dimension scores, findings list, and inline annotations.
 ---
 
@@ -46,74 +46,86 @@ Summarize detected context:
 - Python version: from pyproject.toml or Dockerfile
 - Key dependencies: pydantic, sqlalchemy, asyncpg, opentelemetry, etc.
 
-### Step 3: Run 8-Dimension Review in Parallel
+### Step 3: Grade via Reviewer Team
 
-Spawn 8 Task subagents simultaneously — one per grading dimension. Pass each subagent:
+Create a team to coordinate all 8 dimension reviewers and score computation. The team-lead spawns reviewers in parallel, collects results, computes the weighted final score, and sends back a synthesized scorecard.
 
-- The resolved file list (paths, not contents — subagents will Read files they need)
-- The shared context summary (framework, Python version, key deps)
-- Its specific dimension name and the corresponding rubric section (from grading-rubrics skill)
-- Instructions to output structured findings in this exact format:
-
+**Create team:**
 ```
-DIMENSION: <name>
-SCORE: <0-100>
-FINDINGS:
-- [SEVERITY] Short title | file:line | Impact sentence | Recommendation sentence
-...
-SUMMARY: One-sentence dimension summary.
+TeamCreate("grading")
 ```
 
-Subagent assignments:
+**Spawn team-lead:**
+```
+subagent_type: general-purpose
+team_name: grading
+name: team-lead
+input: |
+  You are the grading team-lead for this Python cloud service review.
 
-| Subagent | Dimension | Focus files |
-|----------|-----------|-------------|
-| reviewer-async | async-correctness | All `*.py` files |
-| reviewer-types | type-safety | All `*.py` files, mypy config |
-| reviewer-security | security | All `*.py` files, `.env.*`, config files |
-| reviewer-observability | observability | All `*.py` files, logging config |
-| reviewer-contracts | api-contracts | Route/endpoint files, Pydantic models |
-| reviewer-performance | performance-risk | All `*.py` files, ORM models |
-| reviewer-tests | test-coverage | `tests/`, `test_*.py`, `*_test.py` |
-| reviewer-k8s | k8s-hygiene | `**/k8s/**/*.yaml`, `**/deploy/**/*.yaml`, Dockerfile, app entry point |
+  Service path: {service_path}
+  File list: {resolved file list}
+  Context summary: {framework, Python version, key deps}
 
-Run all 8 subagents in parallel with a single multi-Task call. Do not wait for one before starting another.
+  Your job:
+  1. Spawn all 8 dimension reviewers in parallel (one Task call with 8 agents):
 
-### Step 4: Collect and Validate Results
+     | Subagent | Dimension | Focus files |
+     |----------|-----------|-------------|
+     | reviewer-async | async-correctness | All *.py files |
+     | reviewer-types | type-safety | All *.py files, mypy config |
+     | reviewer-security | security | All *.py files, .env.*, config files |
+     | reviewer-observability | observability | All *.py files, logging config |
+     | reviewer-contracts | api-contracts | Route/endpoint files, Pydantic models |
+     | reviewer-performance | performance-risk | All *.py files, ORM models |
+     | reviewer-tests | test-coverage | tests/, test_*.py, *_test.py |
+     | reviewer-k8s | k8s-hygiene | **/k8s/**/*.yaml, **/deploy/**/*.yaml, Dockerfile, app entry point |
 
-After all 8 subagents complete:
+  2. Pass each reviewer: the file list, context summary, its dimension name,
+     and instruction to output structured findings in this format:
+     ```
+     DIMENSION: <name>
+     SCORE: <0-100>
+     FINDINGS:
+     - [SEVERITY] Short title | file:line | Impact sentence | Recommendation sentence
+     ...
+     SUMMARY: One-sentence dimension summary.
+     ```
 
-1. Verify each returned a `SCORE:` value between 0 and 100.
-2. Verify each returned a `FINDINGS:` block (may be empty if no issues found).
-3. If a subagent failed or returned malformed output: assign that dimension a score of N/A, note the failure, and continue. Do not re-run failed subagents automatically — report the failure.
+  3. Collect all 8 results. If a subagent failed or returned malformed output:
+     assign that dimension score = N/A and note the failure.
 
-### Step 5: Compute Final Score
+  4. Compute the weighted final score:
+     async-correctness:  score * 0.20
+     type-safety:        score * 0.15
+     security:           score * 0.20
+     observability:      score * 0.10
+     api-contracts:      score * 0.15
+     performance-risk:   score * 0.10
+     test-coverage:      score * 0.05
+     k8s-hygiene:        score * 0.05
+     final_score = sum of weighted dimension scores
+     If any dimension is N/A, exclude its weight from the denominator.
 
-Apply dimension weights:
+  5. Assign grade letter: 90-100=A, 80-89=B, 70-79=C, 60-69=D, <60=F
+
+  6. Send back ALL results via SendMessage to the orchestrator:
+     - All 8 dimension results (scores, findings, summaries)
+     - The computed final_score and grade letter
+     - List of any N/A dimensions and why
+```
+
+**Receive results and clean up:**
+
+Wait for the team-lead's message containing the synthesized review results.
 
 ```
-async-correctness:  score * 0.20
-type-safety:        score * 0.15
-security:           score * 0.20
-observability:      score * 0.10
-api-contracts:      score * 0.15
-performance-risk:   score * 0.10
-test-coverage:      score * 0.05
-k8s-hygiene:        score * 0.05
-
-final_score = sum of weighted dimension scores
+TeamDelete("grading")
 ```
 
-If any dimension returned N/A (subagent failure), exclude its weight from the denominator and note the partial score.
+Proceed to Step 4 (gather git context) with the received results.
 
-Assign grade letter:
-- 90–100: A
-- 80–89: B
-- 70–79: C
-- 60–69: D
-- < 60: F
-
-### Step 6: Gather Git Context
+### Step 4: Gather Git Context
 
 Collect git metadata from the service directory:
 ```bash

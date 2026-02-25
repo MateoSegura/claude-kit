@@ -1,6 +1,6 @@
 ---
 name: embedded-zephyr-grader:compare
-allowed-tools: Task, AskUserQuestion, Read, Glob, Grep, Write, Bash
+allowed-tools: Task, AskUserQuestion, Read, Glob, Grep, Write, Bash, TeamCreate, TeamDelete, SendMessage
 description: Perform blind A/B comparison of two Zephyr submissions with side-by-side scoring and winner analysis
 ---
 
@@ -75,27 +75,70 @@ If `blind_mode == false`:
 
 ---
 
-### Phase 3: Parallel Independent Grading
+### Phase 3: Grade Both Submissions via Parallel Teams
 
-Grade both submissions **independently and in parallel** by spawning two complete grading pipelines.
+Create two teams (one per submission) to independently run the full grading pipeline. Each team-lead manages compilability checking, automated tools, LLM reviewers, and score aggregation — returning a single scorecard.
 
-**For Submission X:**
-1. Spawn `compilability-checker`
-2. Spawn `static-analyzer`
-3. Spawn `metrics-collector`
-4. Spawn `resource-analyzer`
-5. Spawn `style-checker`
-6. Spawn `zephyr-reviewer`
-7. Spawn `architecture-reviewer`
-8. Spawn `completeness-checker`
-9. Spawn `score-aggregator`
+**Create both teams in parallel:**
+```
+TeamCreate("grading-x")
+TeamCreate("grading-y")
+```
 
-**For Submission Y:**
-1. (Same 9 agents as above)
+**Spawn both team-leads simultaneously:**
 
-**Run all 18 agents in parallel** (9 for X, 9 for Y) to maximize speed.
+**Team-lead X:**
+```
+subagent_type: general-purpose
+team_name: grading-x
+name: team-lead
+input: |
+  You are the grading team-lead for Submission X.
 
-**Important:** Do NOT reveal Submission X vs Y identity to LLM review agents. They should grade blindly.
+  Submission path: {submission_x_path}
+  Intake descriptor: {paste intake X descriptor}
+  Boards: {boards_x}
+
+  Your job:
+  1. Spawn compilability-checker for this submission
+  2. Based on build result, spawn all grading agents in parallel:
+     - static-analyzer, metrics-collector, style-checker (always)
+     - resource-analyzer (skip if build failed)
+     - zephyr-reviewer, architecture-reviewer, completeness-checker (always)
+  3. Collect all results, handle failures (retry once, then N/A)
+  4. Spawn score-aggregator with all dimension scores
+  5. Send the final scorecard back via SendMessage to the orchestrator
+
+  Weight overrides: {weight_overrides or null}
+  Grade blindly as "Submission X" — do not reveal identity.
+```
+
+**Team-lead Y:**
+```
+subagent_type: general-purpose
+team_name: grading-y
+name: team-lead
+input: |
+  You are the grading team-lead for Submission Y.
+
+  Submission path: {submission_y_path}
+  Intake descriptor: {paste intake Y descriptor}
+  Boards: {boards_y}
+
+  [Same instructions as Team-lead X, but for Submission Y]
+  Grade blindly as "Submission Y" — do not reveal identity.
+```
+
+**Receive scorecards and clean up:**
+
+Wait for both team-leads' messages containing their aggregated scorecards.
+
+```
+TeamDelete("grading-x")
+TeamDelete("grading-y")
+```
+
+Proceed to Phase 4 (comparison analysis) with both scorecards.
 
 ---
 
@@ -418,9 +461,8 @@ You:
 1. Confirm paths and parameters
 2. Spawn 2 intake agents in parallel (strip metadata)
 3. Randomize order (X=?, Y=?)
-4. Spawn 18 grading agents in parallel (9 for X, 9 for Y)
-5. Wait for all to complete
-6. Spawn comparison-analyzer
-7. Spawn comparison-report-generator
-8. Present winner with summary
-9. Provide file paths to full reports
+4. Create 2 grading teams in parallel — each team-lead runs compilability + 7 agents + aggregation, returns scorecard
+5. Spawn comparison-analyzer with both scorecards
+6. Spawn comparison-report-generator
+7. Present winner with summary
+8. Provide file paths to full reports

@@ -4,6 +4,20 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+### frontend-svelte-grader (0.1.0 → 0.1.1)
+- **Improved** `grade` and `compare` commands use agent teams for reviewer
+  coordination, reducing orchestrator context pollution
+
+### embedded-zephyr-grader (0.2.0 → 0.2.1)
+- **Improved** `grade` and `compare` commands use agent teams for reviewer
+  coordination, reducing orchestrator context pollution
+- **Fixed** `compare` command incorrectly specified running score-aggregators
+  in parallel with their input agents
+
+### cloud-python-grader (0.1.0 → 0.1.1)
+- **Improved** `grade` command uses agent teams for reviewer coordination,
+  reducing orchestrator context pollution
+
 ## [0.5.0] - 2026-02-25
 
 ### system-updater (0.1.0 → 0.2.0)
