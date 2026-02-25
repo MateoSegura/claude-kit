@@ -3,6 +3,8 @@
 # Called by the Stop hook to warn about potential lost work.
 # NOTE: Build directory pattern /tmp/claude-kit-build-* matches the convention defined in commands/make-agent.md Phase 2
 
+set -euo pipefail
+
 BUILD_DIRS=$(ls -d /tmp/claude-kit-build-* 2>/dev/null)
 
 if [ -z "$BUILD_DIRS" ]; then

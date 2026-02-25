@@ -1,4 +1,5 @@
 ---
+name: coding-frontend-svelte-grader:grade
 allowed-tools: Task, Read, Glob, Grep, Bash, AskUserQuestion
 description: Grade a single Svelte/SvelteKit codebase across all 8 dimensions. Spawns 8 dimension reviewers in parallel, then aggregates scores, then generates a report.
 ---

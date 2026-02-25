@@ -1,6 +1,7 @@
 ---
 name: coding-frontend-svelte-knowledge:desktop-targets
 description: "Tauri 2 and Electron integration with SvelteKit: adapter-static SPA configuration, Tauri IPC invoke patterns, Rust commands, Electron with electron-vite, desktop-specific OS features, cross-platform CI, and binary size comparison."
+user-invocable: false
 ---
 
 # Desktop Targets Quick Reference

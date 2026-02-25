@@ -1,6 +1,7 @@
 ---
 name: coding-cloud-python-tester:pytest-testing
 description: "pytest configuration, async testing with pytest-asyncio, test markers, parametrize, coverage enforcement, and plugin setup for Python cloud service test suites. Covers pyproject.toml configuration, test discovery, and common pytest plugins."
+user-invocable: false
 ---
 
 # pytest Testing — Quick Reference

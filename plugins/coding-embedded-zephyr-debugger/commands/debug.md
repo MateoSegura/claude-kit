@@ -1,5 +1,5 @@
 ---
-name: debug
+name: coding-embedded-zephyr-debugger:debug
 description: "Triage and diagnose failures in Zephyr RTOS firmware. Classifies symptoms into failure domains, routes to specialist agents, and delivers structured diagnostic reports. Read-only — never writes or modifies code."
 allowed-tools: Read, Glob, Grep, Bash, Task, AskUserQuestion
 ---

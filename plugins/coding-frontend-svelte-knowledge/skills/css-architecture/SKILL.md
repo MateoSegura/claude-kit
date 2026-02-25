@@ -1,6 +1,7 @@
 ---
 name: coding-frontend-svelte-knowledge:css-architecture
 description: "Modern CSS architecture for Svelte: design token systems with CSS custom properties, @layer cascade control, container queries, :has() selector, oklch color, fluid typography, View Transitions, and Tailwind CSS integration patterns."
+user-invocable: false
 ---
 
 # CSS Architecture Quick Reference

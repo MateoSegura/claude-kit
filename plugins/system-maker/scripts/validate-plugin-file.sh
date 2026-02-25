@@ -3,6 +3,8 @@
 # Validates plugin file frontmatter conventions.
 # Only checks files that appear to be plugin components — exits immediately for all others.
 
+set -euo pipefail
+
 INPUT=$(cat)
 
 # Extract file_path without jq

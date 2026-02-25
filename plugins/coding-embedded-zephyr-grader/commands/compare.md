@@ -1,4 +1,5 @@
 ---
+name: coding-embedded-zephyr-grader:compare
 allowed-tools: Task, AskUserQuestion, Read, Glob, Grep, Write, Bash
 description: Perform blind A/B comparison of two Zephyr submissions with side-by-side scoring and winner analysis
 ---

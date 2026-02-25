@@ -1,6 +1,7 @@
 ---
 name: coding-frontend-svelte-knowledge:component-patterns
 description: "Svelte 5 component composition patterns: snippets replacing slots, context API for compound components, headless components, generic components, event attributes, state management hierarchy, and TypeScript utility types."
+user-invocable: false
 ---
 
 # Svelte 5 Component Patterns Quick Reference

@@ -1,6 +1,7 @@
 ---
 name: coding-frontend-svelte-tester:playwright-e2e
 description: "Playwright E2E testing for SvelteKit applications. Covers configuration, locator strategies, navigation testing, form actions, page object model, network interception, and SvelteKit-specific patterns including load functions, SSR hydration, and route transitions."
+user-invocable: false
 ---
 
 # Playwright E2E Testing for SvelteKit

@@ -1,6 +1,7 @@
 ---
 name: coding-embedded-zephyr-grader:grading-rubrics
 description: "9-dimension grading framework for Zephyr submissions with scoring scales, weight distributions, automated vs LLM evaluation modes, and scoring thresholds for each dimension."
+user-invocable: false
 ---
 
 # Grading Rubrics

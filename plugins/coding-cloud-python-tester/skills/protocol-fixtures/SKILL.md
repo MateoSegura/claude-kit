@@ -1,6 +1,7 @@
 ---
 name: coding-cloud-python-tester:protocol-fixtures
 description: "Protocol-specific test fixtures for Python cloud services: HTTP/FastAPI async testing, in-process gRPC server fixtures, NATS test server, Kafka testcontainer, Celery eager mode, and Redis pub/sub testing patterns."
+user-invocable: false
 ---
 
 # Protocol Fixtures — Decision Matrix

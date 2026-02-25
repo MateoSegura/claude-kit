@@ -1,6 +1,7 @@
 ---
 name: coding-cloud-python-knowledge:distributed-systems
 description: "Distributed systems patterns for Python cloud backends: circuit breakers, retries with exponential backoff, service discovery, event-driven architecture, message queues (Redis Streams, RabbitMQ, Kafka), saga pattern, CQRS, and eventual consistency. Load when designing or implementing inter-service communication, fault tolerance, or event-driven workflows."
+user-invocable: false
 ---
 
 # Distributed Systems — Pattern Catalog

@@ -1,6 +1,7 @@
 ---
 name: coding-cloud-python-knowledge:containers-orchestration
 description: "Docker and Kubernetes reference for Python backend services: multi-stage Dockerfiles, slim images, pip/uv caching, Compose, K8s Deployments, Services, ConfigMaps, Secrets, health probes, resource limits, HPA, and Helm charts. Load when writing Dockerfiles, K8s manifests, or deployment configurations for Python services."
+user-invocable: false
 ---
 
 # Containers & Orchestration — Quick Reference

@@ -1,6 +1,7 @@
 ---
 name: coding-frontend-svelte-tester:coverage-analysis
 description: "Test coverage analysis for Svelte 5 / SvelteKit projects using Vitest's c8 (v8) and istanbul providers. Covers configuration, threshold enforcement, reading coverage reports, identifying gaps, branch coverage interpretation, and prioritizing what to test next."
+user-invocable: false
 ---
 
 # Coverage Analysis
