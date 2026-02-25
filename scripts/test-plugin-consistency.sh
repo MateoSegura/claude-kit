@@ -62,9 +62,10 @@ for agent_file in "$PLUGINS_DIR"/*/agents/*.md; do
   skills_csv="${skills_line#skills: }"
   IFS=',' read -ra skill_list <<< "$skills_csv"
 
-  # Read companions from ctl.json
+  # Read companions and domain from ctl.json
   ctl="$plugin_dir/.claude-plugin/ctl.json"
   companions=""
+  plugin_domain=""
   if [ -f "$ctl" ]; then
     companions=$(python3 -c "
 import json
@@ -72,6 +73,22 @@ d = json.load(open('$ctl'))
 for c in d.get('companions', []):
     print(c)
 " 2>/dev/null)
+    plugin_domain=$(python3 -c "import json; print(json.load(open('$ctl')).get('domain',''))" 2>/dev/null)
+  fi
+
+  # Resolve core-* plugins that would be auto-loaded via domain
+  auto_loaded_core=""
+  if [ -n "$plugin_domain" ]; then
+    for core_dir in "$PLUGINS_DIR"/core-*/; do
+      [ -d "$core_dir" ] || continue
+      core_ctl="$core_dir/.claude-plugin/ctl.json"
+      [ -f "$core_ctl" ] || continue
+      core_domain=$(python3 -c "import json; print(json.load(open('$core_ctl')).get('domain',''))" 2>/dev/null)
+      if [ "$core_domain" = "universal" ] || [ "$core_domain" = "$plugin_domain" ]; then
+        auto_loaded_core="$auto_loaded_core
+$(basename "$core_dir")"
+      fi
+    done
   fi
 
   for raw_skill in "${skill_list[@]}"; do
@@ -83,9 +100,9 @@ for c in d.get('companions', []):
       comp_name="${skill%%:*}"
       skill_name="${skill#*:}"
 
-      # Verify companion is declared
-      if ! echo "$companions" | grep -qx "$comp_name"; then
-        _fail "$plugin_name/$agent_name → $skill" "references companion '$comp_name' but it's not in ctl.json companions"
+      # Verify companion is declared or auto-loaded via domain
+      if ! echo "$companions" | grep -qx "$comp_name" && ! echo "$auto_loaded_core" | grep -qx "$comp_name"; then
+        _fail "$plugin_name/$agent_name → $skill" "references companion '$comp_name' but it's not in ctl.json companions or auto-loaded via domain"
         continue
       fi
 

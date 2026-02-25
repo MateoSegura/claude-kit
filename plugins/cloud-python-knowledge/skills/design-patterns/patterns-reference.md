@@ -1,6 +1,6 @@
 # Design Patterns Reference — Python Cloud Backend
 
-Full implementations for production-grade design patterns.
+Full Python implementations for production-grade design patterns. For language-agnostic pattern concepts and pseudocode, see `core-architecture:design-patterns`.
 
 ---
 

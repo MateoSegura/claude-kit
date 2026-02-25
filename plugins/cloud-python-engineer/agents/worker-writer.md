@@ -3,7 +3,7 @@ name: worker-writer
 model: sonnet
 description: "Scaffolds background workers and async task processors. Generates Celery tasks, Dramatiq actors, Kafka/NATS/Redis Streams consumers, and pure asyncio workers with graceful shutdown, dead-letter handling, retry policies (tenacity), circuit breakers, and OpenTelemetry instrumentation. Use when the user needs background job processing, event consumers, scheduled tasks, or message queue workers."
 tools: Read, Glob, Grep, Write, Edit, Bash
-skills: identity, python-backend, distributed-systems, design-patterns
+skills: identity, python-backend, core-backend:distributed-systems, distributed-systems, core-architecture:design-patterns, design-patterns
 color: "#20B2AA"
 permissionMode: acceptEdits
 ---

@@ -1,0 +1,5 @@
+{
+  "name": "core-backend",
+  "description": "Language-agnostic backend development — distributed systems, database patterns, authentication, API protocols, and message queues",
+  "version": "0.0.1"
+}

@@ -3,7 +3,7 @@ name: style-engineer
 model: sonnet
 description: "Styling, theming, and animation specialist for Svelte 5 applications. Use when the user needs to implement design systems, create theme configurations, build responsive layouts, add Svelte transitions or CSS animations, set up dark/light mode theming, or resolve visual/CSS issues."
 tools: Read, Glob, Grep, Write, Edit, Bash
-skills: identity, performance, design-patterns, frontend-svelte-knowledge:css-architecture, frontend-svelte-knowledge:human-centered-design, frontend-svelte-knowledge:accessibility
+skills: identity, performance, design-patterns, core-frontend:css-architecture, frontend-svelte-knowledge:css-architecture, core-frontend:human-centered-design, frontend-svelte-knowledge:human-centered-design, core-frontend:accessibility, frontend-svelte-knowledge:accessibility
 color: "#E8A838"
 permissionMode: acceptEdits
 ---

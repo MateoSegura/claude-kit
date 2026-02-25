@@ -1,4 +1,5 @@
 {
   "role": "grader",
+  "domain": "embedded",
   "companions": ["embedded-zephyr-knowledge"]
 }

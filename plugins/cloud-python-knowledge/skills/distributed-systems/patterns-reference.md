@@ -1,18 +1,17 @@
-# Distributed Systems — Patterns Reference
+# Distributed Systems -- Python Patterns Reference
 
-Full implementations for production distributed systems patterns in Python.
+Full Python implementations for distributed systems patterns. For language-agnostic concepts and pseudocode, see `core-backend:distributed-systems`.
 
 ---
 
-## Circuit Breaker — Full Implementation
+## Custom asyncio Circuit Breaker
 
 ```python
 # app/resilience/circuit_breaker.py
 import asyncio
 import time
 from enum import Enum
-from dataclasses import dataclass, field
-from typing import Callable, Any
+from dataclasses import dataclass
 import structlog
 
 logger = structlog.get_logger()
@@ -24,9 +23,9 @@ class CircuitState(Enum):
 
 @dataclass
 class CircuitBreakerConfig:
-    fail_threshold: int = 5          # failures before opening
-    success_threshold: int = 2       # successes to close from half-open
-    timeout_seconds: float = 30.0    # seconds before trying half-open
+    fail_threshold: int = 5
+    success_threshold: int = 2
+    timeout_seconds: float = 30.0
     expected_exceptions: tuple = (Exception,)
 
 class CircuitBreaker:
@@ -46,18 +45,16 @@ class CircuitBreaker:
                 return CircuitState.HALF_OPEN
         return self._state
 
-    async def call(self, fn: Callable, *args, **kwargs) -> Any:
+    async def call(self, fn, *args, **kwargs):
         async with self._lock:
             current_state = self.state
-
         if current_state == CircuitState.OPEN:
             raise CircuitOpenError(f"Circuit '{self.name}' is OPEN")
-
         try:
             result = await fn(*args, **kwargs)
             await self._on_success(current_state)
             return result
-        except self.config.expected_exceptions as e:
+        except self.config.expected_exceptions:
             await self._on_failure(current_state)
             raise
 
@@ -80,11 +77,7 @@ class CircuitBreaker:
             if self._failure_count >= self.config.fail_threshold:
                 self._state = CircuitState.OPEN
                 self._opened_at = time.monotonic()
-                logger.warning(
-                    "Circuit opened",
-                    breaker=self.name,
-                    failures=self._failure_count,
-                )
+                logger.warning("Circuit opened", breaker=self.name, failures=self._failure_count)
 
 class CircuitOpenError(Exception):
     pass
@@ -92,13 +85,12 @@ class CircuitOpenError(Exception):
 
 ---
 
-## Retry with Exponential Backoff — Full Implementation
+## Custom asyncio Retry with Backoff
 
 ```python
 # app/resilience/retry.py
 import asyncio
 import random
-import time
 from dataclasses import dataclass
 from typing import TypeVar, Callable, Type
 import structlog
@@ -115,12 +107,7 @@ class RetryConfig:
     jitter_factor: float = 0.25
     retryable_exceptions: tuple[Type[Exception], ...] = (Exception,)
 
-async def retry_with_backoff(
-    fn: Callable,
-    config: RetryConfig = RetryConfig(),
-    *args,
-    **kwargs,
-) -> T:
+async def retry_with_backoff(fn: Callable, config: RetryConfig = RetryConfig(), *args, **kwargs) -> T:
     last_exc: Exception | None = None
     for attempt in range(1, config.max_attempts + 1):
         try:
@@ -129,35 +116,21 @@ async def retry_with_backoff(
             last_exc = e
             if attempt == config.max_attempts:
                 break
-            delay = min(
-                config.initial_delay * (config.exponential_base ** (attempt - 1)),
-                config.max_delay,
-            )
+            delay = min(config.initial_delay * (config.exponential_base ** (attempt - 1)), config.max_delay)
             jitter = delay * config.jitter_factor * (2 * random.random() - 1)
             wait = max(0, delay + jitter)
-            logger.warning(
-                "Retrying after error",
-                attempt=attempt,
-                max_attempts=config.max_attempts,
-                wait_seconds=round(wait, 2),
-                error=str(e),
-                error_type=type(e).__name__,
-            )
+            logger.warning("Retrying", attempt=attempt, wait_seconds=round(wait, 2), error=str(e))
             await asyncio.sleep(wait)
     raise last_exc
 ```
 
 ---
 
-## Outbox Pattern — Transactional Event Publishing
+## Outbox Pattern with SQLAlchemy
 
 ```python
 # app/outbox.py
-"""
-Guarantees at-least-once delivery of events by writing them to a DB table
-in the same transaction as the business operation, then publishing async.
-"""
-from sqlalchemy import Column, String, JSON, Boolean, DateTime, func
+from sqlalchemy import JSON, Boolean, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column
 from uuid import UUID, uuid4
 import asyncio
@@ -172,7 +145,6 @@ class OutboxMessage(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 class OutboxPublisher:
-    """Polls outbox table and publishes unpublished messages."""
     def __init__(self, kafka_producer, poll_interval: float = 1.0):
         self._producer = kafka_producer
         self._poll_interval = poll_interval
@@ -196,33 +168,26 @@ class OutboxPublisher:
                 select(OutboxMessage)
                 .where(OutboxMessage.published == False)
                 .limit(100)
-                .with_for_update(skip_locked=True)  # avoid contention between workers
+                .with_for_update(skip_locked=True)
             )
             messages = list(result.scalars().all())
             for msg in messages:
-                await self._producer.send_and_wait(
-                    msg.topic,
-                    value=json.dumps(msg.payload).encode(),
-                )
+                await self._producer.send_and_wait(msg.topic, value=json.dumps(msg.payload).encode())
                 msg.published = True
             await db.commit()
 
-# In service layer — write event to outbox in same transaction as state change:
+# Usage: write event in same transaction as state change
 async def create_order(db: AsyncSession, data: OrderCreate) -> Order:
     order = Order(**data.model_dump())
     db.add(order)
-    db.add(OutboxMessage(
-        topic="orders",
-        payload={"event": "OrderCreated", "order_id": str(order.id)},
-    ))
-    # Both committed atomically — event cannot be lost
+    db.add(OutboxMessage(topic="orders", payload={"event": "OrderCreated", "order_id": str(order.id)}))
     await db.commit()
     return order
 ```
 
 ---
 
-## Idempotency Key Pattern
+## Idempotency Store with Redis
 
 ```python
 # app/idempotency.py
@@ -243,31 +208,12 @@ class IdempotencyStore:
         return None
 
     async def store_result(self, key: str, result: dict) -> None:
-        await self._redis.setex(
-            f"idempotency:{key}",
-            self._ttl,
-            json.dumps(result, default=str),
-        )
-
-def idempotency_key_from_request(body: bytes, user_id: str) -> str:
-    content = json.dumps({"user_id": user_id, "body": body.decode()}, sort_keys=True)
-    return hashlib.sha256(content.encode()).hexdigest()
-
-# FastAPI dependency
-async def check_idempotency(
-    idempotency_key: Annotated[str | None, Header()] = None,
-    store: IdempotencyStore = Depends(get_idempotency_store),
-) -> str | None:
-    if idempotency_key:
-        cached = await store.get_cached_result(idempotency_key)
-        if cached:
-            raise IdemopotentResponseException(cached)  # return cached response
-    return idempotency_key
+        await self._redis.setex(f"idempotency:{key}", self._ttl, json.dumps(result, default=str))
 ```
 
 ---
 
-## Event Bus — Async Pub/Sub
+## asyncio Event Bus
 
 ```python
 # app/events/bus.py
@@ -281,7 +227,6 @@ class EventBus:
         self._handlers: defaultdict[Type, list[Callable]] = defaultdict(list)
 
     def subscribe(self, event_type: Type) -> Callable:
-        """Decorator: @bus.subscribe(OrderCreated)"""
         def decorator(fn: Callable) -> Callable:
             self._handlers[event_type].append(fn)
             return fn
@@ -290,7 +235,6 @@ class EventBus:
     async def publish(self, event: Any) -> None:
         handlers = self._handlers.get(type(event), [])
         if not handlers:
-            logger.warning("No handlers for event", event_type=type(event).__name__)
             return
         tasks = [asyncio.create_task(self._invoke(h, event)) for h in handlers]
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -305,30 +249,18 @@ class EventBus:
             await asyncio.to_thread(handler, event)
 
 bus = EventBus()
-
-# Usage
-@bus.subscribe(OrderCreated)
-async def send_confirmation_email(event: OrderCreated) -> None:
-    await email_service.send_order_confirmation(event.order_id, event.user_email)
-
-@bus.subscribe(OrderCreated)
-async def update_inventory(event: OrderCreated) -> None:
-    await inventory_service.reserve(event.items)
 ```
 
 ---
 
-## Service Discovery — DNS-Based (K8s)
+## K8s Service Discovery with httpx
 
 ```python
-# In Kubernetes, services are discoverable via DNS: <service>.<namespace>.svc.cluster.local
-
 # app/discovery.py
 import httpx
 import os
 
 class ServiceRegistry:
-    """DNS-based service discovery for Kubernetes."""
     def __init__(self, namespace: str = "default"):
         self._namespace = namespace
         self._clients: dict[str, httpx.AsyncClient] = {}
@@ -337,15 +269,11 @@ class ServiceRegistry:
         if service_name not in self._clients:
             host = f"http://{service_name}.{self._namespace}.svc.cluster.local"
             self._clients[service_name] = httpx.AsyncClient(
-                base_url=host,
-                timeout=httpx.Timeout(connect=1.0, read=10.0),
+                base_url=host, timeout=httpx.Timeout(connect=1.0, read=10.0),
             )
         return self._clients[service_name]
 
     async def close_all(self):
         for client in self._clients.values():
             await client.aclose()
-
-# External services: use environment variables for URLs
-PAYMENT_SERVICE_URL = os.getenv("PAYMENT_SERVICE_URL", "http://payment-svc:8080")
 ```

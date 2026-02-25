@@ -3,7 +3,7 @@ name: grpc-chain-debugger
 model: opus
 description: "Specialist for gRPC call chain debugging in Python microservices. Diagnoses status code errors, deadline propagation failures, metadata forwarding issues, streaming failures, protobuf serialization errors, and interceptor stack problems. Use when triage classifies the issue as gRPC-related or when the user reports gRPC status errors, deadline exceeded, or inter-service communication failures."
 tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
-skills: identity, grpc-protocols, distributed-systems, python-backend
+skills: identity, core-backend:api-protocols, grpc-protocols, core-backend:distributed-systems, distributed-systems, python-backend
 color: "#20B2AA"
 permissionMode: plan
 ---

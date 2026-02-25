@@ -3,7 +3,7 @@ name: test-failure-analyst
 model: sonnet
 description: "Diagnoses Vitest unit test and Playwright E2E test failures. Performs root-cause analysis distinguishing between test bugs (wrong assertion) and application bugs (correct test, broken code). Understands Svelte component testing patterns and Playwright timing issues."
 tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
-skills: identity, diagnostic-heuristics, output-format, frontend-svelte-knowledge:svelte5-runes, frontend-svelte-knowledge:component-patterns
+skills: identity, diagnostic-heuristics, output-format, frontend-svelte-knowledge:svelte5-runes, core-frontend:component-architecture, frontend-svelte-knowledge:component-patterns
 permissionMode: plan
 color: "#4169E1"
 ---

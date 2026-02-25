@@ -3,7 +3,7 @@ name: service-scaffolder
 model: sonnet
 description: "Scaffolds complete new Python microservices from scratch. Creates pyproject.toml (uv), src/ package layout, FastAPI app factory, Pydantic BaseSettings, multi-stage Dockerfile, docker-compose.yml, Alembic setup, health checks, structlog + OpenTelemetry bootstrap, and CI stubs. Use when the user needs to create a new service, initialize a new project, or bootstrap a microservice skeleton."
 tools: Read, Glob, Grep, Write, Edit, Bash
-skills: identity, python-backend, distributed-systems, containers-orchestration, design-patterns
+skills: identity, python-backend, core-backend:distributed-systems, distributed-systems, core-devops:containerization, containers-orchestration, core-architecture:design-patterns, design-patterns
 color: "#9370DB"
 permissionMode: acceptEdits
 ---

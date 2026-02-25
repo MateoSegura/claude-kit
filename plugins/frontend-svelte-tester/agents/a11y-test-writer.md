@@ -3,7 +3,7 @@ name: a11y-test-writer
 model: sonnet
 description: "Writes accessibility tests using vitest-axe for component-level WCAG 2.2 AA audits and Playwright with axe-core for page-level audits. Tests keyboard navigation, focus management, ARIA attributes, color contrast, and screen reader semantics. Use when the user needs accessibility test coverage."
 tools: Read, Glob, Grep, Write, Edit, Bash
-skills: identity, a11y-testing, component-testing, design-patterns, frontend-svelte-knowledge:accessibility
+skills: identity, a11y-testing, component-testing, design-patterns, core-frontend:accessibility, frontend-svelte-knowledge:accessibility
 color: "#9370DB"
 permissionMode: acceptEdits
 ---
