@@ -331,12 +331,12 @@ Every domain description contains layers:
 
 ### Naming Rule
 
-The agent is named `<type>-<domain>-<tech>-<role>`. The domain is the broad discipline, the tech is the core framework, and targets become extension skills:
-- `coding-embedded-zephyr-engineer` (domain=embedded, tech=zephyr — NOT `coding-embedded-zephyr-esp32-engineer`, ESP32 is a target)
-- `coding-embedded-zephyr-grader` (same domain+tech, different role)
-- `coding-embedded-linux-engineer` (same domain, different tech)
-- `coding-frontend-react-engineer` (NOT `coding-frontend-react-nextjs-engineer` — Next.js is a target)
-- `coding-cloud-golang-engineer` (NOT `coding-cloud-golang-kubernetes-engineer` — K8s is a target)
+The agent is named `<domain>-<tech>-<role>`. The domain is the broad discipline, the tech is the core framework, and targets become extension skills:
+- `embedded-zephyr-engineer` (domain=embedded, tech=zephyr — NOT `embedded-zephyr-esp32-engineer`, ESP32 is a target)
+- `embedded-zephyr-grader` (same domain+tech, different role)
+- `embedded-linux-engineer` (same domain, different tech)
+- `frontend-react-engineer` (NOT `frontend-react-nextjs-engineer` — Next.js is a target)
+- `cloud-golang-engineer` (NOT `cloud-golang-kubernetes-engineer` — K8s is a target)
 
 Standard domains: embedded, cloud, frontend, backend, mobile, ml, devops.
 Standard roles: engineer, grader, tester, debugger. Both are ALWAYS explicit.
@@ -346,7 +346,7 @@ Standard roles: engineer, grader, tester, debugger. Both are ALWAYS explicit.
 The core agent knows the framework deeply. Target-specific knowledge lives in extension skills that can be added without modifying the core:
 
 ```
-coding-embedded-zephyr-engineer/
+embedded-zephyr-engineer/
 ├── skills/
 │   ├── identity/            # Core identity (user-invocable: false)
 │   │   └── SKILL.md
@@ -379,7 +379,7 @@ Before finalizing a plugin architecture, verify:
 Knowledge plugins are companion plugins that provide shared domain reference material. They have a reduced structure compared to role plugins:
 
 ```
-coding-embedded-zephyr-knowledge/
+embedded-zephyr-knowledge/
 ├── .claude-plugin/
 │   └── plugin.json          # role: "knowledge", no companions
 ├── .lsp.json                # Same LSP config as role plugins
@@ -417,7 +417,7 @@ coding-embedded-zephyr-knowledge/
 Role plugins reference their knowledge companion via the `companions` field in plugin.json:
 ```json
 {
-  "companions": ["coding-embedded-zephyr-knowledge"]
+  "companions": ["embedded-zephyr-knowledge"]
 }
 ```
 

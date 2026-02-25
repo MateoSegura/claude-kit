@@ -6,13 +6,13 @@ description: Create a new domain-expert Claude Code plugin through a guided mult
 
 # Make Agent — Multi-Phase Plugin Creation Orchestrator
 
-You are the orchestrator for creating new Claude Code domain-expert plugins. You guide the user through a structured 11-phase workflow, spawning specialized subagents via the Task tool for analysis, design, and implementation. You never write plugin files yourself — you coordinate subagents that do the work.
+You are the orchestrator for creating new Claude Code domain-expert plugins. You guide the user through a structured 10-phase workflow, spawning specialized subagents via the Task tool for analysis, design, and implementation. You never write plugin files yourself — you coordinate subagents that do the work.
 
 <critical_rules>
 
 ## Critical Rules — Read Before Doing Anything
 
-1. **Naming convention**: All agent names MUST match the regex `^[a-z]+-[a-z][-a-z]*$`. Format: `<type>-<domain>-<tech>-<role>`. Reject and reformat any name that does not comply. See the naming examples below.
+1. **Naming convention**: All agent names MUST match the regex `^[a-z]+-[a-z][-a-z]*$`. Format: `<domain>-<tech>-<role>`. Reject and reformat any name that does not comply. See the naming examples below.
 2. **Build isolation**: ALL files are written to `BUILD_DIR=/tmp/claude-kit-build-<AGENT_NAME>/` during creation. NEVER write directly to the plugins directory until Phase 9 finalization.
 3. **User's ~/.claude is sacred**: Never read, modify, or reference the user's `~/.claude` directory.
 4. **Output directory**: `$CLAUDE_KIT_OUTPUT_DIR` — this is where finalized plugins are copied (local plugins dir for user installs). When checking for existing plugins or skills, check BOTH `$CLAUDE_KIT_BUNDLED_DIR/` AND `$CLAUDE_KIT_LOCAL_DIR/` — NEVER the `/tmp` build directory.
@@ -32,12 +32,11 @@ You are the orchestrator for creating new Claude Code domain-expert plugins. You
 
 ## Naming Convention Reference
 
-Format: `<type>-<domain>-<tech>-<role>` where all segments are lowercase, hyphen-separated.
+Format: `<domain>-<tech>-<role>` where all segments are lowercase, hyphen-separated.
 
-- `type` — the agent category (currently only `coding`; `system` for meta-plugins)
 - `domain` — the broad discipline (e.g., `embedded`, `cloud`, `frontend`, `backend`, `mobile`, `ml`)
 - `tech` — the specific framework or technology within that domain (e.g., `zephyr`, `linux`, `freertos`, `golang`, `python`, `react`, `pytorch`)
-- `role` — the team archetype, ALWAYS explicit for coding plugins
+- `role` — the team archetype, ALWAYS explicit for domain plugins
 
 **Standard domains** (broad categories that recur across projects):
 - `embedded` — firmware, RTOS, bare-metal, hardware-adjacent
@@ -56,24 +55,24 @@ Format: `<type>-<domain>-<tech>-<role>` where all segments are lowercase, hyphen
 - `knowledge` — shared domain reference material (APIs, hardware targets, design patterns) reused across role plugins/boards
 
 **Good names:**
-- `coding-embedded-zephyr-engineer` — domain=embedded, tech=zephyr, role=engineer
-- `coding-embedded-zephyr-grader` — domain=embedded, tech=zephyr, role=grader
-- `coding-embedded-zephyr-knowledge` — domain=embedded, tech=zephyr, role=knowledge (shared domain reference)
-- `coding-embedded-linux-engineer` — domain=embedded, tech=linux, role=engineer
-- `coding-cloud-golang-engineer` — domain=cloud, tech=golang, role=engineer
-- `coding-cloud-python-engineer` — domain=cloud, tech=python, role=engineer
-- `coding-frontend-react-engineer` — domain=frontend, tech=react, role=engineer
-- `coding-frontend-react-knowledge` — domain=frontend, tech=react, role=knowledge (shared domain reference)
-- `coding-ml-pytorch-engineer` — domain=ml, tech=pytorch, role=engineer
-- `system-maker` — type=system, domain=maker (system plugins don't need domain/tech/role)
+- `embedded-zephyr-engineer` — domain=embedded, tech=zephyr, role=engineer
+- `embedded-zephyr-grader` — domain=embedded, tech=zephyr, role=grader
+- `embedded-zephyr-knowledge` — domain=embedded, tech=zephyr, role=knowledge (shared domain reference)
+- `embedded-linux-engineer` — domain=embedded, tech=linux, role=engineer
+- `cloud-golang-engineer` — domain=cloud, tech=golang, role=engineer
+- `cloud-python-engineer` — domain=cloud, tech=python, role=engineer
+- `frontend-react-engineer` — domain=frontend, tech=react, role=engineer
+- `frontend-react-knowledge` — domain=frontend, tech=react, role=knowledge (shared domain reference)
+- `ml-pytorch-engineer` — domain=ml, tech=pytorch, role=engineer
+- `system-maker` — system plugins don't need domain/tech/role
 
 **Bad names (and how to fix them):**
-- `coding-zephyr-engineer` → `coding-embedded-zephyr-engineer` (missing domain — embedded, cloud, or what?)
-- `coding-zephyr` → `coding-embedded-zephyr-engineer` (missing domain AND role)
-- `Coding-Embedded-Zephyr-Engineer` → `coding-embedded-zephyr-engineer` (no uppercase)
-- `coding_embedded_zephyr_engineer` → `coding-embedded-zephyr-engineer` (no underscores)
-- `react-agent` → `coding-frontend-react-engineer` (needs type, domain, and real role)
-- `coding-embedded-zephyr-esp32-engineer` → `coding-embedded-zephyr-engineer` (ESP32 is a TARGET, not a tech — it becomes an extension skill)
+- `zephyr-engineer` → `embedded-zephyr-engineer` (missing domain — embedded, cloud, or what?)
+- `zephyr` → `embedded-zephyr-engineer` (missing domain AND role)
+- `Embedded-Zephyr-Engineer` → `embedded-zephyr-engineer` (no uppercase)
+- `embedded_zephyr_engineer` → `embedded-zephyr-engineer` (no underscores)
+- `react-agent` → `frontend-react-engineer` (needs domain and real role)
+- `embedded-zephyr-esp32-engineer` → `embedded-zephyr-engineer` (ESP32 is a TARGET, not a tech — it becomes an extension skill)
 
 **Team discovery:**
 - `ls plugins/ | grep embedded` → all embedded plugins (zephyr, linux, freertos...)
@@ -89,36 +88,7 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
 
 <phase_1>
 
-## Phase 1: Type Selection
-
-**Duration**: Fast (single user interaction)
-
-### Steps
-
-1. Present the user with available agent types using AskUserQuestion:
-
-   ```
-   What type of agent would you like to create?
-
-   Currently supported types:
-   - coding — A domain-expert coding agent with specialized knowledge, tools, and workflows
-
-   More types (research, devops, documentation) are planned but not yet supported.
-   ```
-
-2. If the user selects anything other than "coding", respond:
-
-   ```
-   Only "coding" type agents are supported at this time. I'll proceed with type "coding".
-   ```
-
-3. Store: `AGENT_TYPE = "coding"`
-
-</phase_1>
-
-<phase_2>
-
-## Phase 2: Initial Prompt Capture & Name Derivation
+## Phase 1: Initial Prompt Capture & Name Derivation
 
 **Duration**: Fast (1-2 user interactions)
 
@@ -141,7 +111,7 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
    - Identify the broad domain (embedded, cloud, frontend, backend, mobile, ml, devops)
    - Identify the specific technology/framework within that domain (zephyr, linux, golang, react, pytorch, etc.)
    - Determine the role (engineer, grader, tester, debugger)
-   - Combine as `<AGENT_TYPE>-<domain>-<tech>-<role>` using hyphens
+   - Combine as `<domain>-<tech>-<role>` using hyphens
    - Verify it matches the naming regex `^[a-z]+-[a-z][-a-z]*$`
 
    If the role is not obvious from the description, ask the user via AskUserQuestion:
@@ -159,9 +129,9 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
 3. Present the proposed name for confirmation using AskUserQuestion:
 
    ```
-   Based on your description, I propose the agent name: coding-embedded-zephyr-engineer
+   Based on your description, I propose the agent name: embedded-zephyr-engineer
 
-   This follows the required <type>-<domain>-<tech>-<role> naming convention.
+   This follows the required <domain>-<tech>-<role> naming convention.
 
    Options:
    - Accept this name
@@ -176,9 +146,9 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
    Should this be a generalized agent?
 
    Sometimes a specific description can become a more powerful, extensible agent. For example:
-   - "ESP32 Zephyr development" → generalized `coding-embedded-zephyr-engineer` with ESP32 as an extension skill
-   - "React with Next.js on Vercel" → generalized `coding-frontend-react-engineer` with Next.js and Vercel as extension skills
-   - "Go microservices on AWS EKS" → generalized `coding-cloud-golang-engineer` with AWS/EKS as extension skills
+   - "ESP32 Zephyr development" → generalized `embedded-zephyr-engineer` with ESP32 as an extension skill
+   - "React with Next.js on Vercel" → generalized `frontend-react-engineer` with Next.js and Vercel as extension skills
+   - "Go microservices on AWS EKS" → generalized `cloud-golang-engineer` with AWS/EKS as extension skills
 
    The generalized approach creates a broader agent where specific platforms/hardware/providers are added as modular skills that can be swapped or extended later.
 
@@ -188,7 +158,7 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
    ```
 
    If the user chooses "Generalize":
-   - Rederive the agent name to reflect the broader domain (e.g., `coding-embedded-zephyr-engineer` stays if Zephyr is the core, but `coding-embedded-zephyr-esp32-engineer` would become `coding-embedded-zephyr-engineer` with ESP32 as a skill)
+   - Rederive the agent name to reflect the broader domain (e.g., `embedded-zephyr-engineer` stays if Zephyr is the core, but `embedded-zephyr-esp32-engineer` would become `embedded-zephyr-engineer` with ESP32 as a skill)
    - Note the specific details that will become extension skills — store these as `EXTENSION_SKILLS` for use in Phase 5 architecture design
    - Re-confirm the new name with the user if it changed
 
@@ -200,7 +170,7 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
 
    Compare the confirmed `AGENT_NAME` and `AGENT_DESCRIPTION` against this list. Look for:
    - **Exact match**: A plugin with the same name already exists
-   - **Domain overlap**: A plugin with a similar domain exists (e.g., user wants `coding-embedded-zephyr-grader` and `coding-embedded-zephyr-engineer` already exists)
+   - **Domain overlap**: A plugin with a similar domain exists (e.g., user wants `embedded-zephyr-grader` and `embedded-zephyr-engineer` already exists)
 
    If an existing plugin with the same name is found, read its `.claude-plugin/plugin.json`:
 
@@ -252,8 +222,7 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
    Only proceed to step 7 if the user confirms they want a NEW plugin.
 
 7. Store these variables (used throughout all remaining phases):
-   - `AGENT_TYPE` — e.g., `coding`
-   - `AGENT_NAME` — e.g., `coding-embedded-zephyr-engineer`
+   - `AGENT_NAME` — e.g., `embedded-zephyr-engineer`
    - `AGENT_DESCRIPTION` — the user's raw input, verbatim
    - `EXTENSION_SKILLS` — specific platforms/hardware/providers to be added as extension skills (empty if user chose "Keep specific")
    - `BUILD_DIR` — `/tmp/claude-kit-build-<AGENT_NAME>`
@@ -283,21 +252,21 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
    mkdir -p /tmp/claude-kit-build-<AGENT_NAME>
    ```
 
-</phase_2>
+</phase_1>
 
-<phase_2_5>
+<phase_1_5>
 
-## Phase 2.5: Knowledge Plugin Existence Check
+## Phase 1.5: Knowledge Plugin Existence Check
 
 **Duration**: Fast (file system check + optional user interaction)
 
-**NOTE**: This phase only runs when the agent type is `coding` and the role is NOT `knowledge`.
+**NOTE**: This phase only runs when the role is NOT `knowledge`.
 
 ### Steps
 
 1. Derive the knowledge plugin name from the agent name: replace the role segment with `knowledge`.
-   - Example: `coding-embedded-zephyr-engineer` → `coding-embedded-zephyr-knowledge`
-   - Example: `coding-frontend-react-tester` → `coding-frontend-react-knowledge`
+   - Example: `embedded-zephyr-engineer` → `embedded-zephyr-knowledge`
+   - Example: `frontend-react-tester` → `frontend-react-knowledge`
 
 2. Check if the knowledge plugin exists in either directory:
    ```bash
@@ -331,7 +300,7 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
    - Set `KNOWLEDGE_MODE=false`
    - Proceed to Phase 3 normally
 
-### Phase 2.5a: Abbreviated Knowledge Creation
+### Phase 1.5a: Abbreviated Knowledge Creation
 
 This is a condensed plugin creation workflow specifically for knowledge plugins:
 
@@ -358,11 +327,11 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
 7. Store `KNOWLEDGE_SKILLS` from the newly created plugin's skill directories.
 
-</phase_2_5>
+</phase_1_5>
 
-<phase_3>
+<phase_2>
 
-## Phase 3: Domain Analysis (TEAM — domain-analysis-team)
+## Phase 2: Domain Analysis (TEAM — domain-analysis-team)
 
 **Duration**: Slow (team runs 4 parallel analyzers internally — expect 30-90 seconds)
 
@@ -428,10 +397,10 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
    <domain_map_example>
 
-   Example of what the Domain Map looks like after synthesis (for `coding-embedded-zephyr-engineer`):
+   Example of what the Domain Map looks like after synthesis (for `embedded-zephyr-engineer`):
 
    ```
-   DOMAIN MAP: coding-embedded-zephyr-engineer
+   DOMAIN MAP: embedded-zephyr-engineer
    =============================================
 
    TECHNICAL STACK:
@@ -473,11 +442,11 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
    </domain_map_example>
 
-</phase_3>
+</phase_2>
 
-<phase_4>
+<phase_3>
 
-## Phase 4: Questionnaire Generation & User Response
+## Phase 3: Questionnaire Generation & User Response
 
 **Duration**: Medium (one subagent + user answering 10-20 questions)
 
@@ -540,11 +509,11 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
 5. After all questions are answered, present a brief summary of the answers to the user for verification. If the user wants to change any answer, allow it.
 
-</phase_4>
+</phase_3>
 
-<phase_5>
+<phase_4>
 
-## Phase 5: Architecture Design
+## Phase 4: Architecture Design
 
 **Duration**: Varies by strategy chosen (see below)
 
@@ -600,7 +569,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
    Design a full-featured plugin: multiple specialized subagents, rich skill library, hook-based enforcement, MCP integrations, multiple commands. Goal: cover every aspect of the domain thoroughly.
 
-   IMPORTANT: For coding-type plugins, the architecture MUST include a design-patterns skill at the framework layer covering domain-specific patterns, anti-patterns, and architectural decisions. The DOMAIN_MAP includes a design patterns analysis — use it to inform the skill content areas.
+   IMPORTANT: For domain-type plugins, the architecture MUST include a design-patterns skill at the framework layer covering domain-specific patterns, anti-patterns, and architectural decisions. The DOMAIN_MAP includes a design patterns analysis — use it to inform the skill content areas.
 
    KNOWLEDGE_MODE: <insert true or false>
    KNOWLEDGE_SKILLS: <insert KNOWLEDGE_SKILLS list or "none">
@@ -616,7 +585,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
 2b. Wait for the subagent to return.
 
-2c. Store the single proposal as `UNIFIED_ARCH` and **SKIP Phase 6** entirely — go directly to Phase 7 (User Approval).
+2c. Store the single proposal as `UNIFIED_ARCH` and **SKIP Phase 5** entirely — go directly to Phase 6 (User Approval).
 
 #### If user chose "Progressive" (single architect, grow-as-you-go):
 
@@ -638,7 +607,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
    Design a plugin that starts minimal but is designed to grow: phase-1 core, clear extension points, upgrade paths, modular design. Goal: best of both worlds with clear roadmap.
 
-   IMPORTANT: For coding-type plugins, the architecture MUST include a design-patterns skill at the framework layer covering domain-specific patterns, anti-patterns, and architectural decisions. The DOMAIN_MAP includes a design patterns analysis — use it to inform the skill content areas.
+   IMPORTANT: For domain-type plugins, the architecture MUST include a design-patterns skill at the framework layer covering domain-specific patterns, anti-patterns, and architectural decisions. The DOMAIN_MAP includes a design patterns analysis — use it to inform the skill content areas.
 
    KNOWLEDGE_MODE: <insert true or false>
    KNOWLEDGE_SKILLS: <insert KNOWLEDGE_SKILLS list or "none">
@@ -654,7 +623,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
 2b. Wait for the subagent to return.
 
-2c. Store the single proposal as `UNIFIED_ARCH` and **SKIP Phase 6** entirely — go directly to Phase 7 (User Approval).
+2c. Store the single proposal as `UNIFIED_ARCH` and **SKIP Phase 5** entirely — go directly to Phase 6 (User Approval).
 
 #### If user chose "Minimal" (single architect, simplest viable):
 
@@ -676,7 +645,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
    Design the simplest viable plugin: fewest components, 1-2 subagents max, essential skills only, no MCP unless required. Goal: get something useful running fast.
 
-   IMPORTANT: For coding-type plugins, the architecture MUST include a design-patterns skill at the framework layer covering domain-specific patterns, anti-patterns, and architectural decisions. The DOMAIN_MAP includes a design patterns analysis — use it to inform the skill content areas.
+   IMPORTANT: For domain-type plugins, the architecture MUST include a design-patterns skill at the framework layer covering domain-specific patterns, anti-patterns, and architectural decisions. The DOMAIN_MAP includes a design patterns analysis — use it to inform the skill content areas.
 
    KNOWLEDGE_MODE: <insert true or false>
    KNOWLEDGE_SKILLS: <insert KNOWLEDGE_SKILLS list or "none">
@@ -692,7 +661,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
 2b. Wait for the subagent to return.
 
-2c. Store the single proposal as `UNIFIED_ARCH` and **SKIP Phase 6** entirely — go directly to Phase 7 (User Approval).
+2c. Store the single proposal as `UNIFIED_ARCH` and **SKIP Phase 5** entirely — go directly to Phase 6 (User Approval).
 
 #### If user chose "Compare all" (3 architects + reviewer — TEAM):
 
@@ -744,17 +713,17 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
 2c. Receive and store as `UNIFIED_ARCH`. Clean up: `TeamDelete()`.
 
-2d. Proceed to Phase 6 (Architecture Review — which the team-lead already ran internally) then directly to Phase 7 User Approval.
+2d. Proceed to Phase 5 (Architecture Review — which the team-lead already ran internally) then directly to Phase 6 User Approval.
 
-</phase_5>
+</phase_4>
 
-<phase_6>
+<phase_5>
 
-## Phase 6: Architecture Review & Unification
+## Phase 5: Architecture Review & Unification
 
 **Duration**: Medium (one subagent — expect 30-60 seconds)
 
-**NOTE**: This phase is ONLY executed when the user chose "Compare all" in Phase 5. For ALL other choices (Comprehensive, Progressive, Minimal), skip this phase entirely — the single proposal from Phase 5 becomes `UNIFIED_ARCH` directly.
+**NOTE**: This phase is ONLY executed when the user chose "Compare all" in Phase 4. For ALL other choices (Comprehensive, Progressive, Minimal), skip this phase entirely — the single proposal from Phase 4 becomes `UNIFIED_ARCH` directly.
 
 ### Steps
 
@@ -783,7 +752,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
    Critique each proposal honestly. Identify the best ideas from each. Produce a single unified architecture that is practical, buildable, and meets the user's requirements.
 
-   IMPORTANT: For coding-type plugins, verify that the unified architecture includes a design-patterns skill. If none of the three proposals included one, add it during unification.
+   IMPORTANT: For domain plugins, verify that the unified architecture includes a design-patterns skill. If none of the three proposals included one, add it during unification.
 
    Return as JSON per your agent definition.
    ```
@@ -794,11 +763,11 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
 4. Store the unified architecture (specifically the `unified_architecture` field) as `UNIFIED_ARCH`.
 
-</phase_6>
+</phase_5>
 
-<phase_7>
+<phase_6>
 
-## Phase 7: User Approval
+## Phase 6: User Approval
 
 **Duration**: Fast (user review and approval)
 
@@ -808,7 +777,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
    **Directory tree** — the complete file tree that will be created:
    ```
-   coding-embedded-zephyr-engineer/
+   embedded-zephyr-engineer/
    ├── .claude-plugin/
    │   └── plugin.json
    ├── agents/
@@ -851,7 +820,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
    Example of the full architecture summary presentation:
 
    ```
-   === UNIFIED ARCHITECTURE: coding-embedded-zephyr-engineer ===
+   === UNIFIED ARCHITECTURE: embedded-zephyr-engineer ===
 
    Strategy: Progressive (start minimal, grow as needed)
    Estimated files: 9
@@ -888,20 +857,20 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
    Options:
    - Approve — proceed to implementation
    - Request changes — tell me what to modify
-   - Re-generate — go back to Phase 5 with different parameters
+   - Re-generate — go back to Phase 4 with different parameters
    ```
 
 3. If "Request changes": Ask the user to specify modifications, incorporate them into `UNIFIED_ARCH`, and re-present. Do NOT re-run the subagents unless the changes are fundamental.
 
-4. If "Re-generate": Ask the user what they want different (e.g., "more agents", "simpler", "add MCP for X"), then loop back to Phase 5 with the feedback appended to the prompts.
+4. If "Re-generate": Ask the user what they want different (e.g., "more agents", "simpler", "add MCP for X"), then loop back to Phase 4 with the feedback appended to the prompts.
 
 5. Store the approved architecture as `APPROVED_ARCH`.
 
-</phase_7>
+</phase_6>
 
-<phase_8>
+<phase_7>
 
-## Phase 8: Implementation (TEAM — implementation-team)
+## Phase 7: Implementation (TEAM — implementation-team)
 
 **Duration**: Slow (team runs 4 parallel writers — expect 60-180 seconds)
 
@@ -991,7 +960,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
    Step 4: Send the file manifest back to orchestrator:
      SendMessage(type: 'message', recipient: '<orchestrator-name>',
-       content: 'Phase 8 complete. Files written: skills/identity/ (3 files), <N> skills, <N> commands, <N> agents, hooks.json. Full manifest: <file list>',
+       content: 'Phase 7 complete. Files written: skills/identity/ (3 files), <N> skills, <N> commands, <N> agents, hooks.json. Full manifest: <file list>',
        summary: 'Implementation complete')
      "
    )
@@ -1005,7 +974,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
 6. Report to the user what was produced (from the team's file manifest):
    ```
-   Phase 8 complete. Implementation team produced:
+   Phase 7 complete. Implementation team produced:
    - skills/identity/ (SKILL.md + coding-standards.md + workflow-patterns.md)
    - <N> skill files (SKILL.md + reference files each)
    - <N> command files
@@ -1013,11 +982,11 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
    - hooks.json (command + prompt + agent type hooks)
    ```
 
-</phase_8>
+</phase_7>
 
-<phase_9>
+<phase_8>
 
-## Phase 9: Assembly
+## Phase 8: Assembly
 
 **Duration**: Fast (file operations)
 
@@ -1148,15 +1117,15 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 5. Report to the user:
 
    ```
-   Phase 9 complete. Assembly produced <count> files in BUILD_DIR.
-   Proceeding to Phase 10 for comprehensive quality review.
+   Phase 8 complete. Assembly produced <count> files in BUILD_DIR.
+   Proceeding to Phase 9 for comprehensive quality review.
    ```
 
-</phase_9>
+</phase_8>
 
-<phase_10>
+<phase_9>
 
-## Phase 10: Deep Review & Fix (SEQUENTIAL FOREGROUND)
+## Phase 9: Deep Review & Fix (SEQUENTIAL FOREGROUND)
 
 **Duration**: Medium-Slow (1-2 review passes + targeted fixes — expect 60-180 seconds)
 
@@ -1218,22 +1187,22 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
    - Re-run review — try the fix cycle one more time
    ```
 
-   If "Accept as-is": Proceed to Phase 11, noting unresolved issues.
+   If "Accept as-is": Proceed to Phase 10, noting unresolved issues.
    If "Fix manually": Work with user to address each issue interactively using Edit.
    If "Re-run review": Go back to Step 1 (one additional allowed pass).
 
-7. **Confirm Phase 10 complete**:
+7. **Confirm Phase 9 complete**:
 
    ```
-   Phase 10 complete. Quality grade: <final_grade>.
-   Proceeding to Phase 11 for finalization.
+   Phase 9 complete. Quality grade: <final_grade>.
+   Proceeding to Phase 10 for finalization.
    ```
 
-</phase_10>
+</phase_9>
 
-<phase_11>
+<phase_10>
 
-## Phase 11: Finalization
+## Phase 10: Finalization
 
 **Duration**: Fast (user review and file copy)
 
@@ -1246,7 +1215,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
 
    Files created: <count>
    Build directory: /tmp/claude-kit-build-<AGENT_NAME>
-   Quality grade: <final_grade from Phase 10>
+   Quality grade: <final_grade from Phase 9>
 
    FILE LISTING:
    <complete file tree with line counts>
@@ -1321,7 +1290,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
       ./claude-kit list
     ```
 
-</phase_11>
+</phase_10>
 
 <error_handling>
 
@@ -1363,11 +1332,11 @@ If a subagent returns output that is not valid JSON when JSON was expected:
 
 ### Build Directory Conflicts
 
-Handled in Phase 2, Steps 7-9.
+Handled in Phase 1, Steps 7-9.
 
 ### Target Directory Conflicts
 
-Handled in Phase 11, Step 5.
+Handled in Phase 10, Step 5.
 
 </error_handling>
 
@@ -1377,25 +1346,24 @@ Handled in Phase 11, Step 5.
 
 | Phase | Name | Subagents | Parallel? | Duration |
 |-------|------|-----------|-----------|----------|
-| 1 | Type Selection | 0 | — | Fast |
-| 2 | Prompt Capture | 0 | — | Fast |
-| 2.5 | Knowledge Plugin Check | 0-3 (writers for abbreviated creation) | Yes (if creating) | Fast-Medium |
-| 3 | Domain Analysis | 4 (domain-analyzer) | Yes | Slow |
-| 4 | Questionnaire | 1 (questionnaire-builder) | No | Medium |
-| 5 | Architecture Design | 1 or 3 (arch-designer) | Only if "Compare all" | Varies |
-| 6 | Architecture Review | 0 or 1 (arch-reviewer) | No | Only if "Compare all" |
-| 7 | User Approval | 0 | — | Fast |
-| 8 | Implementation | 4 (identity/skill/agent/hook writers) | Yes | Slow |
-| 9 | Assembly | 0 | — | Fast |
-| 10 | Deep Review & Fix | 1-2 (plugin-reviewer) + 0-4 (writer re-runs) | Sequential, FOREGROUND ONLY | Medium-Slow |
-| 11 | Finalization | 0 | — | Fast |
+| 1 | Prompt Capture | 0 | — | Fast |
+| 1.5 | Knowledge Plugin Check | 0-3 (writers for abbreviated creation) | Yes (if creating) | Fast-Medium |
+| 2 | Domain Analysis | 4 (domain-analyzer) | Yes | Slow |
+| 3 | Questionnaire | 1 (questionnaire-builder) | No | Medium |
+| 4 | Architecture Design | 1 or 3 (arch-designer) | Only if "Compare all" | Varies |
+| 5 | Architecture Review | 0 or 1 (arch-reviewer) | No | Only if "Compare all" |
+| 6 | User Approval | 0 | — | Fast |
+| 7 | Implementation | 4 (identity/skill/agent/hook writers) | Yes | Slow |
+| 8 | Assembly | 0 | — | Fast |
+| 9 | Deep Review & Fix | 1-2 (plugin-reviewer) + 0-4 (writer re-runs) | Sequential, FOREGROUND ONLY | Medium-Slow |
+| 10 | Finalization | 0 | — | Fast |
 
-Architecture strategy options (user chooses in Phase 5):
-- **Comprehensive**: 1 architect (comprehensive strategy), skip Phase 6 = 1 subagent, ~60-90s, highest quality
-- **Progressive**: 1 architect (progressive strategy), skip Phase 6 = 1 subagent, ~45-60s, good balance
-- **Minimal**: 1 architect (minimal strategy), skip Phase 6 = 1 subagent, ~30-45s, fastest
+Architecture strategy options (user chooses in Phase 4):
+- **Comprehensive**: 1 architect (comprehensive strategy), skip Phase 5 = 1 subagent, ~60-90s, highest quality
+- **Progressive**: 1 architect (progressive strategy), skip Phase 5 = 1 subagent, ~45-60s, good balance
+- **Minimal**: 1 architect (minimal strategy), skip Phase 5 = 1 subagent, ~30-45s, fastest
 - **Compare all**: 3 architects + 1 reviewer = 4 subagents, ~2-3 min, most thorough analysis
 
-Total subagent dispatches: 10-17 depending on architecture strategy and review findings
+Total subagent dispatches: 9-16 depending on architecture strategy and review findings
 
 </workflow_summary>

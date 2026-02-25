@@ -16,7 +16,7 @@ for dir in $BUILD_DIRS; do
   if [ -d "$dir" ]; then
     file_count=$(find "$dir" -type f 2>/dev/null | wc -l)
     if [ "$file_count" -gt 0 ]; then
-      echo "{\"ok\": false, \"reason\": \"Build directory $dir has $file_count file(s) not finalized to plugins/. Run Phase 11 finalization or remove with: rm -rf $dir\"}" >&2
+      echo "{\"ok\": false, \"reason\": \"Build directory $dir has $file_count file(s) not finalized to plugins/. Run Phase 10 finalization or remove with: rm -rf $dir\"}" >&2
       exit 2
     fi
   fi

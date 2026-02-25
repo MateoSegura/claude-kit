@@ -16,7 +16,7 @@ You are an update strategist. You receive an existing plugin's structural analys
 ## Input
 
 You receive:
-- `PLUGIN_NAME`: The plugin being updated (e.g., `coding-embedded-zephyr-engineer`)
+- `PLUGIN_NAME`: The plugin being updated (e.g., `embedded-zephyr-engineer`)
 - `PLUGIN_ANALYSIS`: Full JSON analysis from the plugin-analyzer agent
 - `USER_REQUEST`: The user's description of what they want to add or change
 - `INSTALL_DIR`: `$CLAUDE_KIT_HOME`
@@ -30,8 +30,8 @@ Before planning any changes, evaluate whether the requested update FITS the exis
 
 ### It FITS this plugin when:
 
-- The change adds a new target/variant to an existing domain (e.g., "add ESP32 support" to coding-embedded-zephyr-engineer)
-- The change adds a new skill within the existing domain (e.g., "add Bluetooth skill" to coding-embedded-zephyr-engineer)
+- The change adds a new target/variant to an existing domain (e.g., "add ESP32 support" to embedded-zephyr-engineer)
+- The change adds a new skill within the existing domain (e.g., "add Bluetooth skill" to embedded-zephyr-engineer)
 - The change improves existing components (e.g., "make hooks more thorough", "add LSP config")
 - The change adds tooling that supports the existing domain (e.g., "add a debugging agent")
 - The change updates methodology or coding standards within the same domain
@@ -107,7 +107,7 @@ When the change FITS, produce a change plan following these rules:
 
 8. **plugin.json updates**: Update keywords and description if the domain scope expands.
 
-9. **Design pattern coverage**: When updating a coding-type plugin, check whether it has design pattern/architecture skills. If missing, recommend adding them. Should cover: domain-specific design patterns, architecture principles, theoretical concepts. This aligns with system-maker which generates these for new coding plugins.
+9. **Design pattern coverage**: When updating a domain plugin, check whether it has design pattern/architecture skills. If missing, recommend adding them. Should cover: domain-specific design patterns, architecture principles, theoretical concepts. This aligns with system-maker which generates these for new domain plugins.
 
 10. **Knowledge plugin constraints**: When updating a knowledge plugin (role="knowledge"):
     - NEVER add agents or commands
@@ -131,7 +131,7 @@ When the change FITS, produce a change plan following these rules:
 
 3. **Run fitness check**: Apply the fitness criteria above. Determine: fits, does not fit, or gray area.
 
-4. **Design Pattern Coverage Check**: If the plugin is a coding-type plugin (name starts with coding- or analysis shows software development keywords), check the PLUGIN_ANALYSIS for has_design_pattern_skill or gaps mentioning design patterns. If missing and the user request does not already include adding design pattern skills, append a proactive recommendation to the change plan: suggest creating a design-patterns skill (SKILL.md + patterns-reference.md + anti-patterns.md) covering domain-specific patterns. Frame as optional-but-recommended, listed after the user requested changes.
+4. **Design Pattern Coverage Check**: If the plugin is a domain plugin (analysis shows software development keywords), check the PLUGIN_ANALYSIS for has_design_pattern_skill or gaps mentioning design patterns. If missing and the user request does not already include adding design pattern skills, append a proactive recommendation to the change plan: suggest creating a design-patterns skill (SKILL.md + patterns-reference.md + anti-patterns.md) covering domain-specific patterns. Frame as optional-but-recommended, listed after the user requested changes.
 
 5. **If fits — plan the changes**: For each change, specify:
    - File path (relative to plugin root)
@@ -159,7 +159,7 @@ Return a JSON object:
 
   "system_maker_suggestion": {
     "description": "Only present when fitness is new_plugin or gray_area",
-    "suggested_name": "coding-something",
+    "suggested_name": "my-domain-engineer",
     "suggested_prompt": "Description to pass to system-maker"
   },
 
@@ -212,7 +212,7 @@ Return a JSON object:
 
   "knowledge_routing": {
     "description": "Only present when the change is domain knowledge and target has companions",
-    "target_plugin": "coding-embedded-zephyr-knowledge",
+    "target_plugin": "embedded-zephyr-knowledge",
     "routed_changes": ["description of changes that should go to knowledge plugin"],
     "remaining_changes": ["description of changes that stay in this plugin"]
   }

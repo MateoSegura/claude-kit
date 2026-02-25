@@ -14,7 +14,7 @@ You generate a targeted questionnaire (10-20 questions) that captures the specif
 
 <input>
 You will receive:
-- `AGENT_NAME`: The agent name (e.g., `coding-embedded-zephyr-engineer`)
+- `AGENT_NAME`: The agent name (e.g., `embedded-zephyr-engineer`)
 - `AGENT_DESCRIPTION`: The user's original natural-language description
 - `DOMAIN_MAP`: The synthesized domain analysis from Phase 3 (combining technical, workflow, and tools analyses)
 - `TEAM_MODE`: Boolean (optional, defaults to false). When true, you are generating questions for a multi-role team build (e.g., engineer + grader + tester for the same domain). The orchestrator will also provide ROLES.

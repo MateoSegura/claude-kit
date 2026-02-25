@@ -108,9 +108,9 @@ The change-planner evaluates:
 
 | Plugin | Request | Fitness | Reasoning |
 |--------|---------|---------|-----------|
-| coding-embedded-zephyr-engineer | Add Bluetooth support | `fits` | BLE is a Zephyr subsystem — natural extension |
-| coding-embedded-zephyr-engineer | Add React frontend support | `new_plugin` | React has nothing to do with embedded Zephyr — domain mismatch |
-| coding-embedded-zephyr-engineer | Add ESP-IDF support | `gray_area` | ESP-IDF is embedded but not Zephyr — could extend or fork |
+| embedded-zephyr-engineer | Add Bluetooth support | `fits` | BLE is a Zephyr subsystem — natural extension |
+| embedded-zephyr-engineer | Add React frontend support | `new_plugin` | React has nothing to do with embedded Zephyr — domain mismatch |
+| embedded-zephyr-engineer | Add ESP-IDF support | `gray_area` | ESP-IDF is embedded but not Zephyr — could extend or fork |
 
 ### Why This Pattern
 
@@ -125,22 +125,22 @@ When evaluating update requests for plugins with companions, the fitness check g
 
 ### Example: Domain Knowledge Change to Role Plugin
 
-User request: "Add Bluetooth LE API reference to coding-embedded-zephyr-engineer"
+User request: "Add Bluetooth LE API reference to embedded-zephyr-engineer"
 
 Analysis:
-- Target plugin has companion: coding-embedded-zephyr-knowledge
+- Target plugin has companion: embedded-zephyr-knowledge
 - Change type: domain API reference → domain knowledge
 - Fitness: gray_area with knowledge routing
 - Recommendation: Route to knowledge plugin
 
 Output includes:
-- `knowledge_routing.target_plugin`: "coding-embedded-zephyr-knowledge"
+- `knowledge_routing.target_plugin`: "embedded-zephyr-knowledge"
 - `knowledge_routing.routed_changes`: ["Add Bluetooth LE API reference skill"]
 - `change_plan`: What it would look like adding directly to engineer (for user choice)
 
 ### Example: Role-Specific Change to Role Plugin
 
-User request: "Add a code review agent to coding-embedded-zephyr-engineer"
+User request: "Add a code review agent to embedded-zephyr-engineer"
 
 Analysis:
 - Target plugin has companion, but change is role-specific (new agent)
@@ -150,7 +150,7 @@ Analysis:
 
 ### Example: Change to Knowledge Plugin Directly
 
-User request: "Update the ESP32 hardware skill in coding-embedded-zephyr-knowledge"
+User request: "Update the ESP32 hardware skill in embedded-zephyr-knowledge"
 
 Analysis:
 - Target IS a knowledge plugin (role: "knowledge")
@@ -160,13 +160,13 @@ Analysis:
 
 ### Example: Inappropriate Change to Knowledge Plugin
 
-User request: "Add a debugging agent to coding-embedded-zephyr-knowledge"
+User request: "Add a debugging agent to embedded-zephyr-knowledge"
 
 Analysis:
 - Target IS a knowledge plugin (role: "knowledge")
 - Change adds an agent → NOT appropriate for knowledge plugins
 - Fitness: does not fit
-- Recommendation: Add the agent to the corresponding role plugin instead (e.g., coding-embedded-zephyr-engineer)
+- Recommendation: Add the agent to the corresponding role plugin instead (e.g., embedded-zephyr-engineer)
 
 ## Parallel Execution Pattern
 
@@ -399,7 +399,7 @@ cp -r $CLAUDE_KIT_OUTPUT_DIR/PLUGIN_NAME /tmp/claude-kit-backup-PLUGIN_NAME-$(da
 This creates backups like:
 
 ```
-/tmp/claude-kit-backup-coding-embedded-zephyr-engineer-20260215-143022/
+/tmp/claude-kit-backup-embedded-zephyr-engineer-20260215-143022/
 ```
 
 **Rollback (if needed)**:

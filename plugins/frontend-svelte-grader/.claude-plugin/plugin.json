@@ -1,0 +1,5 @@
+{
+  "name": "frontend-svelte-grader",
+  "description": "Objective, blind, quantitative code grading agent for Svelte 5 / SvelteKit applications \u2014 scores across 8 weighted dimensions with automated and semantic analysis, supporting single-submission and A/B comparison modes",
+  "version": "0.1.0"
+}

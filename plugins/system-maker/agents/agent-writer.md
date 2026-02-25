@@ -14,10 +14,10 @@ You write the subagent definition files for a new Claude Code plugin. Each subag
 
 <input>
 You will receive:
-- `AGENT_NAME`: The plugin name (e.g., `coding-embedded-zephyr-engineer`)
+- `AGENT_NAME`: The plugin name (e.g., `embedded-zephyr-engineer`)
 - `APPROVED_ARCH`: The approved unified architecture with agent roster and component manifest
 - `USER_ANSWERS`: User's questionnaire responses
-- `BUILD_DIR`: Path to write files (e.g., `/tmp/claude-kit-build-coding-embedded-zephyr-engineer`)
+- `BUILD_DIR`: Path to write files (e.g., `/tmp/claude-kit-build-embedded-zephyr-engineer`)
 </input>
 
 <process>

@@ -367,7 +367,7 @@ Always use `${CLAUDE_PLUGIN_ROOT}` for paths within the plugin directory. This v
 
 // WRONG — hardcoded, breaks on other machines
 "command": "node",
-"args": ["$CLAUDE_KIT_OUTPUT_DIR/coding-embedded-zephyr-engineer/mcp/server.js"]
+"args": ["$CLAUDE_KIT_OUTPUT_DIR/embedded-zephyr-engineer/mcp/server.js"]
 ```
 
 ### Restricting MCP Server Access

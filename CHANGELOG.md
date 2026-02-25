@@ -4,6 +4,18 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **Breaking: team plugin rename** — all 15 team plugins renamed from
+  `coding-<domain>-<tech>-<role>` to `<domain>-<tech>-<role>`, dropping the
+  `coding-` prefix. Affected prefixes:
+  - `coding-embedded-zephyr-*` → `embedded-zephyr-*`
+  - `coding-frontend-svelte-*` → `frontend-svelte-*`
+  - `coding-cloud-python-*` → `cloud-python-*`
+- All 15 team plugins receive MINOR version bumps for the namespace change
+- `system-maker`: 0.2.4 → 0.3.0 (MINOR — updated templates and references)
+- `system-updater`: 0.0.4 → 0.1.0 (MINOR — updated templates and references)
+- Repo-level files updated: README.md, cross-team-consistency rule, test-cli.sh
+
 ## [0.3.7] - 2026-02-25
 
 ### Fixed

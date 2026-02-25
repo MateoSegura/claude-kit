@@ -14,9 +14,9 @@ architecture:
 
 | Team prefix | Roles |
 |-------------|-------|
-| `coding-embedded-zephyr-` | engineer, grader, tester, debugger, knowledge |
-| `coding-frontend-svelte-` | engineer, grader, tester, debugger, knowledge |
-| `coding-cloud-python-` | engineer, grader, tester, debugger, knowledge |
+| `embedded-zephyr-` | engineer, grader, tester, debugger, knowledge |
+| `frontend-svelte-` | engineer, grader, tester, debugger, knowledge |
+| `cloud-python-` | engineer, grader, tester, debugger, knowledge |
 
 ## What to check
 
@@ -26,8 +26,8 @@ team first:
 ```
 # Example: fixing a hook script bug in the zephyr engineer
 # You MUST also check:
-plugins/coding-frontend-svelte-engineer/
-plugins/coding-cloud-python-engineer/
+plugins/frontend-svelte-engineer/
+plugins/cloud-python-engineer/
 ```
 
 Then check whether the same pattern exists in **other roles within the same
@@ -35,10 +35,10 @@ team** (e.g., a hook bug in the engineer may also affect the tester):
 
 ```
 # Same team, different roles
-plugins/coding-embedded-zephyr-tester/
-plugins/coding-embedded-zephyr-grader/
-plugins/coding-embedded-zephyr-debugger/
-plugins/coding-embedded-zephyr-knowledge/
+plugins/embedded-zephyr-tester/
+plugins/embedded-zephyr-grader/
+plugins/embedded-zephyr-debugger/
+plugins/embedded-zephyr-knowledge/
 ```
 
 ## Specific patterns to always cross-check

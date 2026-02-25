@@ -24,10 +24,10 @@ Skills solve this. A skill with `user-invocable: false` and a broad description 
 
 <input>
 You will receive:
-- `AGENT_NAME`: The agent name (e.g., `coding-embedded-zephyr-engineer`)
+- `AGENT_NAME`: The agent name (e.g., `embedded-zephyr-engineer`)
 - `APPROVED_ARCH`: The approved unified architecture (JSON with component manifest, agent roster, hook strategy)
 - `USER_ANSWERS`: User's questionnaire responses (preferences, constraints, non-negotiables they specified)
-- `BUILD_DIR`: Path to write files (e.g., `/tmp/claude-kit-build-coding-embedded-zephyr-engineer`)
+- `BUILD_DIR`: Path to write files (e.g., `/tmp/claude-kit-build-embedded-zephyr-engineer`)
 </input>
 
 <process>
@@ -57,7 +57,7 @@ user-invocable: false
 ```
 
 Key frontmatter details:
-- `name: AGENT_NAME:identity` — always prefix with the plugin name (e.g., `coding-embedded-zephyr-engineer:identity`). This ensures skills are unambiguous when multiple plugins are loaded.
+- `name: AGENT_NAME:identity` — always prefix with the plugin name (e.g., `embedded-zephyr-engineer:identity`). This ensures skills are unambiguous when multiple plugins are loaded.
 - `description:` — must be broad enough to match ANY task in the domain. Claude uses this description to decide whether to load the skill. If the description is too narrow (e.g., "Zephyr devicetree configuration"), it only loads for devicetree tasks. Make it cover the entire domain.
 - `user-invocable: false` — prevents users from manually invoking it as a slash command. It loads automatically based on description match.
 
@@ -86,7 +86,7 @@ Step-by-step workflows for the 3-5 most common tasks in the domain. Each workflo
 
 ```markdown
 ---
-name: coding-embedded-zephyr-engineer:identity
+name: embedded-zephyr-engineer:identity
 description: "Core identity, methodology, and coding standards for embedded systems development with Zephyr RTOS. Defines the agent's role, non-negotiable rules, and working methodology for all Zephyr firmware, devicetree, Kconfig, and driver development tasks."
 user-invocable: false
 ---
