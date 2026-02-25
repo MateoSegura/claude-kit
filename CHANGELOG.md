@@ -4,12 +4,21 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.7] - 2026-02-25
+
 ### Fixed
 - **Stop hook scripts**: `check-uncommitted-build.sh` and `check-staging.sh` now output
   required JSON to stderr (`{"ok": true}` or `{"ok": false, "reason": "..."}`) instead of
   plain text, fixing "No stderr output" errors from the hook system
   - `system-maker`: 0.2.3 → 0.2.4
   - `system-updater`: 0.0.3 → 0.0.4
+
+### Changed
+- **CI**: Added `timeout-minutes: 60` to nightly workflow, added `pull_request` trigger
+  to `push.yml` so required checks run on nightly auto-fix PRs, fixed `branch-name` check
+  to skip on PR events
+- **Nightly frontmatter fixes**: Added missing `name:` fields to 15+ command files and
+  `user-invocable: false` to 15+ skill files across all 3 teams (auto-detected by nightly)
 
 ## [0.3.6] - 2026-02-24
 
