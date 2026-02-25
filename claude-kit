@@ -389,9 +389,18 @@ def _show_changelog(changelog_path: pathlib.Path,
     p("  " + col(C.W, "What's new:"))
     p()
 
+    # Merge multi-line bullet items (continuation lines start with spaces)
+    merged: list = []
     for line in entry_lines:
+        if line.startswith("## [") or line.startswith("### ") or line.startswith("- "):
+            merged.append(line)
+        elif merged and merged[-1].startswith("- ") and line.startswith("  "):
+            merged[-1] += " " + line.strip()
+        else:
+            merged.append(line)
+
+    for line in merged:
         if line.startswith("## ["):
-            # Version header: ## [0.1.0] - 2026-02-22
             ver = line.split("]")[0].replace("## [", "").strip()
             date = line.split("- ", 1)[1].strip() if "- " in line else ""
             p(f"    {col(C.CY, f'v{ver}')}  {col(C.DIM, date)}")
@@ -406,7 +415,6 @@ def _show_changelog(changelog_path: pathlib.Path,
                 p(f"      {col(C.DIM, '•')} {wrapped[0]}")
                 for cont in wrapped[1:]:
                     p(f"        {cont}")
-        # Skip blank lines and other content
 
 def _git(args: list) -> str:
     return subprocess.run(
@@ -549,13 +557,27 @@ def cmd_update() -> None:
 # ── cmd_version ───────────────────────────────────────────────────────────────
 
 def _current_version() -> str:
-    """Return the git tag at HEAD, nearest ancestor tag, or short commit hash."""
+    """Return the git tag at HEAD, nearest ancestor tag, or CHANGELOG version.
+
+    After a squash-merge, the release tag lives on the (now-deleted) feature
+    branch commit, not on the squash commit on main.  ``git describe`` won't
+    find it, so we fall back to the latest versioned entry in CHANGELOG.md.
+    """
     tag = _git(["tag", "--points-at", "HEAD", "--sort=-version:refname"])
     if tag:
         return tag.splitlines()[0]
     desc = _git(["describe", "--tags", "--abbrev=0"])
     if desc:
         return desc
+    # Fallback: parse the latest version from CHANGELOG.md
+    cl = INSTALL_DIR / "CHANGELOG.md"
+    if cl.exists():
+        try:
+            for line in cl.read_text().splitlines():
+                if line.startswith("## [") and "Unreleased" not in line:
+                    return "v" + line.split("]")[0].replace("## [", "").strip()
+        except OSError:
+            pass
     return _git(["rev-parse", "--short", "HEAD"]) or "unknown"
 
 def _remote_version() -> str:

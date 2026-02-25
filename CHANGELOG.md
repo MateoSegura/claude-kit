@@ -63,6 +63,18 @@ All notable changes to claude-kit will be documented in this file.
 - **Main README** — added Core Knowledge Plugins section with domain/auto-load
   table; updated Plugin Structure diagram to show `domain` in `ctl.json`
 
+### Fixed
+- **`claude-kit update` version detection** — `_current_version()` now falls
+  back to parsing `CHANGELOG.md` when no git tag points at HEAD, fixing wrong
+  version shown after squash-merge PRs (e.g., "Updated to v0.5.1" when v0.5.2
+  was actually pulled)
+- **`claude-kit update` changelog truncation** — multi-line bullet items in
+  "What's new" section no longer cut off after the first line; continuation
+  lines are now merged before rendering
+- **5 plugin READMEs** — agent descriptions synced to match frontmatter exactly
+  (embedded-zephyr-grader, frontend-svelte-grader, frontend-svelte-tester,
+  system-maker, system-updater)
+
 ## [0.5.2] - 2026-02-25
 
 ### Changed

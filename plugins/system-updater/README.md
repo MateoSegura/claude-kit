@@ -19,7 +19,7 @@ claude-kit --kit system-updater
 | `plugin-analyzer` | Deep-analyzes an existing Claude Code plugin: reads every file, catalogs the structure, understands the domain identity, and produces a structured inventory. Use in Phase 2 of the update workflow. |
 | `change-planner` | Analyzes a user's update request against an existing plugin's structure, determines if the change belongs in this plugin or needs a new one, and produces a surgical change plan. Use in Phase 3 of the update workflow. |
 | `change-writer` | Implements a specific file change from the approved change plan — creates new files or modifies existing ones following the plugin's established patterns. Launched once per independent change or group of related changes. |
-| `plugin-reviewer` | Exhaustive quality auditor for staged plugins. Performs a 9-category deep review covering structure, frontmatter, cross-references, content quality, hooks, JSON validity, and anti-patterns. Returns a graded report with categorized findings and specific fix instructions. |
+| `plugin-reviewer` | Exhaustive quality auditor for newly built plugins. Performs a 9-category deep review covering structure, frontmatter, cross-references, content quality, hooks, JSON validity, and anti-patterns. Returns a graded report with categorized findings and specific fix instructions. Use during Phase 10 after all plugin files are assembled. |
 
 ---
 
