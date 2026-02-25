@@ -4,6 +4,8 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-02-25
+
 ### Added
 - **8 core knowledge plugins** — cross-team, language-agnostic fundamentals
   auto-loaded via the new `domain` field in `ctl.json`:
