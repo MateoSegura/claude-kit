@@ -6,31 +6,33 @@ user-invocable: false
 
 # Python Cloud-Backend Systems -- Domain Knowledge
 
-This plugin provides reference material for building production distributed systems in Python 3.11+. It covers the full stack from async HTTP/gRPC services through containerization and Kubernetes orchestration, with emphasis on type safety, resilience patterns, and observability.
+This plugin provides Python-specific reference material for building production distributed systems in Python 3.11+. It covers async HTTP/gRPC services, containerization, Kubernetes orchestration, and Python design patterns, with emphasis on type safety, resilience patterns, and observability.
+
+Language-agnostic backend concepts live in the `core-backend` plugin (auto-loaded via domain). This plugin focuses exclusively on Python implementations.
 
 ## What this plugin contains
 
-- **Language fundamentals**: Python 3.11+ asyncio patterns, strict type annotations (mypy/pyright), structured concurrency
-- **Web frameworks**: FastAPI, Starlette, httpx client patterns, middleware, dependency injection
-- **RPC and messaging**: gRPC with grpcio/protobuf, service definitions, streaming patterns
-- **Containerization**: Dockerfile best practices, multi-stage builds, distroless/slim images
-- **Orchestration**: Kubernetes manifests, Helm charts, health probes, resource limits, HPA
-- **Concurrency**: asyncio event loops, threading, multiprocessing, work queues, graceful shutdown
-- **Resilience**: Circuit breakers, retries with backoff, timeouts, bulkheads, service discovery
-- **Observability**: Structured logging, OpenTelemetry tracing, Prometheus metrics
-- **Testing**: pytest, pytest-asyncio, testcontainers, fixture patterns, integration test strategies
-- **Safety**: Error handling conventions, input validation (Pydantic), defensive coding patterns
+- **Python backend patterns**: asyncio event loop, async/await concurrency, type hints, FastAPI/Starlette, httpx, Pydantic v2, dependency injection, middleware
+- **gRPC with grpcio**: protobuf definitions, service stubs, streaming patterns, interceptors, error handling
+- **Python distributed systems**: tenacity retries, pybreaker circuit breakers, aio-pika, aiokafka, redis.asyncio, outbox with SQLAlchemy
+- **Python design patterns**: SQLAlchemy repository/unit of work, FastAPI Depends DI, structlog, OpenTelemetry Python SDK, asyncio graceful shutdown
+- **Python containers**: Dockerfiles with python:3.12-slim, uv/pip caching, Compose, uvicorn configuration
 
 ## What this plugin does NOT contain
 
 - No agent definitions -- agents belong in role plugins (engineer, grader, tester)
 - No slash commands -- workflow orchestration belongs in role plugins
-- No persona or communication style -- role plugins define their own identity
-- No hooks or enforcement rules -- role plugins own those
+- No language-agnostic concepts -- those live in `core-backend`, `core-architecture`, `core-devops`, `core-security`, `core-testing`
 
-## Usage
+## Core plugin companions
 
-This is a companion plugin loaded alongside role plugins such as `cloud-python-engineer` or `cloud-python-grader`. It centralizes domain knowledge so that all role variants share a single, consistent reference base.
+This plugin works alongside these core knowledge plugins (auto-loaded via `domain: "backend"`):
+
+- `core-backend` -- Language-agnostic distributed systems, database patterns, auth, API protocols, message queues
+- `core-architecture` -- Design pattern theory, SOLID, DDD, hexagonal architecture
+- `core-devops` -- Generic Docker, Kubernetes, CI/CD concepts
+- `core-security` -- Security patterns and vulnerability prevention
+- `core-testing` -- Testing strategies and patterns
 
 ## Additional resources
 

@@ -3,7 +3,7 @@ name: feature-builder
 model: opus
 description: "Full-stack SvelteKit feature implementation specialist. Use when the user needs to build a complete feature spanning routes, components, load functions, server endpoints, API integrations, or any multi-file vertical slice through the SvelteKit stack."
 tools: Read, Glob, Grep, Write, Edit, Bash, WebSearch, WebFetch
-skills: identity, performance, state-management, build-deploy, design-patterns, frontend-svelte-knowledge:svelte5-runes, frontend-svelte-knowledge:sveltekit-patterns, frontend-svelte-knowledge:component-patterns, frontend-svelte-knowledge:accessibility, frontend-svelte-knowledge:desktop-targets, frontend-svelte-knowledge:usb-serial-hid, frontend-svelte-knowledge:ble-communication, frontend-svelte-knowledge:lan-discovery, frontend-svelte-knowledge:hardware-abstraction, frontend-svelte-knowledge:audio-midi-devices
+skills: identity, performance, state-management, build-deploy, design-patterns, frontend-svelte-knowledge:svelte5-runes, frontend-svelte-knowledge:sveltekit-patterns, core-frontend:component-architecture, frontend-svelte-knowledge:component-patterns, core-frontend:accessibility, frontend-svelte-knowledge:accessibility, frontend-svelte-knowledge:desktop-targets, frontend-svelte-knowledge:usb-serial-hid, frontend-svelte-knowledge:ble-communication, frontend-svelte-knowledge:lan-discovery, frontend-svelte-knowledge:hardware-abstraction, frontend-svelte-knowledge:audio-midi-devices
 color: "#32CD32"
 permissionMode: acceptEdits
 ---

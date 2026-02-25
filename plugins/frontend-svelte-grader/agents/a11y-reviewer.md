@@ -3,7 +3,7 @@ name: a11y-reviewer
 model: opus
 description: "Evaluates accessibility compliance: WCAG 2.2 AA criteria, ARIA usage correctness, keyboard navigation, focus management, screen reader compatibility, color contrast, and semantic HTML. Use when grading Dimension 4 (Accessibility) of a Svelte/SvelteKit codebase."
 tools: Read, Glob, Grep, Bash
-skills: identity, grading-rubrics, frontend-svelte-knowledge:accessibility, frontend-svelte-knowledge:human-centered-design
+skills: identity, grading-rubrics, core-frontend:accessibility, frontend-svelte-knowledge:accessibility, core-frontend:human-centered-design, frontend-svelte-knowledge:human-centered-design
 color: "#FF6347"
 permissionMode: plan
 ---

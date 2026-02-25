@@ -3,7 +3,7 @@ name: trace-analyst
 model: opus
 description: "Specialist for distributed trace analysis via OpenTelemetry. Reads OTLP trace exports, Jaeger/Tempo query results, and application logs to reconstruct request flow across services, identify latency anomalies, and correlate traces with structured logs. Use when triage classifies the issue as distributed-trace-related or when the user reports cross-service latency, missing spans, or request flow breakdowns."
 tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
-skills: identity, trace-analysis, distributed-systems, python-backend
+skills: identity, trace-analysis, core-backend:distributed-systems, distributed-systems, python-backend
 color: "#9370DB"
 permissionMode: plan
 ---

@@ -1,17 +1,17 @@
 ---
 name: cloud-python-knowledge:design-patterns
-description: "Python cloud-backend design patterns: repository pattern, unit of work, dependency injection, factory, strategy, observer for events, structured logging, OpenTelemetry tracing, graceful shutdown, and connection pooling. Load when architecting Python backend services, reviewing code structure, or implementing cross-cutting concerns."
+description: "Python-specific design pattern implementations: SQLAlchemy repository/unit of work, FastAPI dependency injection, factory/strategy with Python ABC, asyncio observer/event dispatcher, structlog, OpenTelemetry Python SDK, asyncio graceful shutdown, and asyncpg/redis connection pooling. For language-agnostic pattern concepts, see core-architecture:design-patterns."
 user-invocable: false
 ---
 
 # Design Patterns — Python Cloud Backend
 
-Quick reference for domain-specific patterns. See patterns-reference.md for full implementations. See anti-patterns.md for common mistakes to avoid.
+Python-specific implementations using production libraries. For language-agnostic pattern theory (SOLID, DDD, hexagonal architecture, event sourcing concepts), see the `core-architecture:design-patterns` skill.
 
 ## Additional resources
 
-- [patterns-reference.md](patterns-reference.md) — Full implementations: repository, unit of work, DI container, factory, strategy, observer, OpenTelemetry, graceful shutdown
-- [anti-patterns.md](anti-patterns.md) — Things to avoid: fat services, anemic domain models, sync blocking in async, missing connection cleanup
+- [patterns-reference.md](patterns-reference.md) — Full Python implementations: SQLAlchemy repository, unit of work, FastAPI DI, factory, strategy, asyncio observer, OpenTelemetry SDK, graceful shutdown
+- [anti-patterns.md](anti-patterns.md) — Python-specific mistakes: fat services, anemic domain models, sync blocking in async, missing `__aenter__`/`__aexit__`, mutable defaults
 
 ---
 

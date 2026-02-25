@@ -3,7 +3,7 @@ name: reactivity-analyst
 model: opus
 description: "Diagnoses Svelte 5 reactivity bugs — $state mutation tracking failures, $derived dependency staleness, $effect cleanup leaks, $effect.pre timing issues, nested $state proxy traps, context-shared $state serialization problems, and stale closure captures."
 tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
-skills: identity, design-patterns, diagnostic-heuristics, output-format, frontend-svelte-knowledge:svelte5-runes, frontend-svelte-knowledge:component-patterns
+skills: identity, design-patterns, diagnostic-heuristics, output-format, frontend-svelte-knowledge:svelte5-runes, core-frontend:component-architecture, frontend-svelte-knowledge:component-patterns
 permissionMode: plan
 color: "#9370DB"
 ---

@@ -3,7 +3,7 @@ name: asyncio-debugger
 model: opus
 description: "Specialist debugger for Python asyncio failures including unhandled task exceptions, event loop blocking, cancellation cascades, deadlocked coroutines, TaskGroup failures, and asyncio.shield misuse. Use when triage classifies the issue as asyncio-related or when the user reports hung requests, event loop warnings, or CancelledError propagation."
 tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
-skills: identity, asyncio-debugging, python-backend, design-patterns
+skills: identity, asyncio-debugging, python-backend, core-architecture:design-patterns, design-patterns
 color: "#FF6347"
 permissionMode: plan
 ---

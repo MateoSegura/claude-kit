@@ -4,6 +4,63 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **8 core knowledge plugins** — cross-team, language-agnostic fundamentals
+  auto-loaded via the new `domain` field in `ctl.json`:
+  - `core-git` 0.0.1 (universal) — branching strategies, commit conventions,
+    merge conflict resolution, monorepo patterns
+  - `core-security` 0.0.1 (universal) — OWASP Top 10, input validation,
+    secrets management, dependency auditing
+  - `core-architecture` 0.0.1 (universal) — SOLID principles, design patterns,
+    architectural decision records, refactoring strategies
+  - `core-testing` 0.0.1 (universal) — test pyramid, TDD/BDD, coverage
+    strategies, test doubles, property-based testing
+  - `core-devops` 0.0.1 (universal) — CI/CD pipelines, containerization,
+    infrastructure as code, observability
+  - `core-frontend` 0.0.1 (frontend) — accessibility, CSS architecture,
+    UX design, component patterns, web performance
+  - `core-backend` 0.0.1 (backend) — distributed systems, database patterns,
+    auth, API protocols, message queues
+  - `core-embedded` 0.0.1 (embedded) — RTOS fundamentals, memory management,
+    power optimization, comm protocols, HAL patterns
+- **Domain-based auto-loading** — plugins with `"domain": "universal"` in
+  `ctl.json` load with every team; `"backend"`, `"frontend"`, `"embedded"`
+  load only with matching teams. CLI `resolve_core_plugins()` and
+  `expand_kit()` handle discovery and injection
+- **Core plugin launch display** — `_print_launch_header()` shows auto-loaded
+  core plugins grouped with "(auto-loaded)" label before team plugins
+- **Validator check 15** — README version badge must match `plugin.json`
+  version; catches drift in CI (`--strict` mode)
+- **32 new CLI smoke tests** (20 → 52 total) — scalable auto-discovery tests
+  for domain consistency across all `core-*` and team plugins, plus
+  `resolve_core_plugins()` include/exclude correctness
+
+### Changed
+- **CLI `claude-kit`** — `expand_kit()` auto-prepends core plugins before team
+  plugins; `_group_plugins()` returns 3-tuple `(core, groups, standalone)`;
+  new `_read_ctl()` and `resolve_core_plugins()` functions
+- **3 knowledge plugins slimmed** — tech-specific content retained,
+  language-agnostic patterns extracted to core plugins with cross-references:
+  - `cloud-python-knowledge`: 0.1.0 → 0.1.1
+  - `embedded-zephyr-knowledge`: 0.2.0 → 0.2.1
+  - `frontend-svelte-knowledge`: 0.1.0 → 0.1.1
+- **All 15 team role plugins** — added `"domain"` field to `ctl.json`, agent
+  files updated with core skill cross-references:
+  - `cloud-python-debugger`: 0.1.0 → 0.1.1
+  - `cloud-python-engineer`: 0.1.0 → 0.1.1
+  - `cloud-python-grader`: 0.1.1 → 0.1.2
+  - `cloud-python-tester`: 0.1.0 → 0.1.1
+  - `embedded-zephyr-debugger`: 0.1.0 → 0.1.1
+  - `embedded-zephyr-engineer`: 0.1.0 → 0.1.1
+  - `embedded-zephyr-grader`: 0.2.1 → 0.2.2
+  - `embedded-zephyr-tester`: 0.1.0 → 0.1.1
+  - `frontend-svelte-debugger`: 0.1.0 → 0.1.1
+  - `frontend-svelte-engineer`: 0.1.0 → 0.1.1
+  - `frontend-svelte-grader`: 0.1.1 → 0.1.2
+  - `frontend-svelte-tester`: 0.1.0 → 0.1.1
+- **Main README** — added Core Knowledge Plugins section with domain/auto-load
+  table; updated Plugin Structure diagram to show `domain` in `ctl.json`
+
 ## [0.5.2] - 2026-02-25
 
 ### Changed

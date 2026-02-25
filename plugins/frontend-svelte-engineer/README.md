@@ -1,6 +1,6 @@
 # frontend-svelte-engineer
 
-> **Role:** Engineer · **Version:** 0.1.0
+> **Role:** Engineer · **Version:** 0.1.1
 
 Svelte 5 / SvelteKit frontend development agent — writes code, builds features, fixes bugs with runes-only patterns, TypeScript strict mode, Tailwind CSS, proactive performance management, WCAG 2.2 AA accessibility, and desktop targets (Tauri/Electron).
 

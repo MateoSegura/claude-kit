@@ -67,21 +67,41 @@ def resolve_prefix(prefix: str) -> list:
                     results.append(d.name)
     return results
 
-def resolve_companions(plugin_dir: pathlib.Path) -> list:
+def _read_ctl(plugin_dir: pathlib.Path) -> dict:
+    """Read and return the ctl.json for a plugin, or empty dict if missing/invalid."""
     ctl = plugin_dir / ".claude-plugin" / "ctl.json"
     if not ctl.exists():
-        return []
+        return {}
     try:
-        return json.loads(ctl.read_text()).get("companions", [])
+        return json.loads(ctl.read_text())
     except Exception:
-        return []
+        return {}
+
+def resolve_companions(plugin_dir: pathlib.Path) -> list:
+    return _read_ctl(plugin_dir).get("companions", [])
+
+def resolve_core_plugins(domain: str) -> list:
+    """Find core-* plugins whose domain is 'universal' or matches the given domain."""
+    matches = []
+    for base in [PLUGINS_DIR, LOCAL_DIR]:
+        if not base.exists():
+            continue
+        for d in sorted(base.iterdir()):
+            if not d.is_dir() or not d.name.startswith("core-"):
+                continue
+            ctl = _read_ctl(d)
+            ctl_domain = ctl.get("domain")
+            if ctl_domain == "universal" or ctl_domain == domain:
+                if d.name not in [m for m in matches]:
+                    matches.append(d.name)
+    return sorted(set(matches))
 
 def expand_kit(kit_name: str, seen: set) -> list:
     """Expand a kit name into deduplicated plugin names, companions first."""
     prefix_result = resolve_prefix(kit_name)
     plugin_names = prefix_result if prefix_result else [kit_name]
 
-    result = []
+    team_result = []
     for pname in plugin_names:
         pdir = find_plugin_dir(pname)
         if pdir is None:
@@ -99,34 +119,55 @@ def expand_kit(kit_name: str, seen: set) -> list:
                           file=sys.stderr)
                 else:
                     seen.add(comp)
-                    result.append(comp)
+                    team_result.append(comp)
 
         if pname not in seen:
             seen.add(pname)
-            result.append(pname)
+            team_result.append(pname)
 
-    return result
+    # Auto-load core plugins matching the team's domain.
+    # Determine domain from the first resolved plugin's ctl.json.
+    domain = None
+    for pname in plugin_names:
+        pdir = find_plugin_dir(pname)
+        if pdir:
+            domain = _read_ctl(pdir).get("domain")
+            if domain:
+                break
+
+    core_result = []
+    if domain:
+        for core_name in resolve_core_plugins(domain):
+            if core_name not in seen:
+                seen.add(core_name)
+                core_result.append(core_name)
+
+    # Core plugins go before team plugins (foundational knowledge first).
+    return core_result + team_result
 
 # ── Launch display ────────────────────────────────────────────────────────────
 
 _ROLE_SUFFIXES = ("knowledge", "engineer", "grader", "tester", "debugger")
 
 def _group_plugins(names: list) -> tuple:
-    """Split plugin list into team groups (prefix → roles) and standalone plugins."""
+    """Split plugin list into core group, team groups, and standalone plugins."""
+    core: list = []
     groups: dict = {}
     standalone: list = []
     for name in names:
         parts = name.rsplit("-", 1)
-        if len(parts) == 2 and parts[1] in _ROLE_SUFFIXES:
+        if len(parts) == 2 and parts[0] == "core":
+            core.append(parts[1])
+        elif len(parts) == 2 and parts[1] in _ROLE_SUFFIXES:
             groups.setdefault(parts[0], []).append(parts[1])
         else:
             standalone.append(name)
-    return groups, standalone
+    return core, groups, standalone
 
 def _print_launch_header(plugin_names: list) -> None:
-    groups, standalone = _group_plugins(plugin_names)
-    total    = len(plugin_names)
-    n_kits   = len(groups) + len(standalone)
+    core, groups, standalone = _group_plugins(plugin_names)
+    total       = len(plugin_names)
+    n_kits      = len(groups) + len(standalone) + (1 if core else 0)
     kit_word    = "kit"    if n_kits == 1 else "kits"
     plugin_word = "plugin" if total  == 1 else "plugins"
 
@@ -134,6 +175,12 @@ def _print_launch_header(plugin_names: list) -> None:
     p(f"  {col(C.W, 'claude-kit')}  {col(C.DIM, f'·  {n_kits} {kit_word}  ·  {total} {plugin_word}')}")
     p(f"  {col(C.DIM, '─' * 40)}")
     p()
+
+    if core:
+        sep = f"  {col(C.DIM, '·')}  "
+        p(f"  {col(C.DIM, 'core')}  {col(C.DIM, '(auto-loaded)')}")
+        p(f"    {sep.join(col(C.DIM, s) for s in core)}")
+        p()
 
     for prefix, roles in groups.items():
         p(f"  {col(C.W, prefix)}")

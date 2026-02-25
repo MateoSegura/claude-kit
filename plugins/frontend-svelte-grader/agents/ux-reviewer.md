@@ -3,7 +3,7 @@ name: ux-reviewer
 model: opus
 description: "Evaluates UX patterns: loading states, error boundaries, optimistic updates, form validation UX, navigation feedback, empty states, transitions, and progressive enhancement. Use when grading Dimension 8 (UX Patterns) of a Svelte/SvelteKit codebase."
 tools: Read, Glob, Grep, Bash
-skills: identity, grading-rubrics, frontend-svelte-knowledge:human-centered-design, frontend-svelte-knowledge:sveltekit-patterns
+skills: identity, grading-rubrics, core-frontend:human-centered-design, frontend-svelte-knowledge:human-centered-design, frontend-svelte-knowledge:sveltekit-patterns
 color: "#DAA520"
 permissionMode: plan
 ---

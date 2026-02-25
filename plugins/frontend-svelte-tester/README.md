@@ -1,6 +1,6 @@
 # frontend-svelte-tester
 
-> **Role:** Tester · **Version:** 0.1.0
+> **Role:** Tester · **Version:** 0.1.1
 
 Testing specialist for Svelte 5 / SvelteKit applications — writes and runs unit tests (Vitest), component tests (vitest-browser-svelte), E2E tests (Playwright), and accessibility audits (vitest-axe) with behavior-first methodology and 80% coverage target.
 

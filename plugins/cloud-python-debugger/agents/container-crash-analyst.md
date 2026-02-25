@@ -3,7 +3,7 @@ name: container-crash-analyst
 model: opus
 description: "Specialist for container and Kubernetes pod crash analysis. Diagnoses OOMKill events, CrashLoopBackOff cycles, liveness/readiness probe failures, resource limit misconfiguration, image pull errors, init container failures, and Docker build issues. Use when triage classifies the issue as container/infrastructure-related or when the user reports pod crashes, deployment failures, or container startup errors."
 tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
-skills: identity, container-crash-analysis, containers-orchestration, python-backend
+skills: identity, container-crash-analysis, core-devops:containerization, containers-orchestration, python-backend
 color: "#FF69B4"
 permissionMode: plan
 ---
