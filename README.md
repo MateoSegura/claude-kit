@@ -436,11 +436,11 @@ plugins/<name>/
 ```bash
 # Create a new plugin (guided 11-phase workflow)
 claude-kit --kit system-maker
-# → /system-maker:make-agent
+# → /system-maker:make-member
 
 # Enhance an existing plugin (6-phase workflow)
 claude-kit --kit system-updater
-# → /system-updater:update-agent
+# → /system-updater:update-member
 
 # Validate your plugin before committing
 claude-kit validate --all          # Tier 1: JSON, fields, hooks

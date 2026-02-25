@@ -6,9 +6,9 @@ description: Build an entire domain team (multiple role plugins) in one session 
 
 # Make Team — Multi-Plugin Domain Team Builder
 
-You are the orchestrator for building a complete team of Claude Code plugins for a single domain. Instead of running `/system-maker:make-agent` N times, this command builds all role plugins (engineer, grader, tester, debugger, etc.) in one session — sharing domain analysis, pooling questionnaire answers, and batching implementation for efficiency.
+You are the orchestrator for building a complete team of Claude Code plugins for a single domain. Instead of running `/system-maker:make-member` N times, this command builds all role plugins (engineer, grader, tester, debugger, etc.) in one session — sharing domain analysis, pooling questionnaire answers, and batching implementation for efficiency.
 
-You guide the user through a structured workflow, spawning the SAME specialized subagents that make-agent uses. You never write plugin files yourself — you coordinate subagents that do the work.
+You guide the user through a structured workflow, spawning the SAME specialized subagents that make-member uses. You never write plugin files yourself — you coordinate subagents that do the work.
 
 <critical_rules>
 
@@ -204,7 +204,7 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
    done
    ```
 
-   If any build directory already exists, ask the user whether to overwrite or abort (same as make-agent Phase 1 step 9).
+   If any build directory already exists, ask the user whether to overwrite or abort (same as make-member Phase 1 step 9).
 
 8. Report the build plan:
 
@@ -261,7 +261,7 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
    ```
 
 5. If "Create knowledge plugin first":
-   - Follow the same Phase 1.5a abbreviated knowledge creation from make-agent:
+   - Follow the same Phase 1.5a abbreviated knowledge creation from make-member:
      a. Create build directory for knowledge plugin
      b. Launch 3 parallel writers (identity-writer, skill-writer, hook-writer — no agent-writer for knowledge plugins)
      c. Assemble plugin.json + ctl.json (with `"role": "knowledge"`)
@@ -279,7 +279,7 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
 
 **Duration**: Slow (4 parallel analyzers — expect 30-90 seconds)
 
-**KEY DIFFERENCE from make-agent**: This runs ONCE for the entire team. The DOMAIN_MAP is shared across all role plugins.
+**KEY DIFFERENCE from make-member**: This runs ONCE for the entire team. The DOMAIN_MAP is shared across all role plugins.
 
 ### Steps
 
@@ -336,7 +336,7 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
 
 **Duration**: Medium (one subagent + user answering questions)
 
-**KEY DIFFERENCE from make-agent**: Uses TEAM_MODE to generate shared + per-role delta questions. The user answers shared questions once, then role-specific questions per role.
+**KEY DIFFERENCE from make-member**: Uses TEAM_MODE to generate shared + per-role delta questions. The user answers shared questions once, then role-specific questions per role.
 
 ### Steps
 
@@ -409,7 +409,7 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
 
 **Duration**: Medium-Slow (N parallel architects — expect 45-120 seconds depending on role count)
 
-**KEY DIFFERENCE from make-agent**: Instead of asking the user to choose an architecture strategy, launch one arch-designer per role plugin — ALL in parallel. Each architect gets the shared DOMAIN_MAP + shared answers + that role's delta answers.
+**KEY DIFFERENCE from make-member**: Instead of asking the user to choose an architecture strategy, launch one arch-designer per role plugin — ALL in parallel. Each architect gets the shared DOMAIN_MAP + shared answers + that role's delta answers.
 
 ### Steps
 
@@ -688,7 +688,7 @@ For each plugin in `PLUGIN_NAMES`, sequentially:
 
    Include `companions` only if `KNOWLEDGE_MODE` is true. The `role` and `companions` fields MUST go in ctl.json, never in plugin.json.
 
-3. **Create .lsp.json** if the domain uses typed languages (same logic as make-agent Phase 8). Each plugin gets the same .lsp.json since they share the domain.
+3. **Create .lsp.json** if the domain uses typed languages (same logic as make-member Phase 8). Each plugin gets the same .lsp.json since they share the domain.
 
 4. **Create .mcp.json** only if the approved architecture specifies MCP servers that actually exist.
 

@@ -1,5 +1,5 @@
 ---
-name: system-maker:make-agent
+name: system-maker:make-member
 allowed-tools: Task, AskUserQuestion, Read, Glob, Grep, Write, Edit, Bash
 description: Create a new domain-expert Claude Code plugin through a guided multi-phase workflow with parallel subagent execution.
 ---
@@ -216,7 +216,7 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
    To enhance the existing plugin, run:
      claude-kit --kit system-updater
 
-   Then use /system-updater:update-agent to add new skills, hooks, agents, or modify the existing plugin's configuration.
+   Then use /system-updater:update-member to add new skills, hooks, agents, or modify the existing plugin's configuration.
    ```
 
    Only proceed to step 7 if the user confirms they want a NEW plugin.

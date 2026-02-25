@@ -2,6 +2,16 @@
 
 All notable changes to claude-kit will be documented in this file.
 
+## [Unreleased]
+
+### system-updater (0.1.0 → 0.2.0)
+- **Added** `update-team` command for batched team updates with shared intent,
+  parallel analysis, per-plugin fitness checking, and sequential review
+- **Breaking** Renamed `update-agent` command to `update-member`
+
+### system-maker (0.3.0 → 0.4.0)
+- **Breaking** Renamed `make-agent` command to `make-member`
+
 ## [0.4.0] - 2026-02-25
 
 ### Changed
