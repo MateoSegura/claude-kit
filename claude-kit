@@ -389,11 +389,18 @@ def _show_changelog(changelog_path: pathlib.Path,
     p("  " + col(C.W, "What's new:"))
     p()
 
-    # Merge multi-line bullet items (continuation lines start with spaces)
+    # Merge continuation lines into their parent bullet, but drop sub-bullets.
+    # Sub-bullets (  - `core-git` ...) and their continuations (4+ spaces)
+    # are too granular for terminal display.  Check 4-space lines BEFORE
+    # the 2-space merge so they don't get folded into the parent bullet.
     merged: list = []
     for line in entry_lines:
         if line.startswith("## [") or line.startswith("### ") or line.startswith("- "):
             merged.append(line)
+        elif line.startswith("  - "):
+            continue  # drop sub-bullets
+        elif line.startswith("    "):
+            continue  # drop sub-bullet continuation lines (4+ spaces)
         elif merged and merged[-1].startswith("- ") and line.startswith("  "):
             merged[-1] += " " + line.strip()
         else:
@@ -470,7 +477,22 @@ def cmd_update() -> None:
         p()
         sys.exit(1)
 
-    new_ver = _current_version()
+    # Determine version from the freshly-pulled CHANGELOG.md on disk.
+    # We cannot call _current_version() here because the *running* Python
+    # process still has the OLD function definition in memory — the pull
+    # updated the file on disk but not the loaded bytecode.
+    new_ver = "unknown"
+    cl_path = INSTALL_DIR / "CHANGELOG.md"
+    if cl_path.exists():
+        try:
+            for cl_line in cl_path.read_text().splitlines():
+                if cl_line.startswith("## [") and "Unreleased" not in cl_line:
+                    new_ver = "v" + cl_line.split("]")[0].replace("## [", "").strip()
+                    break
+        except OSError:
+            pass
+    if new_ver == "unknown":
+        new_ver = _current_version()
 
     if "Already up to date" in (result.stdout + result.stderr):
         p(f"  {col(C.G, '✓ Already up to date')}  {col(C.DIM, f'({new_ver})')}")
