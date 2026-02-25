@@ -557,19 +557,17 @@ def cmd_update() -> None:
 # ── cmd_version ───────────────────────────────────────────────────────────────
 
 def _current_version() -> str:
-    """Return the git tag at HEAD, nearest ancestor tag, or CHANGELOG version.
+    """Return the version of the local claude-kit installation.
 
-    After a squash-merge, the release tag lives on the (now-deleted) feature
-    branch commit, not on the squash commit on main.  ``git describe`` won't
-    find it, so we fall back to the latest versioned entry in CHANGELOG.md.
+    Resolution order:
+    1. Exact tag at HEAD (rare — only right after tagging on this branch)
+    2. Latest versioned entry in CHANGELOG.md (authoritative after squash-merge,
+       because the release tag lives on the now-deleted feature branch commit)
+    3. Nearest ancestor tag via ``git describe`` (last resort)
     """
     tag = _git(["tag", "--points-at", "HEAD", "--sort=-version:refname"])
     if tag:
         return tag.splitlines()[0]
-    desc = _git(["describe", "--tags", "--abbrev=0"])
-    if desc:
-        return desc
-    # Fallback: parse the latest version from CHANGELOG.md
     cl = INSTALL_DIR / "CHANGELOG.md"
     if cl.exists():
         try:
@@ -578,6 +576,9 @@ def _current_version() -> str:
                     return "v" + line.split("]")[0].replace("## [", "").strip()
         except OSError:
             pass
+    desc = _git(["describe", "--tags", "--abbrev=0"])
+    if desc:
+        return desc
     return _git(["rev-parse", "--short", "HEAD"]) or "unknown"
 
 def _remote_version() -> str:
