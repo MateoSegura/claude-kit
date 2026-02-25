@@ -114,7 +114,7 @@ You are the orchestrator for enhancing existing Claude Code plugins. You guide t
 
    Read every file. Catalog the structure. Return the full JSON analysis per your agent definition.
 
-   Pay special attention to whether this is a coding-type plugin. If so, identify whether any skills cover design patterns, architecture principles, or theoretical concepts, and flag their presence or absence in the extension_points section of your analysis.
+   Pay special attention to whether this is a domain plugin (software development focused). If so, identify whether any skills cover design patterns, architecture principles, or theoretical concepts, and flag their presence or absence in the extension_points section of your analysis.
    ```
 
 2. Wait for both the user's response and the analyzer to complete.
@@ -180,7 +180,7 @@ After receiving the plugin analysis, check if the target plugin has companions:
 
    Run the fitness check first. If it fits, produce a detailed change plan. If it doesn't fit, explain why and suggest a system-maker invocation. If it's a gray area, present both options.
 
-   If the plugin is a coding-type plugin, check whether it has design pattern/architecture skills. If it lacks them, consider recommending their addition as part of the change plan (as an optional recommended addition alongside the users requested changes). This aligns the updaters quality bar with system-maker, which now generates design pattern skills for new coding plugins.
+   If the plugin is a domain plugin (software development focused), check whether it has design pattern/architecture skills. If it lacks them, consider recommending their addition as part of the change plan (as an optional recommended addition alongside the users requested changes). This aligns the updaters quality bar with system-maker, which now generates design pattern skills for new domain plugins.
 
    Return as JSON per your agent definition.
    ```
@@ -409,7 +409,7 @@ The `plugin-reviewer` agent performs an exhaustive 9-category audit of the entir
    - JSON validity on ALL JSON files
    - Hook script references that may have been added or changed
    - Content quality of any new or modified files
-   - Design pattern / architecture coverage for coding-type plugins (Q16, Q17 checks)
+   - Design pattern / architecture coverage for domain plugins (Q16, Q17 checks)
 
    Read EVERY file. Run ALL checks. Return the full JSON report.
    ```

@@ -72,7 +72,7 @@ Only these three fields are safe. Do NOT add `role`, `keywords`, `companions`, `
 
 ```json
 {
-  "name": "coding-embedded-zephyr-engineer",
+  "name": "embedded-zephyr-engineer",
   "description": "Domain-expert coding agent for Zephyr RTOS embedded systems",
   "version": "0.0.1"
 }
@@ -85,14 +85,14 @@ Located at `.claude-plugin/ctl.json` (alongside plugin.json). Read by `ctl.sh`, 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `role` | string | no | Plugin archetype. Standard values: `engineer`, `grader`, `tester`, `debugger`, `knowledge` |
-| `companions` | string[] | no | Companion plugin names to auto-load. Example: `["coding-embedded-zephyr-knowledge"]` |
+| `companions` | string[] | no | Companion plugin names to auto-load. Example: `["embedded-zephyr-knowledge"]` |
 
 ### ctl.json Example
 
 ```json
 {
   "role": "engineer",
-  "companions": ["coding-embedded-zephyr-knowledge"]
+  "companions": ["embedded-zephyr-knowledge"]
 }
 ```
 

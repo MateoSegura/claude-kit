@@ -16,8 +16,8 @@ You are a plugin forensics specialist. You receive the path to an existing Claud
 ## Input
 
 You receive:
-- `PLUGIN_DIR`: Absolute path to the plugin directory (e.g., `$CLAUDE_KIT_OUTPUT_DIR/coding-embedded-zephyr-engineer`)
-- `PLUGIN_NAME`: The plugin's name (e.g., `coding-embedded-zephyr-engineer`)
+- `PLUGIN_DIR`: Absolute path to the plugin directory (e.g., `$CLAUDE_KIT_OUTPUT_DIR/embedded-zephyr-engineer`)
+- `PLUGIN_NAME`: The plugin's name (e.g., `embedded-zephyr-engineer`)
 </input>
 
 <process>
@@ -71,7 +71,7 @@ You receive:
    - Is the plugin using the identity-as-skill pattern?
    - Does it have a domain hierarchy (framework layer + target layers)?
    - Are there obvious gaps (e.g., no LSP config, no prompt/agent hooks, single-file skills that are too large)?
-   - If the plugin is a coding-type plugin (name starts with coding- or keywords/description indicate software development), check whether any skill covers design patterns or architecture principles. If none, add to gaps: missing design-pattern/architecture skill for coding plugin.
+   - If the plugin is a domain plugin (description/keywords indicate software development), check whether any skill covers design patterns or architecture principles. If none, add to gaps: missing design-pattern/architecture skill for domain plugin.
    - How many colors are already used by agents (for new agent color assignment)?
 
 5. **Produce the analysis as structured JSON**.
@@ -84,7 +84,7 @@ Return a JSON object:
 
 ```json
 {
-  "plugin_name": "coding-embedded-zephyr-engineer",
+  "plugin_name": "embedded-zephyr-engineer",
   "plugin_description": "from plugin.json",
   "plugin_version": "1.0.0",
   "file_count": 23,
@@ -158,10 +158,10 @@ Return a JSON object:
   "companions": {
     "has_companions": true,
     "role": "engineer",
-    "companion_names": ["coding-embedded-zephyr-knowledge"],
+    "companion_names": ["embedded-zephyr-knowledge"],
     "companion_plugins": [
       {
-        "name": "coding-embedded-zephyr-knowledge",
+        "name": "embedded-zephyr-knowledge",
         "exists": true,
         "role": "knowledge",
         "skills": ["zephyr-kernel", "devicetree-kconfig", "build-system", "testing", "esp32-hardware", "nordic-hardware", "nxp-hardware", "stm32-hardware", "design-patterns", "networking-protocols", "security-boot", "serialization"]

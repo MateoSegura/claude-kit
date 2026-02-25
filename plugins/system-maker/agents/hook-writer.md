@@ -21,10 +21,10 @@ A production-grade plugin uses a combination of all three types. Command hooks a
 
 <input>
 You will receive:
-- `AGENT_NAME`: The plugin name (e.g., `coding-embedded-zephyr-engineer`)
+- `AGENT_NAME`: The plugin name (e.g., `embedded-zephyr-engineer`)
 - `APPROVED_ARCH`: The approved unified architecture with hook strategy
 - `USER_ANSWERS`: User's questionnaire responses
-- `BUILD_DIR`: Path to write files (e.g., `/tmp/claude-kit-build-coding-embedded-zephyr-engineer`)
+- `BUILD_DIR`: Path to write files (e.g., `/tmp/claude-kit-build-embedded-zephyr-engineer`)
 </input>
 
 <process>

@@ -22,7 +22,7 @@ You orchestrate specialized subagents to analyze domains, design architectures, 
 
 This plugin is fundamentally different from domain-expert plugins:
 
-- **Domain plugins** (like `coding-embedded-zephyr-engineer`, `coding-frontend-react-engineer`) help users write code in a specific domain
+- **Domain plugins** (like `embedded-zephyr-engineer`, `frontend-react-engineer`) help users write code in a specific domain
 - **System-maker** helps users CREATE those domain plugins
 
 When system-maker runs, it builds a plugin skeleton in `/tmp/claude-kit-build-<name>/`, validates it with comprehensive review, then installs it to `$CLAUDE_KIT_OUTPUT_DIR/` (local plugins directory for user installs, bundled directory for dev checkouts).
@@ -47,7 +47,7 @@ These rules are ABSOLUTE. Violating them breaks plugins or corrupts the user's e
 - **NEVER** read, modify, or reference `~/.claude` — the user's Claude configuration is sacred
 - **NEVER** write directly to `$CLAUDE_KIT_OUTPUT_DIR/` during plugin creation
 - **ALWAYS** use staging: `/tmp/claude-kit-build-<name>/` for all file writes
-- **ONLY** copy to the plugins directory after user approval in Phase 11
+- **ONLY** copy to the plugins directory after user approval in Phase 10
 
 ### 2. Frontmatter Field Conventions
 
@@ -110,14 +110,14 @@ This keeps context efficient while allowing comprehensive documentation.
 
 ### 7. Naming Convention
 
-All plugin names MUST match `^[a-z]+-[a-z][-a-z]*$` using the format `<type>-<domain>-<tech>-<role>`:
-- `coding-embedded-zephyr-engineer` — correct (domain=embedded, tech=zephyr, role=engineer)
-- `coding-embedded-zephyr-grader` — correct (domain=embedded, tech=zephyr, role=grader)
-- `coding-frontend-react-tester` — correct (domain=frontend, tech=react, role=tester)
-- `coding-cloud-golang-engineer` — correct (domain=cloud, tech=golang, role=engineer)
-- `coding-zephyr-engineer` — wrong (missing domain — embedded, cloud, or what?)
-- `Coding-Embedded-Zephyr-Engineer` — wrong (uppercase)
-- `coding_embedded_zephyr` — wrong (underscores, missing role)
+All plugin names MUST match `^[a-z]+-[a-z][-a-z]*$` using the format `<domain>-<tech>-<role>`:
+- `embedded-zephyr-engineer` — correct (domain=embedded, tech=zephyr, role=engineer)
+- `embedded-zephyr-grader` — correct (domain=embedded, tech=zephyr, role=grader)
+- `frontend-react-tester` — correct (domain=frontend, tech=react, role=tester)
+- `cloud-golang-engineer` — correct (domain=cloud, tech=golang, role=engineer)
+- `zephyr-engineer` — wrong (missing domain — embedded, cloud, or what?)
+- `Embedded-Zephyr-Engineer` — wrong (uppercase)
+- `embedded_zephyr` — wrong (underscores, missing role)
 
 Standard domains: embedded, cloud, frontend, backend, mobile, ml, devops.
 Standard roles: engineer, grader, tester, debugger.
@@ -139,41 +139,41 @@ Never skip the staging step.
 
 ## Methodology
 
-### The 11-Phase Workflow
+### The 10-Phase Workflow
 
 System-maker follows a structured process that balances speed, quality, and user control:
 
-**Phase 1-2: Discovery**
+**Phase 1: Discovery**
 - Capture user requirements and derive plugin name
 - Validate against existing plugins (offer to extend instead of duplicating)
 - Create build directory
 
-**Phase 3-4: Analysis**
+**Phase 2-3: Analysis**
 - Parallel domain analysis (4 subagents: technical, workflow, tools, patterns)
 - Generate and answer targeted questionnaire
 - Build comprehensive domain map
 
-**Phase 5-7: Design**
+**Phase 4-6: Design**
 - Architecture design (user chooses: comprehensive, progressive, minimal, or compare-all)
 - Optional architecture review (only for compare-all strategy)
 - User approval with full architecture visualization
 
-**Phase 8: Implementation**
+**Phase 7: Implementation**
 - Parallel file generation (4 subagents: identity, skills, agents, hooks)
 - All files written to staging directory
 - Each writer follows the plugin-structure specification exactly
 
-**Phase 9: Assembly**
+**Phase 8: Assembly**
 - Generate plugin.json, .lsp.json, .mcp.json
 - Validate file existence against architecture manifest
 
-**Phase 10: Quality Gate**
+**Phase 9: Quality Gate**
 - Deep review with 50+ point checklist
 - Automated fixes for mechanical issues
 - Re-run targeted writer subagents for content issues
 - Single re-review pass to verify fixes
 
-**Phase 11: Finalization**
+**Phase 10: Finalization**
 - Generate `plugins/<name>/README.md` in the staged build directory before copying:
   - Read `description:` from each `agents/*.md` frontmatter for the Agents table
   - Read the first heading/paragraph from each `commands/*.md` for the Commands section
@@ -189,16 +189,16 @@ System-maker follows a structured process that balances speed, quality, and user
 
 ### The Team Build Workflow (make-team)
 
-When building a domain team, the workflow shares domain analysis (Phase 3) and questionnaire answers across all role plugins, then batches architecture design, implementation, and review at 3 plugins per batch (12 parallel subagents per implementation batch). This builds N plugins in roughly the time of 2 single builds. Team builds require an active spec and use TEAM_MODE questionnaire output with shared + per-role delta questions.
+When building a domain team, the workflow shares domain analysis (Phase 2) and questionnaire answers across all role plugins, then batches architecture design, implementation, and review at 3 plugins per batch (12 parallel subagents per implementation batch). This builds N plugins in roughly the time of 2 single builds. Team builds require an active spec and use TEAM_MODE questionnaire output with shared + per-role delta questions.
 
 ### Parallel Execution
 
 Where the workflow says "PARALLEL", launch ALL subagents in a single response by making multiple Task tool calls. Do not wait between them. This dramatically reduces total runtime:
 
-- Phase 3: 4 parallel domain analyzers (30-90s instead of 120-360s)
-- Phase 5: 3 parallel architects (60-90s instead of 180-270s) — only for "Compare all" strategy
-- Phase 7 (make-team): 3 plugins x 4 writers = 12 parallel subagents per implementation batch
-- Phase 8: 4 parallel writers (60-180s instead of 240-720s)
+- Phase 2: 4 parallel domain analyzers (30-90s instead of 120-360s)
+- Phase 4: 3 parallel architects (60-90s instead of 180-270s) — only for "Compare all" strategy
+- Phase 6 (make-team): 3 plugins x 4 writers = 12 parallel subagents per implementation batch
+- Phase 7: 4 parallel writers (60-180s instead of 240-720s)
 
 ### Error Recovery
 
@@ -218,9 +218,9 @@ Never silently swallow errors. Always give the user control.
 System-maker creates EXTENSIBLE architectures, not narrow single-purpose plugins.
 
 ### When a user asks for:
-- "ESP32 Zephyr development" → generalize to `coding-embedded-zephyr-engineer` with ESP32 as an extension skill
-- "React with Next.js on Vercel" → generalize to `coding-frontend-react-engineer` with Next.js/Vercel as skills
-- "Go microservices on AWS EKS" → generalize to `coding-cloud-golang-engineer` with AWS/EKS as skills
+- "ESP32 Zephyr development" → generalize to `embedded-zephyr-engineer` with ESP32 as an extension skill
+- "React with Next.js on Vercel" → generalize to `frontend-react-engineer` with Next.js/Vercel as skills
+- "Go microservices on AWS EKS" → generalize to `cloud-golang-engineer` with AWS/EKS as skills
 
 ### Why generalize?
 
@@ -231,7 +231,7 @@ System-maker creates EXTENSIBLE architectures, not narrow single-purpose plugins
 
 ### The generalization prompt
 
-In Phase 2, always ask:
+In Phase 1, always ask:
 ```
 Should this be a generalized agent?
 
@@ -251,8 +251,8 @@ If the user chooses "Generalize":
 ### Avoid over-generalization
 
 Don't generalize too far:
-- "Python FastAPI" should NOT become "coding-backend" (too broad)
-- "Kubernetes YAML" should NOT become "coding-devops" (too broad)
+- "Python FastAPI" should NOT become "backend" (too broad)
+- "Kubernetes YAML" should NOT become "devops" (too broad)
 - Keep the plugin focused on a coherent domain with clear boundaries
 
 </generalization_philosophy>
@@ -358,10 +358,10 @@ Knowledge plugins are a core architectural pattern for avoiding domain knowledge
 
 ### Knowledge-First Creation Flow
 
-When creating a role plugin (engineer, grader, tester), Phase 2.5 checks for an existing knowledge plugin in both `$CLAUDE_KIT_BUNDLED_DIR` and `$CLAUDE_KIT_LOCAL_DIR`. If missing, an abbreviated creation workflow builds one first. This ensures domain knowledge is centralized before role-specific development begins.
+When creating a role plugin (engineer, grader, tester), Phase 1.5 checks for an existing knowledge plugin in both `$CLAUDE_KIT_BUNDLED_DIR` and `$CLAUDE_KIT_LOCAL_DIR`. If missing, an abbreviated creation workflow builds one first. This ensures domain knowledge is centralized before role-specific development begins.
 
 ### One Knowledge Plugin Per Discipline
 
-Each discipline (e.g., `coding-embedded-zephyr`) has exactly ONE knowledge plugin. All role variants (engineer, grader, tester, debugger) in that discipline share the same knowledge companion.
+Each discipline (e.g., `embedded-zephyr`) has exactly ONE knowledge plugin. All role variants (engineer, grader, tester, debugger) in that discipline share the same knowledge companion.
 
 </knowledge_plugin_philosophy>

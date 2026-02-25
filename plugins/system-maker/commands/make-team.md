@@ -15,8 +15,8 @@ You guide the user through a structured workflow, spawning the SAME specialized 
 ## Critical Rules — Read Before Doing Anything
 
 1. **Active spec required**: This command REQUIRES an active spec. Check `<SPEC_ROOT>/.active` at the very start (Phase 0). If no active spec exists, halt immediately with an informative message. This is a hard block — no exceptions.
-2. **One domain per session**: ALL plugins built in one make-team run share the same `<type>-<domain>-<tech>` prefix. Only the role segment differs. Never mix domains in a single team build.
-3. **Naming convention**: All plugin names MUST match the regex `^[a-z]+-[a-z][-a-z]*$`. Format: `<type>-<domain>-<tech>-<role>`. The base name `<type>-<domain>-<tech>` is derived once; roles are appended per plugin.
+2. **One domain per session**: ALL plugins built in one make-team run share the same `<domain>-<tech>` prefix. Only the role segment differs. Never mix domains in a single team build.
+3. **Naming convention**: All plugin names MUST match the regex `^[a-z]+-[a-z][-a-z]*$`. Format: `<domain>-<tech>-<role>`. The base name `<domain>-<tech>` is derived once; roles are appended per plugin.
 4. **Build isolation**: Each plugin gets its own `BUILD_DIR=/tmp/claude-kit-build-<PLUGIN_NAME>/`. NEVER write directly to the plugins directory until finalization.
 5. **User's ~/.claude is sacred**: Never read, modify, or reference the user's `~/.claude` directory.
 6. **Output directory**: `$CLAUDE_KIT_OUTPUT_DIR` — finalized plugins are copied here. Check BOTH `$CLAUDE_KIT_BUNDLED_DIR/` AND `$CLAUDE_KIT_LOCAL_DIR/` for existing plugins.
@@ -37,9 +37,8 @@ You guide the user through a structured workflow, spawning the SAME specialized 
 
 ## Naming Convention Reference
 
-Format: `<type>-<domain>-<tech>-<role>` where all segments are lowercase, hyphen-separated.
+Format: `<domain>-<tech>-<role>` where all segments are lowercase, hyphen-separated.
 
-- `type` — the agent category (currently only `coding`; `system` for meta-plugins)
 - `domain` — the broad discipline (e.g., `embedded`, `cloud`, `frontend`, `backend`, `mobile`, `ml`)
 - `tech` — the specific framework or technology within that domain
 - `role` — the team archetype
@@ -51,13 +50,13 @@ Format: `<type>-<domain>-<tech>-<role>` where all segments are lowercase, hyphen
 - `debugger` — diagnoses failures, reads logs/traces/dumps
 
 **NOT selectable as a team role** (handled separately):
-- `knowledge` — shared domain reference material, created automatically in Phase 2.5 if missing
+- `knowledge` — shared domain reference material, created automatically in Phase 1.5 if missing
 
 **Example team build:**
-- Base name: `coding-embedded-zephyr`
+- Base name: `embedded-zephyr`
 - Selected roles: engineer, grader, tester
-- Plugins to build: `coding-embedded-zephyr-engineer`, `coding-embedded-zephyr-grader`, `coding-embedded-zephyr-tester`
-- Knowledge plugin (auto): `coding-embedded-zephyr-knowledge`
+- Plugins to build: `embedded-zephyr-engineer`, `embedded-zephyr-grader`, `embedded-zephyr-tester`
+- Knowledge plugin (auto): `embedded-zephyr-knowledge`
 
 The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
 
@@ -118,36 +117,7 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
 
 <phase_1>
 
-## Phase 1: Type Selection
-
-**Duration**: Fast (single user interaction)
-
-### Steps
-
-1. Present the user with available agent types using AskUserQuestion:
-
-   ```
-   What type of team would you like to create?
-
-   Currently supported types:
-   - coding — A team of domain-expert coding agents with specialized roles
-
-   More types are planned but not yet supported.
-   ```
-
-2. If the user selects anything other than "coding", respond:
-
-   ```
-   Only "coding" type teams are supported at this time. I'll proceed with type "coding".
-   ```
-
-3. Store: `AGENT_TYPE = "coding"`
-
-</phase_1>
-
-<phase_2>
-
-## Phase 2: Domain Capture & Role Selection
+## Phase 1: Domain Capture & Role Selection
 
 **Duration**: Fast (2-3 user interactions)
 
@@ -171,15 +141,15 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
 2. From the user's description, derive the base name:
    - Identify the broad domain (embedded, cloud, frontend, backend, mobile, ml, devops)
    - Identify the specific technology/framework
-   - Combine as `<AGENT_TYPE>-<domain>-<tech>` (e.g., `coding-embedded-zephyr`)
+   - Combine as `<domain>-<tech>` (e.g., `embedded-zephyr`)
    - This becomes `BASE_NAME` — all plugins will be `<BASE_NAME>-<role>`
 
 3. Present the proposed base name for confirmation using AskUserQuestion:
 
    ```
-   Based on your description, the team base name will be: coding-embedded-zephyr
+   Based on your description, the team base name will be: embedded-zephyr
 
-   All plugins will follow the pattern: coding-embedded-zephyr-<role>
+   All plugins will follow the pattern: embedded-zephyr-<role>
 
    Options:
    - Accept this name
@@ -201,17 +171,16 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
    part of the coding team. Future team types may cover these areas.
 
    Note: "knowledge" is handled automatically — if no knowledge plugin exists
-   for this domain, one will be created first in Phase 2.5.
+   for this domain, one will be created first in Phase 1.5.
 
    Recommended minimum: engineer + grader (the most common pair)
    ```
 
 5. Store:
-   - `AGENT_TYPE` — e.g., `coding`
-   - `BASE_NAME` — e.g., `coding-embedded-zephyr`
+   - `BASE_NAME` — e.g., `embedded-zephyr`
    - `AGENT_DESCRIPTION` — the user's raw domain description
    - `SELECTED_ROLES` — list of roles, e.g., `["engineer", "grader", "tester"]`
-   - `PLUGIN_NAMES` — derived list, e.g., `["coding-embedded-zephyr-engineer", "coding-embedded-zephyr-grader", "coding-embedded-zephyr-tester"]`
+   - `PLUGIN_NAMES` — derived list, e.g., `["embedded-zephyr-engineer", "embedded-zephyr-grader", "embedded-zephyr-tester"]`
    - `PLUGIN_COUNT` — number of plugins to build
 
 6. **Existing plugin check**: Scan both plugin directories for overlapping plugins:
@@ -235,7 +204,7 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
    done
    ```
 
-   If any build directory already exists, ask the user whether to overwrite or abort (same as make-agent Phase 2 step 9).
+   If any build directory already exists, ask the user whether to overwrite or abort (same as make-agent Phase 1 step 9).
 
 8. Report the build plan:
 
@@ -247,14 +216,14 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
      <list each PLUGIN_NAME>
    - Implementation batches: <ceil(PLUGIN_COUNT / 3)>
 
-   Proceeding to Phase 2.5 (Knowledge Plugin Check).
+   Proceeding to Phase 1.5 (Knowledge Plugin Check).
    ```
 
-</phase_2>
+</phase_1>
 
-<phase_2_5>
+<phase_1_5>
 
-## Phase 2.5: Knowledge Plugin Existence Check
+## Phase 1.5: Knowledge Plugin Existence Check
 
 **Duration**: Fast (file system check + optional abbreviated creation)
 
@@ -263,7 +232,7 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
 ### Steps
 
 1. Derive the knowledge plugin name: `<BASE_NAME>-knowledge`
-   - Example: `coding-embedded-zephyr` → `coding-embedded-zephyr-knowledge`
+   - Example: `embedded-zephyr` → `embedded-zephyr-knowledge`
 
 2. Check if the knowledge plugin exists:
    ```bash
@@ -292,7 +261,7 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
    ```
 
 5. If "Create knowledge plugin first":
-   - Follow the same Phase 2.5a abbreviated knowledge creation from make-agent:
+   - Follow the same Phase 1.5a abbreviated knowledge creation from make-agent:
      a. Create build directory for knowledge plugin
      b. Launch 3 parallel writers (identity-writer, skill-writer, hook-writer — no agent-writer for knowledge plugins)
      c. Assemble plugin.json + ctl.json (with `"role": "knowledge"`)
@@ -302,11 +271,11 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
 
 6. If "Skip": Set `KNOWLEDGE_MODE=false`
 
-</phase_2_5>
+</phase_1_5>
 
-<phase_3>
+<phase_2>
 
-## Phase 3: Shared Domain Analysis (TEAM — domain-analysis-team)
+## Phase 2: Shared Domain Analysis (TEAM — domain-analysis-team)
 
 **Duration**: Slow (4 parallel analyzers — expect 30-90 seconds)
 
@@ -359,11 +328,11 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
 
 5. Present a brief summary to the user (informational only — no approval needed).
 
-</phase_3>
+</phase_2>
 
-<phase_4>
+<phase_3>
 
-## Phase 4: Unified Questionnaire (TEAM_MODE)
+## Phase 3: Unified Questionnaire (TEAM_MODE)
 
 **Duration**: Medium (one subagent + user answering questions)
 
@@ -432,11 +401,11 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
 
 6. Present a brief summary of all answers. Allow the user to change any answer.
 
-</phase_4>
+</phase_3>
 
-<phase_5>
+<phase_4>
 
-## Phase 5: Parallel Architecture Design
+## Phase 4: Parallel Architecture Design
 
 **Duration**: Medium-Slow (N parallel architects — expect 45-120 seconds depending on role count)
 
@@ -479,7 +448,7 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
    - Each role plugin should focus on its specific responsibilities
    - Do NOT duplicate capabilities that belong in other role plugins
 
-   IMPORTANT: For coding-type plugins, include a design-patterns skill at the
+   IMPORTANT: For domain-type plugins, include a design-patterns skill at the
    framework layer unless KNOWLEDGE_MODE is true and the knowledge plugin
    already provides it.
 
@@ -501,11 +470,11 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
 
 4. If any architect fails, follow error recovery (retry that single architect).
 
-</phase_5>
+</phase_4>
 
-<phase_6>
+<phase_5>
 
-## Phase 6: User Approval (Sequential Per Plugin)
+## Phase 5: User Approval (Sequential Per Plugin)
 
 **Duration**: Medium (user reviews N architectures)
 
@@ -546,14 +515,14 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
    Plugins to build: <PLUGIN_COUNT>
    <list each plugin name>
    Implementation batches: <ceil(PLUGIN_COUNT / 3)>
-   Proceeding to Phase 7 (Batched Implementation).
+   Proceeding to Phase 6 (Batched Implementation).
    ```
 
-</phase_6>
+</phase_5>
 
-<phase_7>
+<phase_6>
 
-## Phase 7: Batched Implementation (TEAMS — 3 plugins per batch)
+## Phase 6: Batched Implementation (TEAMS — 3 plugins per batch)
 
 **Duration**: Slow (expect 60-180 seconds per batch)
 
@@ -679,16 +648,16 @@ The `claude-kit validate` command enforces the regex `^[a-z]+-[a-z][-a-z]*$`.
 4. Report overall implementation status:
 
    ```
-   Phase 7 complete. All <PLUGIN_COUNT> plugins implemented.
+   Phase 6 complete. All <PLUGIN_COUNT> plugins implemented.
    Total files: <sum of all file counts>
-   Proceeding to Phase 8 (Assembly).
+   Proceeding to Phase 7 (Assembly).
    ```
 
-</phase_7>
+</phase_6>
 
-<phase_8>
+<phase_7>
 
-## Phase 8: Assembly (Sequential Per Plugin)
+## Phase 7: Assembly (Sequential Per Plugin)
 
 **Duration**: Fast (file operations per plugin)
 
@@ -719,7 +688,7 @@ For each plugin in `PLUGIN_NAMES`, sequentially:
 
    Include `companions` only if `KNOWLEDGE_MODE` is true. The `role` and `companions` fields MUST go in ctl.json, never in plugin.json.
 
-3. **Create .lsp.json** if the domain uses typed languages (same logic as make-agent Phase 9). Each plugin gets the same .lsp.json since they share the domain.
+3. **Create .lsp.json** if the domain uses typed languages (same logic as make-agent Phase 8). Each plugin gets the same .lsp.json since they share the domain.
 
 4. **Create .mcp.json** only if the approved architecture specifies MCP servers that actually exist.
 
@@ -734,15 +703,15 @@ For each plugin in `PLUGIN_NAMES`, sequentially:
 After all plugins:
 
 ```
-Phase 8 complete. Assembly done for <PLUGIN_COUNT> plugins.
-Proceeding to Phase 9 (Batched Review).
+Phase 7 complete. Assembly done for <PLUGIN_COUNT> plugins.
+Proceeding to Phase 8 (Batched Review).
 ```
 
-</phase_8>
+</phase_7>
 
-<phase_9>
+<phase_8>
 
-## Phase 9: Sequential Review (ONE PLUGIN AT A TIME — FOREGROUND)
+## Phase 8: Sequential Review (ONE PLUGIN AT A TIME — FOREGROUND)
 
 **Duration**: Medium-Slow (expect 60-120 seconds per plugin, sequential)
 
@@ -814,19 +783,19 @@ Proceeding to Phase 9 (Batched Review).
 5. Report overall review status:
 
    ```
-   Phase 9 complete. Review results:
+   Phase 8 complete. Review results:
    | Plugin | Initial | Final | Fixes |
    |--------|---------|-------|-------|
    | <name> | <grade> | <grade> | <count> |
    ...
-   Proceeding to Phase 10 (Finalization).
+   Proceeding to Phase 9 (Finalization).
    ```
 
-</phase_9>
+</phase_8>
 
-<phase_10>
+<phase_9>
 
-## Phase 10: Finalization
+## Phase 9: Finalization
 
 **Duration**: Fast (user review and file copy)
 
@@ -917,7 +886,7 @@ Proceeding to Phase 9 (Batched Review).
      ./claude-kit list
    ```
 
-</phase_10>
+</phase_9>
 
 <error_handling>
 
@@ -969,17 +938,16 @@ If output is not valid JSON when expected:
 | Phase | Name | Subagents | Parallel? | Duration |
 |-------|------|-----------|-----------|----------|
 | 0 | Active Spec Gate | 0 | — | Instant |
-| 1 | Type Selection | 0 | — | Fast |
-| 2 | Domain Capture & Role Selection | 0 | — | Fast |
-| 2.5 | Knowledge Plugin Check | 0-3 (writers if creating) | Yes (if creating) | Fast-Medium |
-| 3 | Shared Domain Analysis | 4 (domain-analyzer) | Yes | Slow |
-| 4 | Unified Questionnaire | 1 (questionnaire-builder) | No | Medium |
-| 5 | Parallel Architecture Design | N (one arch-designer per role) | Yes | Medium-Slow |
-| 6 | User Approval | 0 | — | Medium |
-| 7 | Batched Implementation | 3×4=12 per batch (writer teams) | Yes (within batch) | Slow |
-| 8 | Assembly | 0 | — | Fast |
-| 9 | Sequential Review | 1 (reviewer per plugin, sequential) | No — FOREGROUND ONLY | Medium-Slow |
-| 10 | Finalization | 0 | — | Fast |
+| 1 | Domain Capture & Role Selection | 0 | — | Fast |
+| 1.5 | Knowledge Plugin Check | 0-3 (writers if creating) | Yes (if creating) | Fast-Medium |
+| 2 | Shared Domain Analysis | 4 (domain-analyzer) | Yes | Slow |
+| 3 | Unified Questionnaire | 1 (questionnaire-builder) | No | Medium |
+| 4 | Parallel Architecture Design | N (one arch-designer per role) | Yes | Medium-Slow |
+| 5 | User Approval | 0 | — | Medium |
+| 6 | Batched Implementation | 3×4=12 per batch (writer teams) | Yes (within batch) | Slow |
+| 7 | Assembly | 0 | — | Fast |
+| 8 | Sequential Review | 1 (reviewer per plugin, sequential) | No — FOREGROUND ONLY | Medium-Slow |
+| 9 | Finalization | 0 | — | Fast |
 
 **Batch sizing:**
 - Implementation: 3 plugins/batch × 4 writers/plugin = 12 parallel subagents per batch

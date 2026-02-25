@@ -21,20 +21,20 @@ Requires: `git`, `python3`. Claude Code CLI and `jq` are installed automatically
 claude-kit list
 
 # Launch a full team by domain prefix (loads all related plugins)
-claude-kit --kit coding-embedded-zephyr
-claude-kit --kit coding-frontend-svelte
+claude-kit --kit embedded-zephyr
+claude-kit --kit frontend-svelte
 
 # Launch a specific plugin
-claude-kit --kit coding-embedded-zephyr-engineer
+claude-kit --kit embedded-zephyr-engineer
 
 # Combine kits in one session
-claude-kit --kit coding-embedded-zephyr-engineer --kit core-spec
+claude-kit --kit embedded-zephyr-engineer --kit core-spec
 
 # Skip permission prompts
-claude-kit --kit coding-embedded-zephyr --yolo
+claude-kit --kit embedded-zephyr --yolo
 
 # Choose model (default: opus)
-claude-kit --kit coding-embedded-zephyr --model sonnet
+claude-kit --kit embedded-zephyr --model sonnet
 
 # Check current version and look for updates
 claude-kit version
@@ -47,7 +47,7 @@ claude-kit setup
 
 # Validate plugin structure (Tier 1: JSON, fields, hooks)
 claude-kit validate --all
-claude-kit validate coding-embedded-zephyr-engineer
+claude-kit validate embedded-zephyr-engineer
 
 # Undo setup changes
 claude-kit restore
@@ -126,7 +126,7 @@ graph LR
     style Claude fill:#f39c12,color:#fff,stroke:#e67e22
 ```
 
-claude-kit does not create or modify any of these files. When you run `claude-kit --kit coding-embedded-zephyr`, it resolves the plugins, then launches Claude Code with `--plugin-dir` arguments:
+claude-kit does not create or modify any of these files. When you run `claude-kit --kit embedded-zephyr`, it resolves the plugins, then launches Claude Code with `--plugin-dir` arguments:
 
 ```mermaid
 sequenceDiagram
@@ -135,8 +135,8 @@ sequenceDiagram
     participant FS as File System
     participant CC as Claude Code
 
-    User->>CK: claude-kit --kit coding-embedded-zephyr
-    CK->>FS: resolve_prefix("coding-embedded-zephyr")
+    User->>CK: claude-kit --kit embedded-zephyr
+    CK->>FS: resolve_prefix("embedded-zephyr")
     FS-->>CK: [engineer, grader, tester, debugger, knowledge]
     CK->>FS: resolve_companions() for each
     FS-->>CK: knowledge (companion of all four)
@@ -296,7 +296,7 @@ Each role requires a different permission model, different tool access, and diff
 
 **Skills = context injection, not instructions.** A `skill` file is preloaded verbatim into an agent's context at launch. The knowledge plugin's skills — kernel API references, hardware specs, design patterns — are injected into the engineer's context automatically, giving it domain expertise without bloating its own instructions.
 
-**Agents = focused subagents.** When you run `/coding-embedded-zephyr-engineer:develop`, the `develop` command spawns specialized subagents in parallel. Each subagent has `tools:` restricted to exactly what it needs, `skills:` preloaded with the right reference material, and `permissionMode:` set to `plan` for read-only agents or `acceptEdits` for writers.
+**Agents = focused subagents.** When you run `/embedded-zephyr-engineer:develop`, the `develop` command spawns specialized subagents in parallel. Each subagent has `tools:` restricted to exactly what it needs, `skills:` preloaded with the right reference material, and `permissionMode:` set to `plan` for read-only agents or `acceptEdits` for writers.
 
 **Hooks = behavioral enforcement, not guidelines.** Every plugin uses hooks to enforce hard constraints:
 - **PreToolUse `command` hooks** block dangerous shell commands before they run (exit 2 = block)
@@ -350,48 +350,48 @@ After launch, it's just Claude Code with more plugins loaded. claude-kit is gone
 Five plugins covering the full development lifecycle for Zephyr RTOS embedded firmware. The knowledge plugin is auto-loaded as a companion by the other four, injecting kernel APIs, devicetree syntax, hardware targets, and design patterns into their agent context.
 
 ```bash
-claude-kit --kit coding-embedded-zephyr  # loads all five
+claude-kit --kit embedded-zephyr  # loads all five
 ```
 
 | Plugin | Role | README |
 |--------|------|--------|
-| `coding-embedded-zephyr-knowledge` | Knowledge | [→ README](plugins/coding-embedded-zephyr-knowledge/README.md) |
-| `coding-embedded-zephyr-engineer` | Engineer | [→ README](plugins/coding-embedded-zephyr-engineer/README.md) |
-| `coding-embedded-zephyr-grader` | Grader | [→ README](plugins/coding-embedded-zephyr-grader/README.md) |
-| `coding-embedded-zephyr-tester` | Tester | [→ README](plugins/coding-embedded-zephyr-tester/README.md) |
-| `coding-embedded-zephyr-debugger` | Debugger | [→ README](plugins/coding-embedded-zephyr-debugger/README.md) |
+| `embedded-zephyr-knowledge` | Knowledge | [→ README](plugins/embedded-zephyr-knowledge/README.md) |
+| `embedded-zephyr-engineer` | Engineer | [→ README](plugins/embedded-zephyr-engineer/README.md) |
+| `embedded-zephyr-grader` | Grader | [→ README](plugins/embedded-zephyr-grader/README.md) |
+| `embedded-zephyr-tester` | Tester | [→ README](plugins/embedded-zephyr-tester/README.md) |
+| `embedded-zephyr-debugger` | Debugger | [→ README](plugins/embedded-zephyr-debugger/README.md) |
 
 ### Svelte Frontend Team
 
 Five plugins for Svelte 5 / SvelteKit development. The knowledge plugin is auto-loaded as a companion, providing runes reference, SvelteKit patterns, CSS architecture, accessibility standards, and hardware communication (USB/BLE/LAN/audio/MIDI) to all role plugins.
 
 ```bash
-claude-kit --kit coding-frontend-svelte  # loads all five
+claude-kit --kit frontend-svelte  # loads all five
 ```
 
 | Plugin | Role | README |
 |--------|------|--------|
-| `coding-frontend-svelte-knowledge` | Knowledge | [→ README](plugins/coding-frontend-svelte-knowledge/README.md) |
-| `coding-frontend-svelte-engineer` | Engineer | [→ README](plugins/coding-frontend-svelte-engineer/README.md) |
-| `coding-frontend-svelte-grader` | Grader | [→ README](plugins/coding-frontend-svelte-grader/README.md) |
-| `coding-frontend-svelte-tester` | Tester | [→ README](plugins/coding-frontend-svelte-tester/README.md) |
-| `coding-frontend-svelte-debugger` | Debugger | [→ README](plugins/coding-frontend-svelte-debugger/README.md) |
+| `frontend-svelte-knowledge` | Knowledge | [→ README](plugins/frontend-svelte-knowledge/README.md) |
+| `frontend-svelte-engineer` | Engineer | [→ README](plugins/frontend-svelte-engineer/README.md) |
+| `frontend-svelte-grader` | Grader | [→ README](plugins/frontend-svelte-grader/README.md) |
+| `frontend-svelte-tester` | Tester | [→ README](plugins/frontend-svelte-tester/README.md) |
+| `frontend-svelte-debugger` | Debugger | [→ README](plugins/frontend-svelte-debugger/README.md) |
 
 ### Python Cloud Backend Team
 
 Five plugins covering the full development lifecycle for Python cloud-backend microservices (FastAPI, gRPC, asyncio, SQLAlchemy 2.0, Docker, Kubernetes). The knowledge plugin is auto-loaded as a companion by the other four, injecting asyncio patterns, distributed systems reference, container orchestration, and design patterns into their agent context.
 
 ```bash
-claude-kit --kit coding-cloud-python  # loads all five
+claude-kit --kit cloud-python  # loads all five
 ```
 
 | Plugin | Role | README |
 |--------|------|--------|
-| `coding-cloud-python-knowledge` | Knowledge | [→ README](plugins/coding-cloud-python-knowledge/README.md) |
-| `coding-cloud-python-engineer` | Engineer | [→ README](plugins/coding-cloud-python-engineer/README.md) |
-| `coding-cloud-python-grader` | Grader | [→ README](plugins/coding-cloud-python-grader/README.md) |
-| `coding-cloud-python-tester` | Tester | [→ README](plugins/coding-cloud-python-tester/README.md) |
-| `coding-cloud-python-debugger` | Debugger | [→ README](plugins/coding-cloud-python-debugger/README.md) |
+| `cloud-python-knowledge` | Knowledge | [→ README](plugins/cloud-python-knowledge/README.md) |
+| `cloud-python-engineer` | Engineer | [→ README](plugins/cloud-python-engineer/README.md) |
+| `cloud-python-grader` | Grader | [→ README](plugins/cloud-python-grader/README.md) |
+| `cloud-python-tester` | Tester | [→ README](plugins/cloud-python-tester/README.md) |
+| `cloud-python-debugger` | Debugger | [→ README](plugins/cloud-python-debugger/README.md) |
 
 ### System Plugins
 

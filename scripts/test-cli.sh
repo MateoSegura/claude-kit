@@ -55,13 +55,13 @@ expect_output "help shows --kit"     "--kit" help
 # ── list ──────────────────────────────────────────────────────────────────────
 expect_exit   "list exits 0"                      0 list
 expect_output "list shows Bundled section"        "Bundled" list
-expect_output "list shows a plugin"               "coding-embedded-zephyr" list
+expect_output "list shows a plugin"               "embedded-zephyr" list
 expect_output "list shows shortcut hint"          "claude-kit -k" list
 expect_output "list shows plugin version"         "0." list
 
 # ── validate ──────────────────────────────────────────────────────────────────
 expect_exit   "validate --all exits 0"            0 validate --all
-expect_exit   "validate <plugin> exits 0"         0 validate coding-embedded-zephyr-engineer
+expect_exit   "validate <plugin> exits 0"         0 validate embedded-zephyr-engineer
 expect_exit   "validate --changed exits 0"        0 validate --changed
 expect_error  "validate nonexistent plugin fails"   validate nonexistent-plugin-xyz-abc
 
@@ -73,7 +73,7 @@ expect_output "version shows tag format"          "v0." version
 expect_error  "unknown flag exits non-zero"       --unknown-flag-xyz
 expect_error  "--kit with no name exits non-zero" --kit
 expect_error  "--kit nonexistent plugin fails"    --kit nonexistent-plugin-xyz-abc
-expect_error  "--model with no value fails"       --kit coding-embedded-zephyr-engineer --model
+expect_error  "--model with no value fails"       --kit embedded-zephyr-engineer --model
 
 # ── summary ───────────────────────────────────────────────────────────────────
 echo ""

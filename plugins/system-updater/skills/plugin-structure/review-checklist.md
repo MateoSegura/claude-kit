@@ -74,7 +74,7 @@ For EACH skill's SKILL.md file, check ALL of these:
 | K2 | Frontmatter contains `name:` field | CRITICAL |
 | K3 | Frontmatter contains `description:` field | CRITICAL |
 | K4 | Identity skill has `user-invocable: false` | CRITICAL |
-| K5 | Skill name in frontmatter is `plugin-name:directory-name` (e.g., `coding-foo:identity` for `skills/identity/`). The portion after `:` must match the directory name. | WARNING |
+| K5 | Skill name in frontmatter is `plugin-name:directory-name` (e.g., `my-plugin:identity` for `skills/identity/`). The portion after `:` must match the directory name. | WARNING |
 
 ## Category 6: Hooks Correctness
 
@@ -127,8 +127,8 @@ For EACH skill's SKILL.md file, check ALL of these:
 | Q13 | Each command file has a clear workflow with steps | WARNING |
 | Q14 | No file contains only headers with no content (skeleton files with <20 lines of actual content) | CRITICAL |
 | Q15 | No file has excessive TODO/FIXME/PLACEHOLDER markers (>3 per file) | WARNING |
-| Q16 | For coding-type plugins: at least one skill covers design patterns or architecture principles | WARNING |
-| Q17 | For coding-type plugins: design patterns skill includes patterns-reference.md and anti-patterns.md | SUGGESTION |
+| Q16 | For domain plugins: at least one skill covers design patterns or architecture principles | WARNING |
+| Q17 | For domain plugins: design patterns skill includes patterns-reference.md and anti-patterns.md | SUGGESTION |
 
 ## Category 9: Anti-Pattern Detection
 
