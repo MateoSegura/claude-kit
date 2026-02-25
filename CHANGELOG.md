@@ -4,6 +4,8 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-02-25
+
 ### Changed
 - `claude-kit update` now groups plugin versions by team prefix (matching
   `claude-kit list` layout) instead of a flat alphabetical list — roles shown
