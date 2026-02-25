@@ -4,9 +4,10 @@
 
 set -euo pipefail
 
-STAGING_DIRS=$(ls -d /tmp/claude-kit-update-* 2>/dev/null)
+STAGING_DIRS=$(ls -d /tmp/claude-kit-update-* 2>/dev/null || true)
 
 if [ -z "$STAGING_DIRS" ]; then
+  echo '{"ok": true}' >&2
   exit 0
 fi
 
@@ -14,9 +15,11 @@ for dir in $STAGING_DIRS; do
   if [ -d "$dir" ]; then
     file_count=$(find "$dir" -type f 2>/dev/null | wc -l)
     if [ "$file_count" -gt 0 ]; then
-      echo "[system-updater] WARNING: Staging directory $dir has $file_count file(s)."
-      echo "[system-updater] Changes have not been finalized back to plugins/."
-      echo "[system-updater] Re-run the update workflow to finalize or discard."
+      echo "{\"ok\": false, \"reason\": \"Staging directory $dir has $file_count file(s) not finalized to plugins/. Re-run the update workflow to finalize or remove with: rm -rf $dir\"}" >&2
+      exit 2
     fi
   fi
 done
+
+echo '{"ok": true}' >&2
+exit 0

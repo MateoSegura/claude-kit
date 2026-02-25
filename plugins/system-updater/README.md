@@ -1,6 +1,6 @@
 # system-updater
 
-> **Role:** System · **Version:** 0.0.3
+> **Role:** System · **Version:** 0.0.4
 
 Agent Updater — guides users through enhancing existing Claude Code plugins via a structured 7-phase workflow with fitness checking, surgical change planning, and staging-based safe implementation.
 
