@@ -1,6 +1,7 @@
 ---
 name: coding-cloud-python-tester:fixture-patterns
 description: "pytest fixture patterns for Python cloud services: scope hierarchy, testcontainers (PostgreSQL, Redis, Kafka), async fixtures, conftest organization, factory fixtures, and database rollback patterns for isolated test runs."
+user-invocable: false
 ---
 
 # Fixture Patterns — Quick Reference

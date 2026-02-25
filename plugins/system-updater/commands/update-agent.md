@@ -1,4 +1,5 @@
 ---
+name: system-updater:update-agent
 allowed-tools: Task, AskUserQuestion, Read, Glob, Grep, Write, Edit, Bash
 description: Enhance an existing Claude Code plugin with new skills, agents, hooks, or configuration changes through a guided 7-phase workflow.
 ---

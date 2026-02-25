@@ -429,7 +429,7 @@ Example:
 {
   "name": "plugin-name",
   "description": "One-line description of what this plugin does",
-  "version": "1.0.0"
+  "version": "0.0.1"
 }
 ```
 

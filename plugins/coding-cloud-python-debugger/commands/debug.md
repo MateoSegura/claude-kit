@@ -1,4 +1,5 @@
 ---
+name: coding-cloud-python-debugger:debug
 allowed-tools: Read, Glob, Grep, Bash, Task, AskUserQuestion
 description: Triage and diagnose failures in cloud Python services. Classifies symptoms into one of six categories, routes to the appropriate specialist, and delivers a structured diagnostic report. Read-only — the debugger never writes or modifies code.
 ---

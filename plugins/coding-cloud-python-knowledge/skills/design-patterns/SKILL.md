@@ -1,6 +1,7 @@
 ---
 name: coding-cloud-python-knowledge:design-patterns
 description: "Python cloud-backend design patterns: repository pattern, unit of work, dependency injection, factory, strategy, observer for events, structured logging, OpenTelemetry tracing, graceful shutdown, and connection pooling. Load when architecting Python backend services, reviewing code structure, or implementing cross-cutting concerns."
+user-invocable: false
 ---
 
 # Design Patterns — Python Cloud Backend

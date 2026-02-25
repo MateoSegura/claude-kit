@@ -1,6 +1,7 @@
 ---
 name: coding-frontend-svelte-tester:component-testing
 description: "Component testing for Svelte 5 using vitest-browser-svelte in real browser mode. Covers render API, page locators, userEvent, DOM assertions, and testing Svelte 5 runes ($state, $props, $effect, $bindable) and snippets in a real browser environment."
+user-invocable: false
 ---
 
 # Component Testing with vitest-browser-svelte

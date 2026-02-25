@@ -1,6 +1,7 @@
 ---
 name: coding-frontend-svelte-tester:design-patterns
 description: "Test design patterns and anti-patterns for Svelte 5 / SvelteKit projects. Quick-reference decision matrices for test structure, fixture building, doubles (stub/mock/spy), and common mistakes that produce brittle or misleading tests."
+user-invocable: false
 ---
 
 # Test Design Patterns for Svelte 5

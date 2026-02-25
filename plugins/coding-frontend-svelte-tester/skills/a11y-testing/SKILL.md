@@ -1,6 +1,7 @@
 ---
 name: coding-frontend-svelte-tester:a11y-testing
 description: "Accessibility testing for Svelte 5 components and SvelteKit pages. Covers vitest-axe setup, axe-core rule sets, WCAG 2.2 AA criteria, component-level audits, keyboard navigation testing, and automated a11y verification patterns."
+user-invocable: false
 ---
 
 # Accessibility Testing

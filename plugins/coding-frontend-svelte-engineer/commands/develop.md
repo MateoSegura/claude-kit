@@ -1,4 +1,5 @@
 ---
+name: coding-frontend-svelte-engineer:develop
 allowed-tools: Task, Read, Glob, Grep, Bash, AskFollowupQuestion
 description: "Primary entry point for all Svelte/SvelteKit development work. Routes feature builds, component creation, styling, and project scaffolding to the appropriate specialist subagent. Handles bugs and refactors as well as new features."
 ---

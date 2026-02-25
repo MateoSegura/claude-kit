@@ -1,4 +1,5 @@
 ---
+name: coding-cloud-python-grader:grade-diff
 allowed-tools: Read, Glob, Grep, Bash, Task
 description: Fast diff-scoped pre-commit review. Accepts a git diff range (default: staged changes), scopes grading to changed files and their direct dependents, and produces a focused report suitable for pre-commit or PR review gates.
 ---

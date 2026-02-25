@@ -1,4 +1,5 @@
 ---
+name: coding-frontend-svelte-engineer:review
 allowed-tools: Task, Read, Glob, Grep, Bash, AskFollowupQuestion
 description: "Performance-focused code review for Svelte/SvelteKit code. Analyzes bundle size, rendering strategy (SSR/CSR/prerender), code splitting, lazy loading, Core Web Vitals impact, reactive performance, image/font optimization, and accessibility compliance. Produces prioritized, actionable recommendations. Does NOT modify code."
 ---

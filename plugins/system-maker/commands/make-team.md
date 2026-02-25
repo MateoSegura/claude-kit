@@ -1,4 +1,5 @@
 ---
+name: system-maker:make-team
 allowed-tools: Task, AskUserQuestion, Read, Glob, Grep, Write, Edit, Bash
 description: Build an entire domain team (multiple role plugins) in one session with shared domain analysis, unified questionnaire, parallel architecture, and batched implementation.
 ---
@@ -701,7 +702,7 @@ For each plugin in `PLUGIN_NAMES`, sequentially:
    {
      "name": "<PLUGIN_NAME>",
      "description": "<One-line description derived from role and domain>",
-     "version": "1.0.0"
+     "version": "0.0.1"
    }
    ```
 

@@ -1,6 +1,7 @@
 ---
 name: coding-frontend-svelte-tester:vitest-patterns
 description: "Vitest configuration, test lifecycle, assertion API, mocking patterns, and async testing for Svelte 5 / SvelteKit projects. Covers vi.fn/vi.mock/vi.spyOn, mocking SvelteKit modules, testing $state/$derived/$effect, and parameterized tests."
+user-invocable: false
 ---
 
 # Vitest Patterns for Svelte 5

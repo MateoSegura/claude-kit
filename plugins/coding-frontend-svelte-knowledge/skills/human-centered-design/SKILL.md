@@ -1,6 +1,7 @@
 ---
 name: coding-frontend-svelte-knowledge:human-centered-design
 description: "UX patterns for interfaces that feel right: spacing systems, visual hierarchy, Gestalt principles, progressive disclosure, optimistic UI, skeleton loading, micro-interactions, spring animations, reduced motion, cognitive load management, and predictable interaction patterns."
+user-invocable: false
 ---
 
 # Human-Centered Design Quick Reference

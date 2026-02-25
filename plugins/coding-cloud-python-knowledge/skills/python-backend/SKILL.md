@@ -1,6 +1,7 @@
 ---
 name: coding-cloud-python-knowledge:python-backend
 description: "Core Python backend patterns covering asyncio event loop, async/await concurrency, type hints, FastAPI/Starlette, httpx, Pydantic v2, dependency injection, and middleware. Load when writing or reviewing Python async web services, REST APIs, or backend application code."
+user-invocable: false
 ---
 
 # Python Backend — Quick Reference

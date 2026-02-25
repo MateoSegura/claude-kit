@@ -1,4 +1,5 @@
 ---
+name: coding-frontend-svelte-tester:scaffold-tests
 allowed-tools: Task, Read, Glob, Grep, Bash, AskFollowupQuestion
 description: Generate test file stubs for a directory or module. Creates .test.ts skeleton files with describe blocks and test names derived from exports and components — without writing assertions. Used for rapid test scaffolding before implementing tests incrementally.
 ---

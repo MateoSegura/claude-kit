@@ -1,4 +1,5 @@
 ---
+name: coding-cloud-python-tester:scaffold-tests
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash, Task
 description: Generate a complete test scaffold for a target Python module or service, including conftest.py fixtures and pytest-marked test files with one representative test per behavior category and TODOs for remaining cases.
 ---

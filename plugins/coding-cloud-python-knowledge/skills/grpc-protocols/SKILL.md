@@ -1,6 +1,7 @@
 ---
 name: coding-cloud-python-knowledge:grpc-protocols
 description: "gRPC and Protocol Buffers reference for Python: protobuf definitions, service stubs, all four streaming modes (unary, server-streaming, client-streaming, bidirectional), interceptors, error handling, deadlines, metadata, health checking protocol, and grpcio-tools code generation. Load when implementing or consuming gRPC services in Python."
+user-invocable: false
 ---
 
 # gRPC & Protocols — Quick Reference

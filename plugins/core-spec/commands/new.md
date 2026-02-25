@@ -1,4 +1,5 @@
 ---
+name: core-spec:new
 description: "Create a spec for the current project — captures requirements and acceptance criteria first, then derives implementation phases from them, creating plan files on disk and TaskList items with dependencies."
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, TaskGet
 ---

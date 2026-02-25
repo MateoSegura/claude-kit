@@ -3,6 +3,8 @@
 # Validates spec file structure when spec directory files are written.
 # Warns about status.log direct writes.
 
+set -euo pipefail
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/resolve-active-spec.sh"
 

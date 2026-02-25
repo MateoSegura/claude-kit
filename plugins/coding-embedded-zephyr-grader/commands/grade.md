@@ -1,4 +1,5 @@
 ---
+name: coding-embedded-zephyr-grader:grade
 allowed-tools: Task, AskUserQuestion, Read, Glob, Grep, Write, Bash
 description: Grade a single Zephyr RTOS submission using automated tools and LLM review to generate a comprehensive scorecard
 ---

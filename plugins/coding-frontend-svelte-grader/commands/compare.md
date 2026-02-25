@@ -1,4 +1,5 @@
 ---
+name: coding-frontend-svelte-grader:compare
 allowed-tools: Task, Read, Glob, Grep, Bash, AskUserQuestion
 description: Compare two Svelte/SvelteKit codebases (or two branches/commits of the same project) side-by-side. Runs the full 8-dimension grading pipeline on both, then generates a comparative scorecard showing dimension-by-dimension deltas, regressions, and improvements.
 ---

@@ -1,4 +1,5 @@
 ---
+name: system-maker:make-agent
 allowed-tools: Task, AskUserQuestion, Read, Glob, Grep, Write, Edit, Bash
 description: Create a new domain-expert Claude Code plugin through a guided multi-phase workflow with parallel subagent execution.
 ---
@@ -1036,7 +1037,7 @@ This is a condensed plugin creation workflow specifically for knowledge plugins:
    {
      "name": "<AGENT_NAME>",
      "description": "<One-line description derived from AGENT_DESCRIPTION>",
-     "version": "1.0.0"
+     "version": "0.0.1"
    }
    ```
 
