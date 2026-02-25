@@ -1,4 +1,5 @@
 {
   "role": "grader",
+  "domain": "frontend",
   "companions": ["frontend-svelte-knowledge"]
 }

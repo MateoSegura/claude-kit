@@ -3,7 +3,7 @@ name: styling-layout-analyst
 model: sonnet
 description: "Diagnoses CSS/Tailwind v4 styling failures, layout issues, Svelte scoped style leakage, :global() misuse, design token resolution failures, CSS layer conflicts, container query breakpoints, View Transitions API problems, and responsive design regressions."
 tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
-skills: identity, diagnostic-heuristics, output-format, frontend-svelte-knowledge:css-architecture
+skills: identity, diagnostic-heuristics, output-format, core-frontend:css-architecture, frontend-svelte-knowledge:css-architecture
 permissionMode: plan
 color: "#FF69B4"
 ---

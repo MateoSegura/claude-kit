@@ -1,4 +1,5 @@
 {
   "role": "debugger",
+  "domain": "embedded",
   "companions": ["embedded-zephyr-knowledge"]
 }

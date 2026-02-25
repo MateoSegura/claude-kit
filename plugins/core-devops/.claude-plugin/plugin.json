@@ -1,0 +1,5 @@
+{
+  "name": "core-devops",
+  "description": "General-purpose DevOps patterns — CI/CD pipelines, containerization, observability, and deployment strategies for any software project",
+  "version": "0.0.1"
+}

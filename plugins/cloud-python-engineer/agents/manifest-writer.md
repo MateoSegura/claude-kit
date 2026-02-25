@@ -3,7 +3,7 @@ name: manifest-writer
 model: sonnet
 description: "Generates Kubernetes manifests and Dockerfiles for Python microservices. Produces Deployment, Service, ConfigMap, Secret, HPA, Ingress, PodDisruptionBudget, init containers (Alembic migrations), Kustomize overlays, and multi-stage Dockerfiles with uv. Cloud-agnostic and production-ready. Use when the user needs to containerize a service, create K8s deployment configs, or set up Kustomize environments."
 tools: Read, Glob, Grep, Write, Edit, Bash
-skills: identity, containers-orchestration
+skills: identity, core-devops:containerization, containers-orchestration
 color: "#FF6347"
 permissionMode: acceptEdits
 ---

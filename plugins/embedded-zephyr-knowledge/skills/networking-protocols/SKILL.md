@@ -6,6 +6,8 @@ user-invocable: false
 
 # Networking Protocols Quick Reference
 
+> **Core reference:** For RTOS-agnostic communication protocol concepts (I2C, SPI, UART, CAN, BLE fundamentals, MQTT/CoAP theory), see `core-embedded:comm-protocols`. This skill covers **Zephyr-specific** API implementations and configuration.
+
 ## Protocol Selection Guide
 
 | Protocol | Use Case | Transport | Overhead | Security |

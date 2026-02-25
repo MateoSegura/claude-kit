@@ -1,10 +1,12 @@
 # embedded-zephyr-knowledge
 
-> **Role:** Knowledge companion · **Version:** 0.2.0
+> **Role:** Knowledge companion · **Version:** 0.2.1
 
 Shared domain knowledge for Zephyr RTOS embedded development — kernel APIs, devicetree, hardware targets, design patterns, build system, networking, security, and serialization reference material.
 
-This plugin is **auto-loaded as a companion** by the engineer and tester plugins. Do not launch it directly.
+This plugin is **auto-loaded as a companion** by the engineer, grader, tester, and debugger plugins. Do not launch it directly.
+
+General-purpose architecture, testing, and security knowledge has been extracted into core plugins (`core-architecture`, `core-testing`, `core-security`, `core-embedded`). This plugin retains **Zephyr-specific** content only and cross-references core plugins where appropriate.
 
 ---
 
@@ -13,7 +15,7 @@ This plugin is **auto-loaded as a companion** by the engineer and tester plugins
 | Skill | Domain Coverage |
 |-------|----------------|
 | `zephyr-kernel` | Kernel APIs: threads, semaphores, mutexes, message queues, work queues, timers, memory slabs |
-| `design-patterns` | Zephyr idioms: runtime init, callback registration, subsystem drivers, error propagation |
+| `design-patterns` | Zephyr-specific firmware patterns: subsystem decomposition, initialization orchestration, state machines, memory management, error handling. Generic design patterns in `core-architecture`. |
 | `devicetree-kconfig` | DTS overlay syntax, binding YAML, Kconfig fragments, shield definitions |
 | `build-system` | west commands, sysbuild, CMakeLists patterns, module manifests, out-of-tree builds |
 | `networking-protocols` | TCP/IP stack, MQTT, CoAP, BLE, 802.15.4, OpenThread, LTE-M reference |
@@ -32,5 +34,6 @@ This plugin is **auto-loaded as a companion** by the engineer and tester plugins
 The following plugins declare this plugin as a companion and automatically inject all its skills into their agent context at launch:
 
 - `embedded-zephyr-engineer`
-- `embedded-zephyr-tester`
 - `embedded-zephyr-grader`
+- `embedded-zephyr-tester`
+- `embedded-zephyr-debugger`

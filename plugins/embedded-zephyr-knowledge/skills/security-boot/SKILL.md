@@ -6,6 +6,8 @@ user-invocable: false
 
 # Secure Boot Quick Reference
 
+> **Core reference:** For general secure coding principles and threat modeling, see `core-security:threat-modeling`. For RTOS-agnostic HAL and secure boot concepts, see `core-embedded:hal-patterns`. This skill covers **Zephyr-specific** MCUboot, sysbuild, TF-M, and PSA Crypto implementations.
+
 ## Secure Boot Chain Overview
 
 **Modern Zephyr secure boot uses sysbuild** to orchestrate multiple images:

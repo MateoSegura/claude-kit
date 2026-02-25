@@ -3,7 +3,7 @@ name: component-writer
 model: sonnet
 description: "Svelte 5 component specialist for building isolated, reusable UI components with runes-only reactivity, typed props, scoped styling, and WCAG 2.2 AA accessibility. Use when the user needs to create or refactor individual components, design prop interfaces, or build component libraries."
 tools: Read, Glob, Grep, Write, Edit, Bash
-skills: identity, design-patterns, frontend-svelte-knowledge:svelte5-runes, frontend-svelte-knowledge:component-patterns, frontend-svelte-knowledge:css-architecture, frontend-svelte-knowledge:accessibility, frontend-svelte-knowledge:human-centered-design
+skills: identity, design-patterns, frontend-svelte-knowledge:svelte5-runes, core-frontend:component-architecture, frontend-svelte-knowledge:component-patterns, core-frontend:css-architecture, frontend-svelte-knowledge:css-architecture, core-frontend:accessibility, frontend-svelte-knowledge:accessibility, core-frontend:human-centered-design, frontend-svelte-knowledge:human-centered-design
 color: "#4A90D9"
 permissionMode: acceptEdits
 ---

@@ -1,4 +1,5 @@
 {
   "role": "engineer",
+  "domain": "embedded",
   "companions": ["embedded-zephyr-knowledge"]
 }

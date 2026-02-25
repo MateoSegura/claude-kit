@@ -3,7 +3,7 @@ name: component-reviewer
 model: sonnet
 description: "Evaluates Svelte component quality: file organization, prop interfaces, composition patterns, snippet usage, reusability, and single-responsibility adherence. Use when grading Dimension 1 (Component Quality) of a Svelte/SvelteKit codebase."
 tools: Read, Glob, Grep, Bash
-skills: identity, grading-rubrics, frontend-svelte-knowledge:component-patterns, frontend-svelte-knowledge:svelte5-runes
+skills: identity, grading-rubrics, core-frontend:component-architecture, frontend-svelte-knowledge:component-patterns, frontend-svelte-knowledge:svelte5-runes
 color: "#4A90D9"
 permissionMode: plan
 ---

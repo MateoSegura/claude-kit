@@ -1,4 +1,5 @@
 {
   "role": "debugger",
+  "domain": "backend",
   "companions": ["cloud-python-knowledge"]
 }

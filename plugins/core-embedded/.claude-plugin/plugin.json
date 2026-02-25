@@ -1,0 +1,5 @@
+{
+  "name": "core-embedded",
+  "description": "RTOS-agnostic embedded systems — RTOS fundamentals, memory management, power optimization, communication protocols, and HAL patterns",
+  "version": "0.0.1"
+}

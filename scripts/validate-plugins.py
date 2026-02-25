@@ -25,26 +25,32 @@ VALID_PLUGIN_JSON_FIELDS = {"name", "description", "version"}
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
 VALID_ROLES = {
     "engineer", "grader", "tester", "knowledge",
-    "system", "debugger",
+    "system", "debugger", "core",
 }
 SKILL_MD_LINE_LIMIT = 500
 
 
 def _frontmatter_keys(path: pathlib.Path) -> set:
     """Return the set of top-level frontmatter key names from a markdown file."""
+    return set(_frontmatter_fields(path).keys())
+
+
+def _frontmatter_fields(path: pathlib.Path) -> dict:
+    """Return top-level frontmatter key→value pairs from a markdown file."""
     try:
         lines = path.read_text().splitlines()
     except OSError:
-        return set()
+        return {}
     if not lines or lines[0].strip() != "---":
-        return set()
-    keys = set()
+        return {}
+    fields: dict = {}
     for line in lines[1:]:
         if line.strip() == "---":
             break
         if ":" in line and not line.startswith(" "):
-            keys.add(line.split(":", 1)[0].strip())
-    return keys
+            k, v = line.split(":", 1)
+            fields[k.strip()] = v.strip().strip('"').strip("'")
+    return fields
 
 
 # ── Changed-plugin detection ──────────────────────────────────────────────────
@@ -244,10 +250,77 @@ def validate_plugin(plugin_dir: pathlib.Path, strict: bool) -> dict:
                 f"expected one of: {', '.join(sorted(VALID_ROLES))}"
             ))
 
-    # ── Warning 9: knowledge plugins must not have agents/ or commands/ ───────
+    # ── Check 14: ctl.json domain must be a string if present ────────────────
+    if ctl_data is not None:
+        domain = ctl_data.get("domain")
+        if domain is not None and not isinstance(domain, str):
+            fatal(14, (
+                f"ctl.json 'domain' must be a string, "
+                f"got {type(domain).__name__}"
+            ))
+
+    # ── Check 15: README version badge must match plugin.json version ─────────
+    readme_path = plugin_dir / "README.md"
+    if readme_path.exists() and version and SEMVER_RE.match(str(version)):
+        readme_lines = readme_path.read_text().splitlines()
+        badge_match = None
+        for line in readme_lines[:5]:
+            m = re.search(r"\*\*Version:\*\*\s*(\d+\.\d+\.\d+)", line)
+            if m:
+                badge_match = m.group(1)
+                break
+        if badge_match is None:
+            warn(15, "README.md missing version badge in first 5 lines")
+        elif badge_match != version:
+            fatal(15, (
+                f"README.md version badge ({badge_match}) "
+                f"does not match plugin.json version ({version})"
+            ))
+
     is_knowledge = (
         ctl_data is not None and ctl_data.get("role") == "knowledge"
     )
+
+    # ── Check 16: README agent descriptions match frontmatter ────────────────
+    if readme_path.exists() and agents_dir.exists():
+        try:
+            readme_text = readme_path.read_text()
+        except OSError:
+            readme_text = ""
+        for agent_file in sorted(agents_dir.glob("*.md")):
+            fm = _frontmatter_fields(agent_file)
+            desc = fm.get("description", "")
+            if not desc:
+                continue
+            # Check that the description text appears somewhere in README
+            if desc not in readme_text:
+                warn(16, (
+                    f"agents/{agent_file.name} description not found in README.md: "
+                    f"\"{desc[:60]}{'...' if len(desc) > 60 else ''}\""
+                ))
+
+    # ── Check 17: knowledge README skill names match skill directories ─────
+    if is_knowledge and readme_path.exists():
+        try:
+            readme_text = readme_path.read_text()
+        except OSError:
+            readme_text = ""
+        if skills_dir.exists():
+            for skill_dir in sorted(skills_dir.iterdir()):
+                if not skill_dir.is_dir() or skill_dir.name == "identity":
+                    continue
+                skill_md = skill_dir / "SKILL.md"
+                if not skill_md.exists():
+                    continue
+                fm = _frontmatter_fields(skill_md)
+                skill_name = fm.get("name", "")
+                # Check skill directory name appears in README
+                if skill_dir.name not in readme_text:
+                    warn(17, (
+                        f"skill '{skill_dir.name}' not mentioned in README.md"
+                    ))
+
+    # ── Warning 9: knowledge plugins must not have agents/ or commands/ ───────
     if is_knowledge:
         for dirname in ("agents", "commands"):
             d = plugin_dir / dirname

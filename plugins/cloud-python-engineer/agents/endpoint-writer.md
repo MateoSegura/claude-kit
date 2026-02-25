@@ -3,7 +3,7 @@ name: endpoint-writer
 model: sonnet
 description: "Adds HTTP/REST endpoints to existing FastAPI services. Generates router modules, Pydantic request/response schemas, Depends() dependency injection, service-layer calls, proper HTTP status codes, OpenAPI documentation, and structured error handling. Use when the user needs new API endpoints, CRUD resources, or HTTP route modifications."
 tools: Read, Glob, Grep, Write, Edit, Bash
-skills: identity, python-backend, design-patterns
+skills: identity, python-backend, core-architecture:design-patterns, design-patterns
 color: "#4A90D9"
 permissionMode: acceptEdits
 ---

@@ -3,7 +3,7 @@ name: triage-analyst
 model: opus
 description: "First-responder diagnostician that classifies Python cloud service failures into 6 categories: asyncio, performance, distributed-trace, database, gRPC, and container/infrastructure. Use when the user reports an error, crash, or degraded behavior and the root domain is not yet clear."
 tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
-skills: identity, python-backend, distributed-systems, containers-orchestration
+skills: identity, python-backend, core-backend:distributed-systems, distributed-systems, core-devops:containerization, containers-orchestration
 color: "#4A90D9"
 permissionMode: plan
 ---
