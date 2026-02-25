@@ -2,7 +2,7 @@
 
 All notable changes to claude-kit will be documented in this file.
 
-## [Unreleased]
+## [0.4.0] - 2026-02-25
 
 ### Changed
 - **Breaking: team plugin rename** — all 15 team plugins renamed from
