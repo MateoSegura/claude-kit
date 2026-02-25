@@ -1,0 +1,5 @@
+{
+  "name": "core-frontend",
+  "description": "Framework-agnostic frontend development — accessibility, CSS architecture, UX design, component patterns, state management, and web performance",
+  "version": "0.0.1"
+}

@@ -1,10 +1,12 @@
 ---
 name: cloud-python-knowledge:grpc-protocols
-description: "gRPC and Protocol Buffers reference for Python: protobuf definitions, service stubs, all four streaming modes (unary, server-streaming, client-streaming, bidirectional), interceptors, error handling, deadlines, metadata, health checking protocol, and grpcio-tools code generation. Load when implementing or consuming gRPC services in Python."
+description: "Python gRPC implementation with grpcio: protobuf definitions, service stubs, all four streaming modes (unary, server-streaming, client-streaming, bidirectional), interceptors, error handling, deadlines, metadata, health checking, and grpcio-tools code generation. For language-agnostic gRPC concepts, see core-backend:api-protocols."
 user-invocable: false
 ---
 
-# gRPC & Protocols — Quick Reference
+# gRPC & Protocols — Python Quick Reference
+
+Python-specific gRPC implementations using grpcio. For language-agnostic gRPC concepts (streaming modes, status codes, protobuf conventions), see the `core-backend:api-protocols` skill.
 
 Stack: `grpcio>=1.60`, `protobuf>=4.25`, `grpcio-tools`, `grpcio-health-checking`, `grpcio-reflection`.
 

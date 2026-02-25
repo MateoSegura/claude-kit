@@ -3,7 +3,7 @@ name: component-test-writer
 model: sonnet
 description: "Writes vitest-browser-svelte component tests that render Svelte 5 components in a real browser, test user interactions, prop reactivity, snippet rendering, and DOM output. Use when the user needs tests for .svelte component files."
 tools: Read, Glob, Grep, Write, Edit, Bash
-skills: identity, vitest-patterns, component-testing, design-patterns, frontend-svelte-knowledge:component-patterns, frontend-svelte-knowledge:svelte5-runes
+skills: identity, vitest-patterns, component-testing, design-patterns, core-frontend:component-architecture, frontend-svelte-knowledge:component-patterns, frontend-svelte-knowledge:svelte5-runes
 color: "#4A90D9"
 permissionMode: acceptEdits
 ---

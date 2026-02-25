@@ -6,6 +6,8 @@ user-invocable: false
 
 # Testing Quick Reference
 
+> **Core reference:** For language-agnostic test philosophy (test pyramid rationale, test doubles taxonomy, coverage strategy, TDD/BDD), see `core-testing`. This skill covers **Zephyr-specific** ztest, twister, BabbleSim, and Renode tooling.
+
 ## Test Pyramid for Embedded
 
 ```

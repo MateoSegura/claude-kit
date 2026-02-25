@@ -1,0 +1,5 @@
+{
+  "name": "core-security",
+  "description": "General-purpose secure development — OWASP awareness, secrets management, dependency scanning, and threat modeling for any software project",
+  "version": "0.0.1"
+}

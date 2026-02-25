@@ -1,0 +1,5 @@
+{
+  "name": "core-testing",
+  "description": "General-purpose testing philosophy — test pyramid, test doubles, coverage strategy, and TDD/BDD patterns for any software project",
+  "version": "0.0.1"
+}

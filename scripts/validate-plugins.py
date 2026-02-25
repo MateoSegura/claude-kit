@@ -25,7 +25,7 @@ VALID_PLUGIN_JSON_FIELDS = {"name", "description", "version"}
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
 VALID_ROLES = {
     "engineer", "grader", "tester", "knowledge",
-    "system", "debugger",
+    "system", "debugger", "core",
 }
 SKILL_MD_LINE_LIMIT = 500
 
@@ -242,6 +242,33 @@ def validate_plugin(plugin_dir: pathlib.Path, strict: bool) -> dict:
             warn(13, (
                 f"ctl.json 'role' is '{role}' — "
                 f"expected one of: {', '.join(sorted(VALID_ROLES))}"
+            ))
+
+    # ── Check 14: ctl.json domain must be a string if present ────────────────
+    if ctl_data is not None:
+        domain = ctl_data.get("domain")
+        if domain is not None and not isinstance(domain, str):
+            fatal(14, (
+                f"ctl.json 'domain' must be a string, "
+                f"got {type(domain).__name__}"
+            ))
+
+    # ── Check 15: README version badge must match plugin.json version ─────────
+    readme_path = plugin_dir / "README.md"
+    if readme_path.exists() and version and SEMVER_RE.match(str(version)):
+        readme_lines = readme_path.read_text().splitlines()
+        badge_match = None
+        for line in readme_lines[:5]:
+            m = re.search(r"\*\*Version:\*\*\s*(\d+\.\d+\.\d+)", line)
+            if m:
+                badge_match = m.group(1)
+                break
+        if badge_match is None:
+            warn(15, "README.md missing version badge in first 5 lines")
+        elif badge_match != version:
+            fatal(15, (
+                f"README.md version badge ({badge_match}) "
+                f"does not match plugin.json version ({version})"
             ))
 
     # ── Warning 9: knowledge plugins must not have agents/ or commands/ ───────

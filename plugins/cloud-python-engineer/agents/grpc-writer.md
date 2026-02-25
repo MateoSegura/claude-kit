@@ -3,7 +3,7 @@ name: grpc-writer
 model: sonnet
 description: "Adds gRPC service methods to Python backends. Generates and updates .proto files following Google API Design Guide, compiles Python stubs, implements async servicers, adds interceptors for logging/auth/tracing, wires services into the gRPC server, and configures gRPC health checking. Use when the user needs gRPC endpoints, protobuf definitions, or inter-service RPC communication."
 tools: Read, Glob, Grep, Write, Edit, Bash
-skills: identity, grpc-protocols, python-backend, design-patterns
+skills: identity, core-backend:api-protocols, grpc-protocols, python-backend, core-architecture:design-patterns, design-patterns
 color: "#E8A838"
 permissionMode: acceptEdits
 ---

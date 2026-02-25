@@ -8,6 +8,8 @@ user-invocable: false
 
 Higher-level architectural patterns for structuring Zephyr-based firmware systems. These build on kernel-level concurrency primitives to create maintainable, testable, and portable embedded applications.
 
+For language-agnostic design patterns (GoF, repository, strategy, observer, CQRS), see `core-architecture:design-patterns`. This skill focuses on **Zephyr-specific** firmware patterns.
+
 For thread-level concurrency patterns (producer-consumer, ISR-safe signaling, work queues), see [zephyr-kernel/concurrency-patterns.md](../zephyr-kernel/concurrency-patterns.md).
 
 ## Architecture Principles
@@ -268,11 +270,7 @@ void sensor_notify(const struct reading *r) {
 
 ## Common Anti-Patterns to Avoid
 
-**Architectural:**
-- God Module: all logic in one file → decompose into subsystems
-- Circular Dependencies: A calls B, B calls A → use event-based decoupling
-- Leaky Abstraction: app directly accesses registers → use HAL APIs
-- Monolithic Init: single init function, no error handling → per-subsystem init with error propagation
+For general-purpose architectural anti-patterns (god class, circular dependencies, anemic domain model, service locator), see `core-architecture:design-patterns`. The patterns below are **Zephyr-specific**.
 
 **Concurrency:**
 - Global Shared State: threads share variables without sync → use message queues

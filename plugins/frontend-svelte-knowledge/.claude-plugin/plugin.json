@@ -1,5 +1,5 @@
 {
   "name": "frontend-svelte-knowledge",
-  "description": "Shared domain reference for Svelte 5 / SvelteKit frontend development \u2014 runes, component patterns, CSS architecture, accessibility, human-centered design, desktop targets, and hardware communication (USB, BLE, LAN, audio/MIDI, IoT)",
-  "version": "0.1.0"
+  "description": "Svelte 5 / SvelteKit-specific frontend knowledge \u2014 runes, component patterns, scoped CSS, a11y compiler warnings, SvelteKit routing, desktop targets, and hardware communication (USB, BLE, LAN, audio/MIDI, IoT)",
+  "version": "0.1.1"
 }

@@ -69,6 +69,82 @@ expect_error  "validate nonexistent plugin fails"   validate nonexistent-plugin-
 expect_exit   "version exits 0"                   0 version
 expect_output "version shows tag format"          "v0." version
 
+# ── core plugin structure (scalable — auto-discovers all core-* plugins) ──────
+PLUGINS_DIR="$(cd "$(dirname "$0")/.." && pwd)/plugins"
+
+# Every core-* knowledge plugin must have a domain field in ctl.json
+# (core-spec is a system plugin, not a knowledge plugin — skip it)
+for core_dir in "$PLUGINS_DIR"/core-*/; do
+  [ -d "$core_dir" ] || continue
+  name="$(basename "$core_dir")"
+  ctl="$core_dir/.claude-plugin/ctl.json"
+  if [ -f "$ctl" ]; then
+    role=$(python3 -c "import json; print(json.load(open('$ctl')).get('role',''))" 2>/dev/null)
+    [ "$role" = "system" ] && continue  # system plugins don't need domain
+    domain=$(python3 -c "import json; print(json.load(open('$ctl')).get('domain',''))" 2>/dev/null)
+    if [ -n "$domain" ]; then _ok "core domain: $name → $domain"
+    else _fail "core domain: $name" "missing 'domain' in ctl.json"; fi
+  else _fail "core domain: $name" "ctl.json not found"; fi
+done
+
+# Every team plugin must have a domain field in ctl.json
+for team in embedded-zephyr cloud-python frontend-svelte; do
+  for team_dir in "$PLUGINS_DIR"/${team}-*/; do
+    [ -d "$team_dir" ] || continue
+    name="$(basename "$team_dir")"
+    ctl="$team_dir/.claude-plugin/ctl.json"
+    if [ -f "$ctl" ]; then
+      domain=$(python3 -c "import json; print(json.load(open('$ctl')).get('domain',''))" 2>/dev/null)
+      if [ -n "$domain" ]; then _ok "team domain: $name → $domain"
+      else _fail "team domain: $name" "missing 'domain' in ctl.json"; fi
+    fi
+  done
+done
+
+# Core auto-loading: resolve_core_plugins returns correct plugins per domain
+_test_core_resolve() {
+  local desc="$1" domain="$2" expect="$3"
+  local result
+  result=$(python3 -c "
+from importlib.machinery import SourceFileLoader
+ck = SourceFileLoader('ck', '$CLI').load_module()
+plugins = ck.resolve_core_plugins('$domain')
+print(' '.join(sorted(plugins)))
+" 2>/dev/null)
+  local ok=true
+  for exp in $expect; do
+    if ! echo "$result" | grep -qF "$exp"; then ok=false; break; fi
+  done
+  if $ok; then _ok "$desc"
+  else _fail "$desc" "expected '$expect' in '$result'"; fi
+}
+
+_test_core_excludes() {
+  local desc="$1" domain="$2" reject="$3"
+  local result
+  result=$(python3 -c "
+from importlib.machinery import SourceFileLoader
+ck = SourceFileLoader('ck', '$CLI').load_module()
+plugins = ck.resolve_core_plugins('$domain')
+print(' '.join(sorted(plugins)))
+" 2>/dev/null)
+  if echo "$result" | grep -qF "$reject"; then
+    _fail "$desc" "'$reject' should NOT be in '$result'"
+  else _ok "$desc"; fi
+}
+
+_test_core_resolve  "core resolve: universals load for backend"    "backend"  "core-git core-security"
+_test_core_resolve  "core resolve: backend includes core-backend"  "backend"  "core-backend"
+_test_core_resolve  "core resolve: frontend includes core-frontend" "frontend" "core-frontend"
+_test_core_resolve  "core resolve: embedded includes core-embedded" "embedded" "core-embedded"
+_test_core_excludes "core resolve: backend excludes core-frontend" "backend"  "core-frontend"
+_test_core_excludes "core resolve: backend excludes core-embedded" "backend"  "core-embedded"
+_test_core_excludes "core resolve: frontend excludes core-backend" "frontend" "core-backend"
+_test_core_excludes "core resolve: embedded excludes core-frontend" "embedded" "core-frontend"
+
+# List command shows core plugins grouped
+expect_output "list shows core group"              "core" list
+
 # ── error cases ───────────────────────────────────────────────────────────────
 expect_error  "unknown flag exits non-zero"       --unknown-flag-xyz
 expect_error  "--kit with no name exits non-zero" --kit

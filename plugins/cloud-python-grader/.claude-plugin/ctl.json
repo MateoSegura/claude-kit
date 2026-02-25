@@ -1,4 +1,5 @@
 {
   "role": "grader",
+  "domain": "backend",
   "companions": ["cloud-python-knowledge"]
 }

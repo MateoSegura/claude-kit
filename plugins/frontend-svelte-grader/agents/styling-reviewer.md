@@ -3,7 +3,7 @@ name: styling-reviewer
 model: sonnet
 description: "Evaluates CSS and styling quality: Tailwind utility-first discipline, custom property patterns, responsive design, component-scoped styles, design token consistency, and specificity management. Use when grading Dimension 3 (Styling/CSS) of a Svelte/SvelteKit codebase."
 tools: Read, Glob, Grep, Bash
-skills: identity, grading-rubrics, frontend-svelte-knowledge:css-architecture
+skills: identity, grading-rubrics, core-frontend:css-architecture, frontend-svelte-knowledge:css-architecture
 color: "#E8A838"
 permissionMode: plan
 ---

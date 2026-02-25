@@ -393,6 +393,23 @@ claude-kit --kit cloud-python  # loads all five
 | `cloud-python-tester` | Tester | [→ README](plugins/cloud-python-tester/README.md) |
 | `cloud-python-debugger` | Debugger | [→ README](plugins/cloud-python-debugger/README.md) |
 
+### Core Knowledge Plugins
+
+Eight cross-team knowledge plugins providing language-agnostic fundamentals. Core plugins are **auto-loaded** when you launch any team — universal plugins load with every team, domain-specific plugins load when the team's `domain` matches.
+
+| Plugin | Domain | Auto-loads with | README |
+|--------|--------|-----------------|--------|
+| `core-git` | Universal | All teams | [→ README](plugins/core-git/README.md) |
+| `core-security` | Universal | All teams | [→ README](plugins/core-security/README.md) |
+| `core-architecture` | Universal | All teams | [→ README](plugins/core-architecture/README.md) |
+| `core-testing` | Universal | All teams | [→ README](plugins/core-testing/README.md) |
+| `core-devops` | Universal | All teams | [→ README](plugins/core-devops/README.md) |
+| `core-frontend` | Frontend | `frontend-svelte-*` | [→ README](plugins/core-frontend/README.md) |
+| `core-backend` | Backend | `cloud-python-*` | [→ README](plugins/core-backend/README.md) |
+| `core-embedded` | Embedded | `embedded-zephyr-*` | [→ README](plugins/core-embedded/README.md) |
+
+Core plugins are never launched directly. They inject their skills into team sessions automatically via the `domain` field in each plugin's `ctl.json`.
+
 ### System Plugins
 
 Meta-plugins for building and maintaining the plugin ecosystem itself.
@@ -413,7 +430,7 @@ Every plugin is a directory of markdown files and JSON configs:
 plugins/<name>/
 ├── .claude-plugin/
 │   ├── plugin.json    # { name, description, version } — parsed by Claude Code
-│   └── ctl.json       # { role, companions } — read by claude-kit
+│   └── ctl.json       # { role, companions, domain } — read by claude-kit
 ├── agents/            # subagent definitions (tools:, permissionMode:, skills:)
 ├── commands/          # user-invocable slash commands (allowed-tools:)
 ├── skills/            # domain knowledge preloaded into agent context

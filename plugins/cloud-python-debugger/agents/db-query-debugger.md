@@ -3,7 +3,7 @@ name: db-query-debugger
 model: opus
 description: "Specialist for database query debugging in Python cloud services. Diagnoses slow queries via EXPLAIN ANALYZE, missing indexes, N+1 query patterns, connection pool exhaustion, transaction deadlocks, and SQLAlchemy/asyncpg session lifecycle issues. Use when triage classifies the issue as database-related or when the user reports slow queries, connection errors, or ORM-related exceptions."
 tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
-skills: identity, db-query-debugging, python-backend, design-patterns
+skills: identity, db-query-debugging, python-backend, core-architecture:design-patterns, design-patterns
 color: "#32CD32"
 permissionMode: plan
 ---

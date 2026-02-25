@@ -1,6 +1,6 @@
-# Design Patterns — Anti-Patterns
+# Design Patterns — Python Anti-Patterns
 
-Common structural mistakes in Python cloud backends that hurt maintainability, performance, and testability.
+Python-specific structural mistakes that hurt maintainability, performance, and testability. For language-agnostic anti-patterns, see `core-architecture:design-patterns`.
 
 ---
 

@@ -29,6 +29,16 @@ This plugin contains **skills only** — no agents, no commands. Skills are load
 
 See also `coding-standards.md` for content accuracy and formatting conventions, and `workflow-patterns.md` for the consumption model and maintenance workflows.
 
+## Core Companion Plugins
+
+General-purpose knowledge that applies across all domains has been extracted into core plugins. Zephyr-specific content remains here. Core plugins that complement this domain knowledge:
+
+- `core-architecture` — SOLID principles, GoF design patterns, clean architecture, API design
+- `core-testing` — Test philosophy, test doubles, coverage strategy, TDD/BDD
+- `core-security` — Secure coding, secrets management, dependency scanning, threat modeling
+- `core-embedded` — RTOS fundamentals, HAL patterns, memory management, power optimization, communication protocols
+- `core-git` — Git workflow, branching strategies, commit conventions
+
 ## What This Plugin Does NOT Contain
 
 - No agents (role plugins provide those)
