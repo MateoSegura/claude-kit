@@ -5,6 +5,9 @@ name: nightly-plugin-review
 # 2. If WARN or FATAL findings exist, Claude auto-fixes them, opens a fix
 #    PR, and enables auto-merge. The PR auto-merges once fast-validate and
 #    validate-tier1 pass. The following night confirms all issues are resolved.
+#
+# REQUIRES: Settings → Actions → General → "Allow GitHub Actions to create
+# and approve pull requests" must be enabled for PR creation to work.
 
 on:
   schedule:
@@ -21,6 +24,7 @@ jobs:
     # Only run from main — ignore spurious triggers on feature branches
     if: github.ref == 'refs/heads/main'
     runs-on: self-hosted
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
