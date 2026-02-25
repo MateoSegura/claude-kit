@@ -4,6 +4,13 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Stop hook scripts**: `check-uncommitted-build.sh` and `check-staging.sh` now output
+  required JSON to stderr (`{"ok": true}` or `{"ok": false, "reason": "..."}`) instead of
+  plain text, fixing "No stderr output" errors from the hook system
+  - `system-maker`: 0.2.3 → 0.2.4
+  - `system-updater`: 0.0.3 → 0.0.4
+
 ## [0.3.6] - 2026-02-24
 
 ### Fixed
