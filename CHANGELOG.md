@@ -4,6 +4,8 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-02-25
+
 ### system-updater (0.1.0 → 0.2.0)
 - **Added** `update-team` command for batched team updates with shared intent,
   parallel analysis, per-plugin fitness checking, and sequential review
