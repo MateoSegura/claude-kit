@@ -48,14 +48,14 @@ jobs:
           print(body)
           EOF
 
-      - name: Create GitHub Release
+      - name: Create or update GitHub Release
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
             const body = fs.readFileSync('/tmp/release-body.md', 'utf8');
             const tag = context.ref.replace('refs/tags/', '');
-            await github.rest.repos.createRelease({
+            const params = {
               owner: context.repo.owner,
               repo: context.repo.repo,
               tag_name: tag,
@@ -63,4 +63,33 @@ jobs:
               body,
               draft: false,
               prerelease: tag.includes('-'),
-            });
+            };
+            try {
+              await github.rest.repos.createRelease(params);
+              console.log(`Created release ${tag}`);
+            } catch (err) {
+              if (err.status === 422) {
+                const { data: releases } = await github.rest.repos.listReleases({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  per_page: 20,
+                });
+                const existing = releases.find(r => r.tag_name === tag);
+                if (existing) {
+                  await github.rest.repos.updateRelease({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    release_id: existing.id,
+                    body,
+                    name: tag,
+                    draft: false,
+                    prerelease: tag.includes('-'),
+                  });
+                  console.log(`Updated existing release ${tag}`);
+                } else {
+                  throw err;
+                }
+              } else {
+                throw err;
+              }
+            }
