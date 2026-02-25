@@ -1,6 +1,6 @@
 ---
 name: frontend-svelte-grader:grade
-allowed-tools: Task, Read, Glob, Grep, Bash, AskUserQuestion
+allowed-tools: Task, Read, Glob, Grep, Bash, AskUserQuestion, TeamCreate, TeamDelete, SendMessage
 description: Grade a single Svelte/SvelteKit codebase across all 8 dimensions. Spawns 8 dimension reviewers in parallel, then aggregates scores, then generates a report.
 ---
 
@@ -8,9 +8,9 @@ description: Grade a single Svelte/SvelteKit codebase across all 8 dimensions. S
 
 You orchestrate a complete Svelte/SvelteKit grading run for a single codebase. The pipeline has three sequential phases:
 
-1. **Phase 1 (Parallel):** Launch all 8 dimension reviewers simultaneously
-2. **Phase 2 (Sequential):** Run score-aggregator on the 8 dimension payloads
-3. **Phase 3 (Sequential):** Run report-generator on the scorecard
+1. **Phase 1 (Team):** Create a grading team — the team-lead spawns 8 reviewers in parallel, collects results, runs aggregation, and returns a single scorecard
+2. **Phase 2 (Sequential):** Run report-generator on the scorecard
+3. **Phase 3 (Sequential):** Present summary to user
 
 You never grade code yourself. You coordinate subagents and synthesize their outputs.
 
@@ -58,245 +58,94 @@ Collect:
 
 ---
 
-## Step 2: Launch 8 Dimension Reviewers in Parallel
+## Step 2: Grade via Reviewer Team
 
-Launch ALL 8 agents in a single response. Do not wait between them.
+Create a team to coordinate parallel review and aggregation. This keeps all 8 reviewer outputs contained — the orchestrator receives a single scorecard instead of 8 raw payloads.
 
-Pass each reviewer:
-- The absolute path to the project root
-- The structural scan summary from Step 1
-- Instruction to output a JSON payload conforming to the dimension reviewer schema (see scoring-engine skill)
-- Instruction to be BLIND: evaluate the code objectively with no knowledge of the author
+### 2a. Create the team and launch team-lead
 
-### Agent 1: component-reviewer
 ```
-subagent_type: component-reviewer
+TeamCreate("grading")
+```
+
+Spawn a team-lead agent:
+
+```
+subagent_type: general-purpose
+team_name: grading
+name: team-lead
 input: |
+  You are the grading team-lead for "{project_name}".
+
   Project root: {project_root}
-  Project name: {project_name}
-  Component count: {component_count}
-  Has TypeScript: {has_typescript}
-  Has Tailwind: {has_tailwind}
+  Structural scan: {paste structural scan summary from Step 1}
 
-  Evaluate Dimension 1: Component Quality (weight: 15%).
+  Your job:
+  1. Spawn all 8 dimension reviewers in parallel (one Task call with 8 agents)
+  2. Collect all 8 JSON payloads
+  3. Handle failures: if any reviewer fails, use this fallback payload:
+     { "dimension": "{dim}", "score": null, "pass": false, "critical_failure": false, "na": false, "na_reason": null, "findings": [], "positive_notes": [], "confidence": "low", "incomplete_review": true }
+  4. Spawn the score-aggregator agent with all 8 payloads
+  5. Send the final scorecard back via SendMessage to the orchestrator
 
-  Your task:
-  1. Find and read Svelte component files (focus on src/lib/components/ and src/routes/)
-  2. Evaluate: $props() usage, component size, single responsibility, snippet usage, Svelte 5 API compliance
-  3. Check for Svelte 4 anti-patterns: `export let`, `on:event` syntax, `<slot>`
-  4. Output a JSON payload with dimension="component-quality", score (0-100), findings array, confidence
+  Dimension reviewers to spawn (pass each the project root, structural scan, and instruction to output ONLY JSON):
 
-  Read dimension-rubrics.md from the grading-rubrics skill for exact scoring criteria.
-  Output ONLY the JSON payload. No prose.
+  - component-reviewer: Dimension 1 — Component Quality (weight: 15%)
+    Evaluate $props() usage, component size, single responsibility, snippet usage, Svelte 5 API compliance.
+    Check for Svelte 4 anti-patterns: `export let`, `on:event`, `<slot>`.
+    Read dimension-rubrics.md from grading-rubrics skill.
+
+  - state-reviewer: Dimension 2 — State Management (weight: 15%)
+    Grep for $state, $derived, $effect. Check for Svelte 4 patterns ($:, writable/readable stores).
+    Check prop drilling and $effect misuse. Read dimension-rubrics.md.
+
+  - styling-reviewer: Dimension 3 — Styling/CSS (weight: 10%)
+    Check Tailwind utility usage, inline styles, responsive breakpoints, CSS variables, !important abuse.
+    Has Tailwind: {has_tailwind}. Read dimension-rubrics.md.
+
+  - a11y-reviewer: Dimension 4 — Accessibility (weight: 15%)
+    Check div/span as interactive elements, keyboard accessibility, ARIA labels, focus management,
+    semantic HTML, form labels, WCAG 2.2 focus-visible. Read dimension-rubrics.md.
+
+  - performance-reviewer: Dimension 5 — Performance (weight: 15%)
+    Check +page.server.ts usage, $effect chains, image dimensions, eager imports,
+    streaming patterns, preload-data. Read dimension-rubrics.md.
+
+  - typescript-reviewer: Dimension 6 — TypeScript Usage (weight: 10%)
+    Check tsconfig strict mode, `as any` casts, $props() interfaces, $types imports.
+    Has TypeScript: {has_typescript}. Read dimension-rubrics.md.
+
+  - testing-reviewer: Dimension 7 — Testing Quality (weight: 10%)
+    Find test files, check getByRole vs getByTestId, snapshot tests, behavior testing.
+    Has Tests: {has_tests}. Read dimension-rubrics.md.
+
+  - ux-reviewer: Dimension 8 — UX Patterns (weight: 10%)
+    Check use:enhance, loading states, +error.svelte, empty states, error messages.
+    Read dimension-rubrics.md.
+
+  After collecting all 8 payloads, spawn score-aggregator with:
+    Project: {project_name}
+    Graded at: {timestamp}
+    All 8 dimension payloads as JSON array
+    Instruction to apply aggregation-rules.md algorithm
+
+  When you have the scorecard, send it back:
+    SendMessage(type="message", recipient="orchestrator", content=<scorecard JSON>)
 ```
 
-### Agent 2: state-reviewer
+### 2b. Receive scorecard and clean up
+
+Wait for the team-lead's message containing the aggregated scorecard JSON.
+
 ```
-subagent_type: state-reviewer
-input: |
-  Project root: {project_root}
-  Project name: {project_name}
-  Component count: {component_count}
-
-  Evaluate Dimension 2: State Management (weight: 15%).
-
-  Your task:
-  1. Grep for $state, $derived, $effect usage patterns
-  2. Grep for Svelte 4 patterns: `$:`, `export let`, writable/readable stores
-  3. Check for prop drilling (same prop in 3+ component chain)
-  4. Check for $effect used to set derived state
-  5. Check for .svelte.ts files vs .ts for global state
-  6. Output a JSON payload with dimension="state-management", score (0-100), findings array, confidence
-
-  Read dimension-rubrics.md for exact criteria. A single `$:` reactive declaration = Critical finding.
-  Output ONLY the JSON payload. No prose.
+TeamDelete("grading")
 ```
 
-### Agent 3: styling-reviewer
-```
-subagent_type: styling-reviewer
-input: |
-  Project root: {project_root}
-  Project name: {project_name}
-  Has Tailwind: {has_tailwind}
-
-  Evaluate Dimension 3: Styling/CSS (weight: 10%).
-
-  Your task:
-  1. Check Tailwind utility usage vs custom CSS for standard layout patterns
-  2. Check for inline style attributes on non-dynamic elements
-  3. Check responsive breakpoint coverage (sm:, md:, lg:)
-  4. Check for custom property (CSS variable) usage for design tokens
-  5. Check for !important abuse, deep selector nesting
-  6. Output a JSON payload with dimension="styling-css", score (0-100), findings array, confidence
-
-  If project has no Tailwind AND no CSS, mark dimension as N/A with na_reason.
-  Read dimension-rubrics.md for exact criteria.
-  Output ONLY the JSON payload. No prose.
-```
-
-### Agent 4: a11y-reviewer
-```
-subagent_type: a11y-reviewer
-input: |
-  Project root: {project_root}
-  Project name: {project_name}
-
-  Evaluate Dimension 4: Accessibility (weight: 15%).
-
-  Your task:
-  1. Check for div/span used as interactive elements (div onclick, div role=button)
-  2. Check keyboard accessibility: all interactive elements must be keyboard-reachable
-  3. Check for missing ARIA labels on icon-only buttons
-  4. Check for focus management in modals/dialogs
-  5. Check semantic HTML: nav, main, button, a, h1-h6 used appropriately
-  6. Check form inputs have associated labels (not just placeholder)
-  7. Check for WCAG 2.2 focus-visible styles
-  8. Output a JSON payload with dimension="accessibility", score (0-100), findings array, confidence
-
-  WCAG 2.1.1 (keyboard) and WCAG 2.1.2 (no keyboard trap) failures = Critical.
-  Read dimension-rubrics.md for exact WCAG success criterion breakdowns.
-  Output ONLY the JSON payload. No prose.
-```
-
-### Agent 5: performance-reviewer
-```
-subagent_type: performance-reviewer
-input: |
-  Project root: {project_root}
-  Project name: {project_name}
-
-  Evaluate Dimension 5: Performance (weight: 15%).
-
-  Your task:
-  1. Check +page.server.ts vs +page.ts usage — private data must be in .server.ts
-  2. Check for $effect chains that should be $derived
-  3. Check for missing image dimensions (causes layout shift)
-  4. Check for unnecessary eager imports of large components
-  5. Check for streaming patterns for slow data loads
-  6. Check for data-sveltekit-preload-data on navigation links
-  7. Output a JSON payload with dimension="performance", score (0-100), findings array, confidence
-
-  Read dimension-rubrics.md for exact criteria.
-  Output ONLY the JSON payload. No prose.
-```
-
-### Agent 6: typescript-reviewer
-```
-subagent_type: typescript-reviewer
-input: |
-  Project root: {project_root}
-  Project name: {project_name}
-  Has TypeScript: {has_typescript}
-
-  Evaluate Dimension 6: TypeScript Usage (weight: 10%).
-
-  Your task:
-  1. Read tsconfig.json — check for "strict": true (Critical if false or missing)
-  2. Grep for `as any` casts — Major per instance
-  3. Check $props() declarations have explicit interface Props
-  4. Check load functions use types from ./$types
-  5. Check for @ts-ignore suppressions — Major per instance
-  6. Output a JSON payload with dimension="typescript-usage", score (0-100), findings array, confidence
-
-  If project has no TypeScript at all, mark dimension as N/A with na_reason.
-  strict: false = Critical finding that forces overall FAIL.
-  Read dimension-rubrics.md for exact criteria.
-  Output ONLY the JSON payload. No prose.
-```
-
-### Agent 7: testing-reviewer
-```
-subagent_type: testing-reviewer
-input: |
-  Project root: {project_root}
-  Project name: {project_name}
-  Has Tests: {has_tests}
-
-  Evaluate Dimension 7: Testing Quality (weight: 10%).
-
-  Your task:
-  1. Find all test files (*.test.ts, *.spec.ts)
-  2. If zero test files: Critical finding, mark testing-quality as failed
-  3. Check for getByRole vs getByTestId usage
-  4. Check for snapshot tests (toMatchSnapshot)
-  5. Check for implementation testing vs behavior testing
-  6. Check test description quality (descriptive vs "test 1")
-  7. Check for cleanup and test isolation
-  8. Output a JSON payload with dimension="testing-quality", score (0-100), findings array, confidence
-
-  If no vitest.config.ts AND project appears to be a prototype, you may mark N/A.
-  Zero tests in a non-prototype = Critical failure.
-  Read dimension-rubrics.md for exact criteria.
-  Output ONLY the JSON payload. No prose.
-```
-
-### Agent 8: ux-reviewer
-```
-subagent_type: ux-reviewer
-input: |
-  Project root: {project_root}
-  Project name: {project_name}
-
-  Evaluate Dimension 8: UX Patterns (weight: 10%).
-
-  Your task:
-  1. Check forms use use:enhance from $app/forms
-  2. Check for loading state indicators on async operations
-  3. Check for +error.svelte error boundaries at route level
-  4. Check for empty state designs on lists/grids
-  5. Check for actionable error messages (not generic "An error occurred")
-  6. Check for optimistic update patterns where appropriate
-  7. Output a JSON payload with dimension="ux-patterns", score (0-100), findings array, confidence
-
-  Missing use:enhance = Major finding.
-  Missing +error.svelte at top-level = Major finding.
-  Read dimension-rubrics.md for exact criteria.
-  Output ONLY the JSON payload. No prose.
-```
+Proceed to Step 3 (report generation) with the scorecard.
 
 ---
 
-## Step 3: Collect Reviewer Outputs
-
-Wait for all 8 agents to complete. Collect their JSON payloads.
-
-If any reviewer fails (error or no output):
-- Log which dimension failed
-- Set that dimension's payload to: `{ "dimension": "{dim}", "score": null, "pass": false, "critical_failure": false, "na": false, "na_reason": null, "findings": [], "positive_notes": [], "confidence": "low", "incomplete_review": true }`
-- Continue to aggregation — do not stop the pipeline
-
----
-
-## Step 4: Run score-aggregator
-
-Pass all 8 dimension payloads to the score-aggregator agent:
-
-```
-subagent_type: score-aggregator
-input: |
-  Project: {project_name}
-  Graded at: {timestamp}
-
-  Dimension payloads (JSON array):
-  {paste all 8 JSON payloads}
-
-  Apply the full aggregation algorithm from aggregation-rules.md:
-  1. Check for critical_failure overrides
-  2. Separate N/A dimensions
-  3. Redistribute N/A weights
-  4. Compute weighted composite
-  5. Determine per-dimension and overall pass/fail
-  6. Assign letter grade
-  7. Compute confidence score
-
-  Output the complete scorecard JSON conforming to the aggregator output schema.
-  Output ONLY the JSON scorecard. No prose.
-```
-
----
-
-## Step 5: Run report-generator
+## Step 3: Run report-generator
 
 Compute a timestamped output directory:
 ```
@@ -327,7 +176,7 @@ input: |
 
 ---
 
-## Step 6: Present Summary to User
+## Step 4: Present Summary to User
 
 After the report-generator completes, present a brief summary:
 
@@ -365,7 +214,7 @@ Reports: {project_root}/reports/<YYYY-MM-DD_HH-MM-SS>/contents.zip
 |-----------|--------|
 | Path does not exist | Report error, stop |
 | No .svelte files found | Report error, stop — not a Svelte project |
-| Reviewer returns invalid JSON | Log warning, use fallback payload, continue |
-| Aggregator fails | Report error, show raw dimension scores, stop before report generation |
+| Team-lead fails | Report error, show any partial data available, stop |
+| Team-lead sends incomplete scorecard | Log warning, proceed to report generation with available data |
 | Report generator fails | Report error, show scorecard JSON in terminal |
 | User cancels mid-run | Save any completed dimension payloads to `{project_root}/reports/.partial-grade.json` |

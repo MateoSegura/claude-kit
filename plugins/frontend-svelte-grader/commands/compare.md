@@ -1,12 +1,12 @@
 ---
 name: frontend-svelte-grader:compare
-allowed-tools: Task, Read, Glob, Grep, Bash, AskUserQuestion
+allowed-tools: Task, Read, Glob, Grep, Bash, AskUserQuestion, TeamCreate, TeamDelete, SendMessage
 description: Compare two Svelte/SvelteKit codebases (or two branches/commits of the same project) side-by-side. Runs the full 8-dimension grading pipeline on both, then generates a comparative scorecard showing dimension-by-dimension deltas, regressions, and improvements.
 ---
 
 # Compare — A/B Codebase Comparison
 
-You orchestrate a side-by-side comparison of two Svelte/SvelteKit codebases. Run the full grading pipeline on each, then produce a comparative report showing which performs better across all 8 dimensions.
+You orchestrate a side-by-side comparison of two Svelte/SvelteKit codebases. Create parallel grading teams (one per project) to independently run the full 8-dimension pipeline, then produce a comparative report showing which performs better across all dimensions.
 
 Common use cases:
 - PR review: compare feature branch vs main
@@ -81,81 +81,74 @@ Note: Clean up worktrees at the end with `git worktree remove`.
 
 ---
 
-## Step 2: Run Full Grading Pipeline on BOTH Codebases in Parallel
+## Step 2: Grade Both Codebases via Parallel Teams
 
-Launch ALL 16 dimension reviewer agents simultaneously (8 for A, 8 for B). This is the most important optimization — do not run them sequentially.
+Create two teams (one per project) to contain the reviewer sprawl. Each team-lead manages 8 reviewers + aggregation, sending back a single scorecard.
 
-Name convention: prefix agent inputs with `[A]` or `[B]` to distinguish outputs.
+### 2a. Create both teams in parallel
 
-### Launch 8 reviewers for Project A (all in parallel with Project B reviewers):
+```
+TeamCreate("grading-a")
+TeamCreate("grading-b")
+```
 
-For each of the 8 dimensions, spawn the dimension reviewer with project root set to `{project_root_a}` and a label note `"[Grading: {label_a}]"` at the start of the input.
+### 2b. Launch team-leads for both projects simultaneously
 
-Use the exact same reviewer inputs as documented in `grade.md`, with `{project_root}` replaced by `{project_root_a}`.
+Spawn both team-leads in a single response:
 
-Reviewers to spawn for Project A:
-- `component-reviewer` with Project A root
-- `state-reviewer` with Project A root
-- `styling-reviewer` with Project A root
-- `a11y-reviewer` with Project A root
-- `performance-reviewer` with Project A root
-- `typescript-reviewer` with Project A root
-- `testing-reviewer` with Project A root
-- `ux-reviewer` with Project A root
+**Team-lead A:**
+```
+subagent_type: general-purpose
+team_name: grading-a
+name: team-lead
+input: |
+  You are the grading team-lead for "{label_a}".
 
-### Launch 8 reviewers for Project B (simultaneously with Project A reviewers):
+  Project root: {project_root_a}
+  Structural scan: {paste structural scan for Project A}
 
-Reviewers to spawn for Project B:
-- `component-reviewer` with Project B root
-- `state-reviewer` with Project B root
-- `styling-reviewer` with Project B root
-- `a11y-reviewer` with Project B root
-- `performance-reviewer` with Project B root
-- `typescript-reviewer` with Project B root
-- `testing-reviewer` with Project B root
-- `ux-reviewer` with Project B root
+  Your job:
+  1. Spawn all 8 dimension reviewers in parallel (component-reviewer, state-reviewer,
+     styling-reviewer, a11y-reviewer, performance-reviewer, typescript-reviewer,
+     testing-reviewer, ux-reviewer)
+  2. Pass each reviewer the project root, structural scan, and instruction to output ONLY JSON
+  3. Collect all 8 JSON payloads (use fallback payload for any failures)
+  4. Spawn score-aggregator with all 8 payloads
+  5. Send the final scorecard back via SendMessage to the orchestrator
 
-**Total: 16 agents launched in one parallel batch.**
+  Use the exact same reviewer inputs as documented in grade.md, with project root = {project_root_a}.
+  Label all output with project="{label_a}".
+```
+
+**Team-lead B:**
+```
+subagent_type: general-purpose
+team_name: grading-b
+name: team-lead
+input: |
+  You are the grading team-lead for "{label_b}".
+
+  Project root: {project_root_b}
+  Structural scan: {paste structural scan for Project B}
+
+  [Same instructions as Team-lead A, but for Project B with project root = {project_root_b}]
+  Label all output with project="{label_b}".
+```
+
+### 2c. Receive scorecards and clean up
+
+Wait for both team-leads' messages containing their aggregated scorecard JSONs.
+
+```
+TeamDelete("grading-a")
+TeamDelete("grading-b")
+```
+
+Proceed to Step 3 (delta analysis) with both scorecards.
 
 ---
 
-## Step 3: Aggregate Scores for Each Project Separately
-
-After all 16 reviewers complete, run two score-aggregator agents in parallel (one per project):
-
-### Aggregator for Project A:
-```
-subagent_type: score-aggregator
-input: |
-  Project: {label_a}
-  Graded at: {timestamp}
-
-  Dimension payloads for {label_a} (JSON array):
-  {paste all 8 Project A dimension payloads}
-
-  Apply full aggregation algorithm from aggregation-rules.md.
-  Output the complete scorecard JSON. Label all fields with project="{label_a}".
-  Output ONLY the JSON scorecard. No prose.
-```
-
-### Aggregator for Project B:
-```
-subagent_type: score-aggregator
-input: |
-  Project: {label_b}
-  Graded at: {timestamp}
-
-  Dimension payloads for {label_b} (JSON array):
-  {paste all 8 Project B dimension payloads}
-
-  Apply full aggregation algorithm from aggregation-rules.md.
-  Output the complete scorecard JSON. Label all fields with project="{label_b}".
-  Output ONLY the JSON scorecard. No prose.
-```
-
----
-
-## Step 4: Compute Delta Analysis
+## Step 3: Compute Delta Analysis
 
 Before calling the report-generator, compute the deltas yourself so the report-generator has them ready:
 
@@ -181,7 +174,7 @@ Identify:
 
 ---
 
-## Step 5: Run report-generator for Comparative Report
+## Step 4: Run report-generator for Comparative Report
 
 Compute a timestamped output directory:
 ```
@@ -230,7 +223,7 @@ input: |
 
 ---
 
-## Step 6: Present Comparison Summary to User
+## Step 5: Present Comparison Summary to User
 
 ```
 Comparison complete: {label_a} vs {label_b}
@@ -263,7 +256,7 @@ Comparison complete: {label_a} vs {label_b}
 
 ---
 
-## Step 7: Git Worktree Cleanup (branch comparison only)
+## Step 6: Git Worktree Cleanup (branch comparison only)
 
 If git worktrees were created in Step 1, clean them up:
 
@@ -284,17 +277,13 @@ Input: Project A path + Project B path
 Structural scan (both projects)
          │
          ▼
-┌────────────────────────────────────────────────────────────────────┐
-│  16 PARALLEL REVIEWERS (8 per project)                             │
-│  comp-A  state-A  css-A  a11y-A  perf-A  ts-A  test-A  ux-A      │
-│  comp-B  state-B  css-B  a11y-B  perf-B  ts-B  test-B  ux-B      │
-└────────────────────────────────────────────────────────────────────┘
-         │
-         ▼
-┌──────────────────────────────────────────┐
-│  2 PARALLEL AGGREGATORS                  │
-│  score-aggregator-A   score-aggregator-B │
-└──────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  2 PARALLEL GRADING TEAMS                                    │
+│                                                              │
+│  Team A (team-lead-a):              Team B (team-lead-b):    │
+│    8 reviewers → aggregator           8 reviewers → aggregator│
+│    → scorecard A                      → scorecard B          │
+└──────────────────────────────────────────────────────────────┘
          │
          ▼
 Delta computation (inline, no subagent needed)
@@ -314,13 +303,12 @@ Output: comparison-report.md + 3 scorecard JSON files
 |-----------|--------|
 | One project path does not exist | Report error with which path failed, stop |
 | Git branch does not exist | Report error, list available branches, stop |
-| Reviewer fails for one project | Use fallback payload, note incomplete in report |
-| Both reviewers fail for same dimension | Flag dimension as "inconclusive" in comparative report |
-| Aggregator fails for one project | Show raw dimension scores in terminal, stop before report generation |
+| Team-lead fails for one project | Use fallback payload, note incomplete in report |
+| Both team-leads fail for same dimension | Flag dimension as "inconclusive" in comparative report |
 | Git worktree creation fails | Try `git stash && git checkout {branch}` alternative approach, warn user |
 
 ---
 
 ## Cost Note
 
-This command runs 16 dimension reviewers (vs 8 for a single grade). Budget approximately 2x the API cost of the `grade` command. For cost-conscious usage, consider running `grade` on each project separately and manually comparing the resulting scorecards.
+This command creates 2 parallel grading teams, each running 8 dimension reviewers internally. Budget approximately 2x the API cost of the `grade` command. For cost-conscious usage, consider running `grade` on each project separately and manually comparing the resulting scorecards.
