@@ -1,6 +1,6 @@
 ---
-allowed-tools: Bash, Read, Edit
-description: Finalize a release — run preflight checks, promote [Unreleased] to a versioned CHANGELOG section, commit, tag, and ask before pushing. Requires no uncommitted changes.
+allowed-tools: Bash, Read, Edit, Glob, Grep, Write
+description: Finalize a release — run preflight checks, promote [Unreleased] to a versioned CHANGELOG section, commit, tag, push, monitor CI until the GitHub Release is published, and auto-fix any CI failures along the way.
 ---
 
 # Release
@@ -92,6 +92,141 @@ If confirmed:
 git push && git push --tags
 ```
 
-The `release.yml` workflow will then create the GitHub Release automatically.
+If declined, tell the user they can push manually when ready and **stop here**.
 
-If declined, tell the user they can push manually when ready.
+If pushed, proceed to Step 10.
+
+## Step 10 — Monitor CI Until Complete
+
+After pushing, enter a monitoring loop. Two CI workflows will trigger:
+1. **fast-validate** (push.yml) — triggered by the branch push
+2. **release** (release.yml) — triggered by the tag push (creates the GitHub
+   Release)
+
+### Monitoring procedure
+
+1. Wait 15 seconds for CI to register the push.
+
+2. Find the workflow runs triggered by this push:
+
+```bash
+# Get the commit SHA we just pushed
+HEAD_SHA=$(git rev-parse HEAD)
+TAG_NAME="vX.Y.Z"  # the tag we just pushed
+
+# Find fast-validate run for this commit
+gh run list --workflow=push.yml --branch=$(git branch --show-current) --limit=3 --json databaseId,status,conclusion,headSha --jq '.[] | select(.headSha=="'$HEAD_SHA'")'
+
+# Find release run for this tag
+gh run list --workflow=release.yml --limit=3 --json databaseId,status,conclusion,headSha --jq '.[] | select(.headSha=="'$HEAD_SHA'")'
+```
+
+3. Poll every 20 seconds until **both** workflows reach a terminal state
+   (`completed`). On each poll, report the current status concisely:
+
+```
+CI status: fast-validate=in_progress, release=queued
+```
+
+4. If a workflow has been `queued` for more than 3 minutes with no progress,
+   note this to the user but keep polling — the self-hosted runner may be busy.
+
+5. Once both workflows complete, check their conclusions:
+   - Both `success` → proceed to **Step 12** (Verify Release)
+   - Any `failure` → proceed to **Step 11** (Auto-Fix)
+   - Any `cancelled` → report and ask the user what to do
+
+## Step 11 — Auto-Fix CI Failures
+
+When a CI workflow fails, attempt to diagnose and fix it locally. This step
+may loop up to **3 times** — if all 3 attempts fail, stop and report.
+
+### 11a. Fetch failure logs
+
+```bash
+gh run view <FAILED_RUN_ID> --log 2>&1 | tail -300
+```
+
+Read the log output and identify the root cause. Common failures:
+
+| Failure | Fix strategy |
+|---------|-------------|
+| Plugin validation error (validate-plugins.py) | Fix the plugin file locally with Edit |
+| CLI syntax error (py_compile) | Fix the CLI script with Edit |
+| Plugin consistency check (test-plugin-consistency.sh) | Fix cross-references, frontmatter, or hook config |
+| CLI smoke test failure (test-cli.sh) | Fix the CLI script or test expectations |
+| CHANGELOG entry missing for tag | Fix CHANGELOG.md with Edit |
+| Release body extraction failed | Fix CHANGELOG formatting with Edit |
+
+### 11b. Apply the fix
+
+Use Read and Edit to fix the identified issue. Run the same check locally to
+verify:
+
+```bash
+# Depending on what failed:
+python3 scripts/validate-plugins.py --all --strict
+bash scripts/test-cli.sh
+bash scripts/test-plugin-consistency.sh
+python3 -m py_compile claude-kit
+```
+
+### 11c. Re-commit, re-tag, re-push
+
+After fixing:
+
+```bash
+# Stage and commit the fix
+git add -A
+git commit -m "fix: <description of what was fixed>"
+
+# Delete the old tag locally and remotely, then recreate
+git tag -d "vX.Y.Z"
+git push origin :refs/tags/vX.Y.Z
+git tag -a "vX.Y.Z" -m "Release vX.Y.Z"
+
+# Push the fix commit and the new tag
+git push && git push --tags
+```
+
+### 11d. Resume monitoring
+
+Go back to **Step 10** with the new commit SHA. Increment the attempt counter.
+
+If this is already the 3rd attempt, **stop** and report:
+
+```
+Release failed after 3 auto-fix attempts. The remaining issue requires
+manual intervention:
+
+<describe the failure>
+
+The tag vX.Y.Z has been left on the latest commit. You can:
+- Fix manually and force-push
+- Delete the tag with: git tag -d vX.Y.Z && git push origin :refs/tags/vX.Y.Z
+```
+
+## Step 12 — Verify Release Published
+
+After both CI workflows succeed, verify the GitHub Release was actually created:
+
+```bash
+gh release view "vX.Y.Z" --json tagName,name,isDraft,isPrerelease,url,createdAt
+```
+
+If the release exists and is not a draft:
+
+```
+Release vX.Y.Z published successfully!
+
+  URL:     <release URL>
+  Tag:     vX.Y.Z
+  Created: <timestamp>
+
+The release is now available for download via:
+  claude-kit update
+```
+
+If the release does not exist (the `gh release view` command fails), check
+whether `release.yml` created it but as a draft, or if the workflow had a
+partial failure. Report what happened and suggest next steps.
