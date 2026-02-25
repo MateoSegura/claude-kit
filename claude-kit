@@ -434,28 +434,50 @@ def cmd_update() -> None:
                 new_versions[d.name] = plugin_version(d)
 
     all_names = set(old_versions) | set(new_versions)
-    max_len = max((len(n) for n in all_names), default=0)
 
     p(f"  {col(C.W, 'Plugin versions:')}")
     p()
 
-    shown: set = set()
-    for name in sorted(new_versions):
-        ov = old_versions.get(name)
-        nv = new_versions[name]
-        pad = " " * (max_len - len(name))
-        if ov is None:
-            p(f"    {col(C.G, '+')} {col(C.W, name)}{pad}  {col(C.G, nv)}  {col(C.DIM, '(new)')}")
-        elif ov != nv:
-            p(f"    {col(C.Y, '↑')} {col(C.W, name)}{pad}  {col(C.Y, f'{ov} → {nv}')}")
+    # Group by prefix (same logic as _list_section)
+    groups: dict = {}
+    standalones: list = []
+    for name in sorted(all_names):
+        if "-" in name:
+            prefix = name.rsplit("-", 1)[0]
+            groups.setdefault(prefix, []).append(name)
         else:
-            p(f"    {col(C.DIM, f'  {name}{pad}  {nv}')}")
-        shown.add(name)
+            standalones.append(name)
 
-    for name in sorted(old_versions):
-        if name not in shown:
-            pad = " " * (max_len - len(name))
-            p(f"    {col(C.R, '-')} {name}{pad}  {col(C.R, '(removed)')}")
+    sep = f"  {col(C.DIM, '·')}  "
+
+    def _ver_entry(name: str, role: str) -> str:
+        ov = old_versions.get(name)
+        nv = new_versions.get(name)
+        if nv is None:
+            return f"{col(C.R, '−')} {role}  {col(C.R, '(removed)')}"
+        if ov is None:
+            return f"{col(C.G, '+')} {col(C.CY, role)}  {col(C.G, nv)}  {col(C.DIM, '(new)')}"
+        if ov != nv:
+            return f"{col(C.Y, '↑')} {col(C.CY, role)}  {col(C.Y, f'{ov} → {nv}')}"
+        return f"{col(C.DIM, f'{role} {nv}')}"
+
+    for prefix, members in sorted(groups.items()):
+        p(f"  {col(C.W, prefix)}")
+        parts = [_ver_entry(n, n[len(prefix)+1:]) for n in members]
+        p(f"    {sep.join(parts)}")
+        p()
+
+    for name in sorted(standalones):
+        ov = old_versions.get(name)
+        nv = new_versions.get(name)
+        if nv is None:
+            p(f"  {col(C.R, '−')} {name}  {col(C.R, '(removed)')}")
+        elif ov is None:
+            p(f"  {col(C.G, '+')} {col(C.CY, name)}  {col(C.G, nv)}  {col(C.DIM, '(new)')}")
+        elif ov != nv:
+            p(f"  {col(C.Y, '↑')} {col(C.CY, name)}  {col(C.Y, f'{ov} → {nv}')}")
+        else:
+            p(f"  {col(C.DIM, f'{name} {nv}')}")
 
     # Auto-update statusline script if installed
     sl_dest = pathlib.Path.home() / ".claude" / "statusline-command.sh"
