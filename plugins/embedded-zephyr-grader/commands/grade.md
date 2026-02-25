@@ -1,6 +1,6 @@
 ---
 name: embedded-zephyr-grader:grade
-allowed-tools: Task, AskUserQuestion, Read, Glob, Grep, Write, Bash
+allowed-tools: Task, AskUserQuestion, Read, Glob, Grep, Write, Bash, TeamCreate, TeamDelete, SendMessage
 description: Grade a single Zephyr RTOS submission using automated tools and LLM review to generate a comprehensive scorecard
 ---
 
@@ -82,101 +82,67 @@ Pass the full intake descriptor (which contains `boards`) to the compilability c
 
 ---
 
-### Phase 3: Parallel Automated Analysis
+### Phase 3: Grade via Reviewer Team
 
-Run these agents **in parallel** using multiple Task calls in a single response:
+Create a team to coordinate all parallel analysis agents and score aggregation. The team-lead manages automated tools and LLM reviewers, handles the compilability gate logic, and returns a single scorecard.
 
-1. **static-analyzer**
-   - Input: `{submission_path, board, build_dir}`
-   - Tools: cppcheck, clang-tidy
-   - Output: `{score, defect_density, defects: []}`
-
-2. **metrics-collector**
-   - Input: `{submission_path}`
-   - Tools: lizard, cloc
-   - Output: `{score, avg_ccn, max_ccn, kloc}`
-
-3. **resource-analyzer** (skip if build failed)
-   - Input: `{descriptor, compilability_result}`
-   - Tools: arm-zephyr-eabi-size, bloaty, ram_report, rom_report
-   - Output: `{resource_efficiency_score, board_results}`
-
-4. **style-checker**
-   - Input: `{submission_path, source_files}`
-   - Tools: checkpatch.pl
-   - Output: `{score, violations, violations_per_kloc}`
-
-**Wait for all parallel tasks to complete before proceeding.**
-
----
-
-### Phase 4: Parallel LLM Reviews
-
-Run these agents **in parallel**:
-
-1. **zephyr-reviewer**
-   - Input: `{submission_path, source_files}`
-   - Reviews: Zephyr correctness patterns (25+ patterns)
-   - Output: `{score, issues: [], good_practices: []}`
-
-2. **architecture-reviewer**
-   - Input: `{submission_path, source_files}`
-   - Reviews: Code organization, separation of concerns, modularity
-   - Output: `{score, strengths: [], weaknesses: []}`
-
-3. **completeness-checker**
-   - Input: `{submission_path, requirements_spec (if available)}`
-   - Reviews: Whether all requirements are implemented
-   - Output: `{score, met: [], missing: []}`
-
-**Optional:** If `llm_passes > 1`, run each LLM agent multiple times and average scores for consistency.
-
-**Wait for all parallel tasks to complete before proceeding.**
-
----
-
-### Phase 5: Score Aggregation
-
-**Spawn:** `score-aggregator` agent
-
-**Input:**
-```json
-{
-  "dimension_scores": {
-    "compilability": {score, weight, details},
-    "static_analysis": {score, weight, details},
-    "zephyr_correctness": {score, weight, details},
-    "resource_efficiency": {score, weight, details},
-    "architecture": {score, weight, details},
-    "code_metrics": {score, weight, details},
-    "style": {score, weight, details},
-    "completeness": {score, weight, details},
-    "documentation": {score, weight, details}
-  },
-  "weight_overrides": <user_overrides or null>,
-  "na_dimensions": ["resource_efficiency"] (if build failed)
-}
+**Create team:**
+```
+TeamCreate("grading")
 ```
 
-**Output:**
-```json
-{
-  "aggregate_score": 53.35,
-  "grade": "F",
-  "weighted_scores": {
-    "compilability": 18.50,
-    ...
-  },
-  "final_weights": {
-    "compilability": 0.20,
-    ...
-  }
-}
+**Spawn team-lead:**
 ```
+subagent_type: general-purpose
+team_name: grading
+name: team-lead
+input: |
+  You are the grading team-lead for this Zephyr submission.
+
+  Submission path: {submission_path}
+  Intake descriptor: {paste full intake descriptor JSON}
+  Compilability result: {paste compilability result JSON}
+  Build succeeded: {build_succeeded}
+
+  Your job:
+  1. Spawn all grading agents in parallel (one Task call with multiple agents):
+
+     Automated analysis agents (always run):
+     - static-analyzer: Input {submission_path, board, build_dir}. Tools: cppcheck, clang-tidy.
+     - metrics-collector: Input {submission_path}. Tools: lizard, cloc.
+     - style-checker: Input {submission_path, source_files}. Tools: checkpatch.pl.
+
+     Automated analysis agent (skip if build failed):
+     - resource-analyzer: Input {descriptor, compilability_result}. Tools: arm-zephyr-eabi-size, bloaty, ram_report, rom_report.
+
+     LLM review agents (always run):
+     - zephyr-reviewer: Input {submission_path, source_files}. Reviews 25+ Zephyr correctness patterns.
+     - architecture-reviewer: Input {submission_path, source_files}. Reviews code organization, modularity.
+     - completeness-checker: Input {submission_path, requirements_spec if available}.
+
+  2. Collect all results (4 automated + 3 LLM = 7 agents, or 6 if build failed)
+  3. If any agent fails: retry once, then mark that dimension as N/A
+  4. Spawn score-aggregator with all dimension scores, weight_overrides (if provided),
+     and na_dimensions list
+  5. Send the final scorecard back via SendMessage to the orchestrator
+
+  Weight overrides: {weight_overrides or null}
+  If build failed, include "resource_efficiency" in na_dimensions.
+```
+
+**Receive scorecard and clean up:**
+
+Wait for the team-lead's message containing the aggregated scorecard.
+
+```
+TeamDelete("grading")
+```
+
+Proceed to Phase 4 (report generation) with the scorecard.
 
 ---
 
-### Phase 6: Report Generation
+### Phase 4: Report Generation
 
 Compute a timestamped output directory:
 ```
@@ -209,7 +175,7 @@ Create the directory before spawning the report generator.
 
 ---
 
-### Phase 7: Present Results to User
+### Phase 5: Present Results to User
 
 Display a summary:
 
@@ -273,7 +239,7 @@ Always generate a report even with partial results. Include a "Warnings" section
 ### Critical Path
 
 ```
-Intake (seq) → Compilability (seq) → {Automated Tools (par), LLM Reviews (par)} → Aggregation (seq) → Report (seq)
+Intake (seq) → Compilability (seq) → Grading Team (parallel tools + LLM + aggregation) → Report (seq)
 ```
 
 ### Timing Estimates
@@ -297,11 +263,9 @@ You:
 1. Confirm parameters (path, board(s))
 2. Spawn intake agent
 3. Spawn compilability checker
-4. Spawn 4 automated agents + 3 LLM agents in parallel (7 total)
-5. Wait for all
-6. Spawn aggregator
-7. Spawn report generator
-8. Present results with summary and file paths
+4. Create grading team — team-lead spawns 7 agents in parallel, aggregates, returns scorecard
+5. Spawn report generator
+6. Present results with summary and file paths
 
 ---
 
