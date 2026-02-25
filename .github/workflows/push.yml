@@ -10,8 +10,8 @@ on:
 jobs:
   branch-name:
     runs-on: self-hosted
-    # Skip check on main itself
-    if: github.ref != 'refs/heads/main'
+    # Only check on push (not PR) and skip main
+    if: github.event_name == 'push' && github.ref != 'refs/heads/main'
     steps:
       - name: Enforce branch naming convention
         run: |
