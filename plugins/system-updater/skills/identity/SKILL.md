@@ -80,6 +80,24 @@ Before replacing the live plugin:
 Then: show diff (including README changes), get final approval, create timestamped backup, replace live plugin, validate, clean up staging.
 
 For detailed workflow instructions and error recovery patterns, see [workflow-patterns.md](workflow-patterns.md).
+
+### Team Update Workflow (update-team)
+
+When updating an entire domain team, the workflow shares a single user intent across all selected plugins:
+
+**Phase 0: Team Selection** — Detect teams by prefix, let user pick team and role subset.
+
+**Phase 1: Shared Intent + Parallel Analysis** — Capture ONE shared intent while launching N plugin-analyzer agents in parallel (one per selected plugin).
+
+**Phase 2: Per-Plugin Fitness & Planning** — Launch N change-planner agents in parallel, each receiving the shared intent plus its own plugin analysis.
+
+**Phase 3: User Approval** — Present each plugin's change plan sequentially for approval, modification, or skip.
+
+**Phase 4: Batched Implementation** — Group plugins into batches of 3, create per-plugin staging dirs, launch change-writer agents in parallel within each batch.
+
+**Phase 5: Sequential Review** — Process plugins one at a time in foreground mode (context compaction safety) using the plugin-reviewer.
+
+**Phase 6: Finalization** — Per-plugin backup, copy to live directory, validate, and clean up staging.
 </workflow>
 
 <non_negotiables>

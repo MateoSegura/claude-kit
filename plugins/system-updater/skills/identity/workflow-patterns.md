@@ -315,7 +315,7 @@ If Phase 5 validation detects issues:
 
 ### Concept
 
-The orchestrator (update-agent.md command) coordinates all work via the Task tool. Subagents never spawn other subagents — the hierarchy is flat.
+The orchestrator (update-member.md command) coordinates all work via the Task tool. Subagents never spawn other subagents — the hierarchy is flat.
 
 ### Implementation
 
@@ -451,3 +451,44 @@ The change-writer reads format references BEFORE writing any files:
 - **Correctness**: Reduces frontmatter errors (tools: vs allowed-tools:, etc.)
 - **Completeness**: Change-writers know all available frontmatter fields and options
 - **Single Source of Truth**: When the format spec evolves, all change-writers get the update automatically
+
+## Team Update Patterns
+
+The update-team command extends the single-plugin update workflow to operate on an entire domain team (or a subset of roles) in one session.
+
+### Team Staging Pattern
+
+Each plugin in the team gets its own independent staging directory:
+
+```
+/tmp/claude-kit-update-embedded-zephyr-engineer/
+/tmp/claude-kit-update-embedded-zephyr-grader/
+/tmp/claude-kit-update-embedded-zephyr-tester/
+```
+
+All staging directories are created by copying the existing live plugin, modified in isolation, and only copied back to the live directory after per-plugin approval.
+
+### Batched Implementation Pattern
+
+Plugins are grouped into batches of 3 for implementation. Each batch launches up to 3 change-writer agents in parallel (one per plugin):
+
+```
+Batch 1: [engineer, grader, tester]  → 3 parallel change-writers
+Batch 2: [debugger]                  → 1 change-writer
+```
+
+This matches the make-team batching pattern and stays within tested parallelism limits. Each change-writer operates on its own staging directory — no cross-plugin dependencies within a batch.
+
+### Sequential Team Review Pattern
+
+Reviews are processed ONE PLUGIN AT A TIME in foreground mode. This is critical for context compaction safety — background agent IDs are lost during compaction, making results unrecoverable.
+
+```
+Review plugin 1/4: embedded-zephyr-engineer (foreground)
+  → Parse findings → Apply fixes → Optional re-review
+Review plugin 2/4: embedded-zephyr-grader (foreground)
+  → Parse findings → Apply fixes → Optional re-review
+...
+```
+
+Each plugin gets one review pass plus one optional re-review (same as the single-plugin update-member workflow).
