@@ -1,4 +1,5 @@
 ---
+name: coding-cloud-python-tester:run-tests
 allowed-tools: Read, Glob, Grep, Bash, Task
 description: Execute pytest with coverage reporting, support for targeting specific files or markers, and a pass/fail summary with the 80% line coverage gate and file:line failure references.
 ---

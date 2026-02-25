@@ -1,6 +1,7 @@
 ---
 name: coding-embedded-zephyr-grader:tool-pipeline
 description: "Tool execution pipeline for Zephyr grading including west build, cppcheck, clang-tidy, lizard, cloc, checkpatch, size analysis, ram/rom reports, and bloaty with execution order, parallelism strategy, and availability detection."
+user-invocable: false
 ---
 
 # Tool Pipeline

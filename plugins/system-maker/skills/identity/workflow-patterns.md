@@ -321,7 +321,7 @@ The orchestrator (make-agent command) generates these files directly — no suba
    {
      "name": "<AGENT_NAME>",
      "description": "<one-line from AGENT_DESCRIPTION>",
-     "version": "1.0.0"
+     "version": "0.0.1"
    }
    ```
 

@@ -1,6 +1,7 @@
 ---
 name: system-maker:plugin-structure
 description: Canonical reference specification for Claude Code plugin file formats, frontmatter fields, hooks schema, and component conventions. Preloaded by Phase 8 implementation agents to ensure correct file generation.
+user-invocable: false
 ---
 
 # Claude Code Plugin Structure Reference
@@ -73,7 +74,7 @@ Only these three fields are safe. Do NOT add `role`, `keywords`, `companions`, `
 {
   "name": "coding-embedded-zephyr-engineer",
   "description": "Domain-expert coding agent for Zephyr RTOS embedded systems",
-  "version": "1.0.0"
+  "version": "0.0.1"
 }
 ```
 

@@ -1,4 +1,5 @@
 ---
+name: coding-frontend-svelte-debugger:diagnose
 description: "Triage and diagnose failures in Svelte 5 / SvelteKit applications. Classifies symptoms into failure domains, routes to specialist agents, and delivers structured diagnostic reports. Read-only — never writes or modifies code."
 allowed-tools:
   - Read

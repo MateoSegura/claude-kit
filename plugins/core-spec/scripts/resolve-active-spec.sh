@@ -3,6 +3,8 @@
 # Source this script; do not invoke directly.
 # Sets: SPEC_ROOT (root for all specs), ACTIVE_PLAN_DIR (active spec dir, or empty)
 
+set -euo pipefail
+
 # Determine project root (git root or cwd fallback)
 _project_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 

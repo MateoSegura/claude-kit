@@ -1,6 +1,7 @@
 ---
 name: coding-frontend-svelte-knowledge:sveltekit-patterns
 description: "SvelteKit 2 routing, data loading, form actions, streaming SSR, hooks, adapters, and prerendering patterns — complete reference for building full-stack SvelteKit applications."
+user-invocable: false
 ---
 
 # SvelteKit 2 Patterns Quick Reference

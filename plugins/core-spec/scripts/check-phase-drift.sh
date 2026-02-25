@@ -3,6 +3,8 @@
 # Advisory drift detection: warns when an edit falls outside the current
 # phase's declared scope. Does NOT block — the edit already happened.
 
+set -euo pipefail
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/resolve-active-spec.sh"
 

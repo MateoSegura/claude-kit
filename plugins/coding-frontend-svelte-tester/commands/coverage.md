@@ -1,4 +1,5 @@
 ---
+name: coding-frontend-svelte-tester:coverage
 allowed-tools: Task, Read, Glob, Grep, Bash, AskFollowupQuestion
 description: Run test coverage analysis, identify files below the 80% threshold, and optionally generate tests to fill the gaps. Spawns coverage-analyzer for analysis, then optionally spawns test-writer agents for gap-filling.
 ---

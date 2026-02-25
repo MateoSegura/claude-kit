@@ -1,6 +1,7 @@
 ---
 name: coding-frontend-svelte-knowledge:accessibility
 description: "WCAG 2.2 AA compliance patterns for Svelte and SvelteKit: compiler a11y warnings, route announcements, focus management, skip links, ARIA live regions, keyboard navigation, form accessibility, color contrast requirements, and headless component library usage."
+user-invocable: false
 ---
 
 # Accessibility Quick Reference (WCAG 2.2 AA)

@@ -1,6 +1,7 @@
 ---
 name: coding-cloud-python-tester:coverage-strategy
 description: "Coverage measurement strategy for Python cloud services: 80% threshold enforcement with pytest-cov, branch coverage, exclusion pragmas, JSON report parsing for gap analysis, and prioritization of high-value coverage gaps."
+user-invocable: false
 ---
 
 # Coverage Strategy — Quick Reference

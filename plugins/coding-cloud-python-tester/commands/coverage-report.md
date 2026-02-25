@@ -1,4 +1,5 @@
 ---
+name: coding-cloud-python-tester:coverage-report
 allowed-tools: Read, Glob, Grep, Bash, Task
 description: Run pytest with branch coverage reporting, identify uncovered lines and branches prioritized by risk, generate an actionable gap analysis with specific test suggestions per gap, and compare against the 80% line coverage gate.
 ---

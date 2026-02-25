@@ -1,4 +1,5 @@
 ---
+name: system-maker:validate
 allowed-tools: Read, Glob, Grep
 description: Semantic review (Tier 2-4) of one or all plugins. Checks agent/command/skill frontmatter, structural conventions, identity coherence, and hook appropriateness against the plugin-structure spec.
 ---

@@ -1,4 +1,5 @@
 ---
+name: coding-cloud-python-grader:grade
 allowed-tools: Read, Glob, Grep, Bash, Task
 description: Full-service on-demand code review. Accepts a service path or file glob, grades all 8 dimensions via parallel subagents, and produces a unified report with weighted final score, per-dimension scores, findings list, and inline annotations.
 ---

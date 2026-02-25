@@ -1,4 +1,5 @@
 ---
+name: coding-frontend-svelte-tester:test
 allowed-tools: Task, Read, Glob, Grep, Bash, AskFollowupQuestion
 description: Write tests for a target file or component, then run them. Auto-detects the appropriate test type from the target. Spawns the correct test-writer agent followed by the test-runner agent.
 ---

@@ -1,6 +1,7 @@
 ---
 name: coding-frontend-svelte-knowledge:svelte5-runes
 description: "Comprehensive reference for Svelte 5 runes system: $state, $derived, $effect, $props, $bindable, $inspect, $host — reactive primitives, anti-patterns, and .svelte.ts shared reactive logic patterns."
+user-invocable: false
 ---
 
 # Svelte 5 Runes Quick Reference

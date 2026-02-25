@@ -1,4 +1,5 @@
 ---
+name: core-spec:status
 description: "Show current plan status — displays phase progress, recent activity from status.log, and TaskList state."
 allowed-tools: Read, Glob, Grep, TaskList, TaskGet
 ---

@@ -1,6 +1,7 @@
 ---
 name: coding-embedded-zephyr-grader:scoring-engine
 description: "Scoring pipeline algorithms for normalizing raw tool outputs to 0-100 scores including per-KLOC normalization, weighted deduplication, severity weights, and N/A dimension handling."
+user-invocable: false
 ---
 
 # Scoring Engine
