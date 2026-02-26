@@ -22,6 +22,7 @@ BACKUP_DIR       = INSTALL_DIR / "local" / "backups"
 
 CK_MODE       = "user" if INSTALLED_MARKER.exists() else "dev"
 CK_OUTPUT_DIR = LOCAL_DIR if CK_MODE == "user" else PLUGINS_DIR
+VERBOSE       = False
 
 # ── Colors ───────────────────────────────────────────────────────────────────
 
@@ -312,6 +313,9 @@ def _list_section(dirs: list, label: str, empty_msg: str) -> None:
     - Teams: domain-specific coding plugins (cloud-python, embedded-zephyr, ...)
     - Core: shared knowledge plugins that auto-load (core-*)
     - System: meta-tools like system-maker and system-updater (system-*)
+
+    In compact mode (default), versions and launch hints are hidden.
+    In verbose mode (-v), the full output with versions and hints is shown.
     """
     p(f"  {col(C.W, label)}")
     p()
@@ -340,32 +344,53 @@ def _list_section(dirs: list, label: str, empty_msg: str) -> None:
 
     # ── Teams ──
     if teams:
+        if not VERBOSE:
+            p(f"  {col(C.W, 'Teams')}")
         for prefix, members in sorted(teams.items()):
-            p(f"  {col(C.DIM, 'claude-kit -k')} {col(C.W, prefix)}")
-            parts_str = sep.join(
-                f"{col(C.CY, d.name[len(prefix)+1:])}  {col(C.DIM, plugin_version(d))}"
-                for d in members
-            )
+            if VERBOSE:
+                p(f"  {col(C.DIM, 'claude-kit -k')} {col(C.W, prefix)}")
+                parts_str = sep.join(
+                    f"{col(C.CY, d.name[len(prefix)+1:])}  {col(C.DIM, plugin_version(d))}"
+                    for d in members
+                )
+            else:
+                p(f"  {col(C.W, prefix)}")
+                parts_str = sep.join(
+                    f"{col(C.CY, d.name[len(prefix)+1:])}"
+                    for d in members
+                )
             p(f"    {parts_str}")
             p()
 
     # ── Core ──
     if core:
-        p(f"  {col(C.DIM, 'Core  ·  auto-loaded by domain')}")
-        parts_str = sep.join(
-            f"{col(C.DIM, d.name.removeprefix('core-'))}  {col(C.DIM, plugin_version(d))}"
-            for d in core
-        )
+        p(f"  {col(C.W, 'Core')}  {col(C.DIM, '·  auto-loaded by domain')}")
+        if VERBOSE:
+            parts_str = sep.join(
+                f"{col(C.DIM, d.name.removeprefix('core-'))}  {col(C.DIM, plugin_version(d))}"
+                for d in core
+            )
+        else:
+            parts_str = sep.join(
+                f"{col(C.DIM, d.name.removeprefix('core-'))}"
+                for d in core
+            )
         p(f"    {parts_str}")
         p()
 
     # ── System ──
     if system:
-        p(f"  {col(C.DIM, 'System')}")
-        parts_str = sep.join(
-            f"{col(C.DIM, d.name.removeprefix('system-'))}  {col(C.DIM, plugin_version(d))}"
-            for d in system
-        )
+        p(f"  {col(C.W, 'System')}")
+        if VERBOSE:
+            parts_str = sep.join(
+                f"{col(C.DIM, d.name.removeprefix('system-'))}  {col(C.DIM, plugin_version(d))}"
+                for d in system
+            )
+        else:
+            parts_str = sep.join(
+                f"{col(C.DIM, d.name.removeprefix('system-'))}"
+                for d in system
+            )
         p(f"    {parts_str}")
         p()
 
@@ -374,7 +399,10 @@ def _list_section(dirs: list, label: str, empty_msg: str) -> None:
         max_len = max(len(d.name) for d in standalones)
         for d in sorted(standalones, key=lambda x: x.name):
             pad = " " * (max_len - len(d.name))
-            p(f"  {col(C.W, d.name)}{pad}  {col(C.DIM, plugin_version(d))}")
+            if VERBOSE:
+                p(f"  {col(C.W, d.name)}{pad}  {col(C.DIM, plugin_version(d))}")
+            else:
+                p(f"  {col(C.W, d.name)}")
         p()
 
 def cmd_list() -> None:
@@ -409,11 +437,17 @@ def cmd_list() -> None:
 # ── cmd_update ────────────────────────────────────────────────────────────────
 
 def _show_changelog(changelog_path: pathlib.Path,
-                    since_tag: str | None = None) -> None:
+                    since_tag: str | None = None,
+                    latest_only: bool | None = None) -> None:
     """Parse CHANGELOG.md and display release entries newer than *since_tag*.
 
     If *since_tag* is ``None`` only the latest release entry is shown.
+    When *latest_only* is ``True`` (default in non-verbose mode), only the
+    first version section is shown even when multiple new versions exist.
     """
+    if latest_only is None:
+        latest_only = not VERBOSE
+
     try:
         text = changelog_path.read_text()
     except OSError:
@@ -425,6 +459,7 @@ def _show_changelog(changelog_path: pathlib.Path,
     lines = text.splitlines()
     entry_lines: list = []
     in_entry = False
+    version_count = 0
 
     for line in lines:
         if line.startswith("## ["):
@@ -433,6 +468,10 @@ def _show_changelog(changelog_path: pathlib.Path,
                 continue
             # Stop when we reach the version the user already had.
             if since_ver and ver_name == since_ver:
+                break
+            version_count += 1
+            # In latest-only mode, stop after the first version section.
+            if latest_only and version_count > 1:
                 break
             in_entry = True
             entry_lines.append(line)
@@ -590,21 +629,31 @@ def cmd_update() -> None:
 
     sep = f"  {col(C.DIM, '·')}  "
 
-    def _ver_entry(name: str, role: str) -> str:
+    def _ver_entry(name: str, role: str) -> tuple:
+        """Return (display_str, changed_bool) for a plugin version entry."""
         ov = old_versions.get(name)
         nv = new_versions.get(name)
         if nv is None:
-            return f"{col(C.R, '−')} {role}  {col(C.R, '(removed)')}"
+            return f"{col(C.R, '−')} {role}  {col(C.R, '(removed)')}", True
         if ov is None:
-            return f"{col(C.G, '+')} {col(C.CY, role)}  {col(C.G, nv)}  {col(C.DIM, '(new)')}"
+            return f"{col(C.G, '+')} {col(C.CY, role)}  {col(C.G, nv)}  {col(C.DIM, '(new)')}", True
         if ov != nv:
-            return f"{col(C.Y, '↑')} {col(C.CY, role)}  {col(C.Y, f'{ov} → {nv}')}"
-        return f"{col(C.DIM, f'{role} {nv}')}"
+            return f"{col(C.Y, '↑')} {col(C.CY, role)}  {col(C.Y, f'{ov} → {nv}')}", True
+        return f"{col(C.DIM, f'{role} {nv}')}", False
 
     for prefix, members in sorted(groups.items()):
-        p(f"  {col(C.W, prefix)}")
-        parts = [_ver_entry(n, n[len(prefix)+1:]) for n in members]
-        p(f"    {sep.join(parts)}")
+        entries = [_ver_entry(n, n[len(prefix)+1:]) for n in members]
+        # In non-verbose mode, skip groups where nothing changed
+        if not VERBOSE:
+            changed = [e for e, c in entries if c]
+            if not changed:
+                continue
+            p(f"  {col(C.W, prefix)}")
+            p(f"    {sep.join(changed)}")
+        else:
+            p(f"  {col(C.W, prefix)}")
+            parts = [e for e, _ in entries]
+            p(f"    {sep.join(parts)}")
         p()
 
     for name in sorted(standalones):
@@ -1140,6 +1189,7 @@ def cmd_help() -> None:
     {CY}--plugin, -p <name>{C.N}    load exactly one plugin (no expansion, no auto-load)
     {CY}--model, -m <model>{C.N}    model to use (default: opus)
     {CY}-y, --yolo{C.N}             shorthand for --dangerously-skip-permissions
+    {CY}-v, --verbose{C.N}          show full details (versions, hints, full changelog)
 
   {DIM}Commands:{C.N}
     {CY}claude-kit setup{C.N}      install Claude Code features with backup
@@ -1148,13 +1198,33 @@ def cmd_help() -> None:
     {CY}claude-kit update{C.N}     pull latest plugins, show version changes
     {CY}claude-kit version{C.N}    show current version and check for updates
     {CY}claude-kit debug [on|off]{C.N}   toggle debug mode (shows [kit:*] routing info)
-    {CY}claude-kit validate [<name> | --all | --changed]{C.N}   check plugin structure
     {CY}claude-kit uninstall{C.N}  remove claude-kit and the CLI symlink
 """)
 
 # ── dispatch ──────────────────────────────────────────────────────────────────
 
+def _maybe_show_setup_banner() -> None:
+    """Show a one-time banner when setup has not been run after install."""
+    if not INSTALLED_MARKER.exists():
+        return
+    if MANIFEST_FILE.exists():
+        return
+    B = C.Y  # border color
+    p()
+    p(f"  {col(B, '┌─────────────────────────────────────────────────────┐')}")
+    p(f"  {col(B, '│')}  Run  {col(C.CY, 'claude-kit setup')}  to configure Claude Code    {col(B, '│')}")
+    p(f"  {col(B, '│')}                                                     {col(B, '│')}")
+    p(f"  {col(B, '│')}  This will add to ~/.claude/:                       {col(B, '│')}")
+    p(f"  {col(B, '│')}    {col(C.DIM, '•')} {col(C.DIM, 'statusline (context %, tokens, model)')}          {col(B, '│')}")
+    p(f"  {col(B, '│')}    {col(C.DIM, '•')} {col(C.DIM, 'auto-routing rules (intent → skill matching)')}   {col(B, '│')}")
+    p(f"  {col(B, '│')}                                                     {col(B, '│')}")
+    p(f"  {col(B, '│')}  All changes can be undone with: {col(C.CY, 'claude-kit restore')} {col(B, '│')}")
+    p(f"  {col(B, '└─────────────────────────────────────────────────────┘')}")
+    p()
+
+
 def main() -> None:
+    global VERBOSE
     args = sys.argv[1:]
 
     if not args or args[0] in ("help", "--help", "-h"):
@@ -1163,6 +1233,24 @@ def main() -> None:
 
     cmd  = args[0]
     rest = args[1:]
+
+    # Extract -v/--verbose for subcommands (not for launch mode via cmd_run)
+    subcommands = {"list", "update", "version", "setup", "restore", "debug",
+                   "validate", "uninstall"}
+    if cmd in subcommands:
+        if "-v" in rest or "--verbose" in rest:
+            VERBOSE = True
+            rest = [a for a in rest if a not in ("-v", "--verbose")]
+
+    # Auto-enable verbose if debug mode is active
+    debug_rule = pathlib.Path.home() / ".claude" / "rules" / "claude-kit-debug.md"
+    if debug_rule.exists():
+        VERBOSE = True
+
+    # Show setup banner for user installs where setup hasn't been run
+    skip_banner = {"setup", "uninstall", "restore", "help"}
+    if cmd not in skip_banner:
+        _maybe_show_setup_banner()
 
     dispatch = {
         "list":      lambda: cmd_list(),

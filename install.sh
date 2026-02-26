@@ -173,3 +173,16 @@ echo ""
 echo -e "  ${_DIM}────────────────────────────────────────────────────────${_N}"
 echo -e "  ${_DIM}github.com/MateoSegura/claude-kit${_N}"
 echo ""
+
+# ── Setup reminder banner ────────────────────────────────────────────────────
+
+echo -e "  ${_Y}┌─────────────────────────────────────────────────────┐${_N}"
+echo -e "  ${_Y}│${_N}  Run  ${_C}claude-kit setup${_N}  to configure Claude Code    ${_Y}│${_N}"
+echo -e "  ${_Y}│${_N}                                                     ${_Y}│${_N}"
+echo -e "  ${_Y}│${_N}  This will add to ~/.claude/:                       ${_Y}│${_N}"
+echo -e "  ${_Y}│${_N}    ${_DIM}• statusline (context %, tokens, model)${_N}          ${_Y}│${_N}"
+echo -e "  ${_Y}│${_N}    ${_DIM}• auto-routing rules (intent → skill matching)${_N}   ${_Y}│${_N}"
+echo -e "  ${_Y}│${_N}                                                     ${_Y}│${_N}"
+echo -e "  ${_Y}│${_N}  All changes can be undone with: ${_C}claude-kit restore${_N} ${_Y}│${_N}"
+echo -e "  ${_Y}└─────────────────────────────────────────────────────┘${_N}"
+echo ""
