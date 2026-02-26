@@ -1133,7 +1133,7 @@ def _feedback_ask(prompt: str, required: bool = True) -> str:
         p(f"  {col(C.DIM, 'Cancelled.')}")
         return ""
 
-def cmd_feedback(args: list) -> None:
+def cmd_feedback() -> None:
     # Check gh is installed
     if not shutil.which("gh"):
         p()
