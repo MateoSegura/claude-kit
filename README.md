@@ -12,7 +12,7 @@ Specialized Claude Code plugins for your team. One command launches a domain exp
 git clone https://github.com/MateoSegura/claude-kit.git ~/.claude-kit && bash ~/.claude-kit/install.sh
 ```
 
-Requires: `git`, `python3`, and repo access. Claude Code CLI and `jq` are installed automatically if missing.
+Requires: `git`, `python3`, and repo access. Claude Code CLI, `jq`, and `gh` are installed automatically if missing.
 
 ## Usage
 
@@ -51,6 +51,13 @@ claude-kit validate embedded-zephyr-engineer
 
 # Undo setup changes
 claude-kit restore
+
+# Share feedback (creates a GitHub issue)
+claude-kit feedback "love the debug mode!"
+claude-kit feedback                        # interactive prompt
+
+# See what's coming and what shipped
+claude-kit roadmap
 
 # Remove claude-kit from this machine
 claude-kit uninstall

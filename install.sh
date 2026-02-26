@@ -72,6 +72,47 @@ if ! command -v jq &>/dev/null; then
   fi
 fi
 
+# ── Install gh if missing ──────────────────────────────────────────────────────
+
+_install_gh() {
+  if command -v apt-get &>/dev/null; then
+    info "Installing gh via apt ..."
+    (type -p wget >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq wget >/dev/null)) \
+      && sudo mkdir -p -m 755 /etc/apt/keyrings \
+      && out=$(mktemp) && wget -qO "$out" https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+      && cat "$out" | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg >/dev/null \
+      && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+      && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+        | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null \
+      && sudo apt-get update -qq >/dev/null && sudo apt-get install -y -qq gh >/dev/null
+  elif command -v brew &>/dev/null; then
+    info "Installing gh via brew ..."
+    brew install gh >/dev/null
+  elif command -v dnf &>/dev/null; then
+    info "Installing gh via dnf ..."
+    sudo dnf install -y -q 'dnf-command(config-manager)' >/dev/null \
+      && sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo >/dev/null \
+      && sudo dnf install -y -q gh >/dev/null
+  elif command -v pacman &>/dev/null; then
+    info "Installing gh via pacman ..."
+    sudo pacman -S --noconfirm github-cli >/dev/null
+  elif command -v apk &>/dev/null; then
+    info "Installing gh via apk ..."
+    sudo apk add -q github-cli >/dev/null
+  else
+    return 1
+  fi
+}
+
+if ! command -v gh &>/dev/null; then
+  if _install_gh; then
+    ok "gh installed"
+  else
+    warn "Could not auto-install gh (GitHub CLI). The feedback command will not work."
+    warn "Install manually: https://cli.github.com"
+  fi
+fi
+
 # ── Clone or update ───────────────────────────────────────────────────────────
 
 _kit_version() {

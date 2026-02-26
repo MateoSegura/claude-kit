@@ -4,6 +4,21 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Tips system** — random helpful tips (~30% chance) shown after CLI commands
+  with emoji and color formatting; covers setup, kits, feedback, roadmap, debug,
+  and other common workflows
+- **`claude-kit feedback [msg]` command** — creates a GitHub issue with git
+  identity, version, and OS metadata auto-attached; supports inline or
+  interactive input; requires `gh` CLI (auto-installed)
+- **`claude-kit roadmap` command** — renders ROADMAP.md with terminal colors,
+  section-aware formatting (cyan for in-progress, yellow for planned, dim for
+  shipped)
+- **ROADMAP.md** — initial roadmap with In Progress, Planned, and Shipped
+  sections
+- **`gh` auto-install** in `install.sh` — follows same pattern as `jq`
+  auto-install, with soft failure warning if install fails
+
 ## [0.8.0] - 2026-02-26
 
 ### Added
