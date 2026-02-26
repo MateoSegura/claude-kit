@@ -152,6 +152,21 @@ expect_error  "--kit with no name exits non-zero" --kit
 expect_error  "--kit nonexistent plugin fails"    --kit nonexistent-plugin-xyz-abc
 expect_error  "--model with no value fails"       --kit embedded-zephyr-engineer --model
 
+# ── roadmap ──────────────────────────────────────────────────────────────────
+expect_exit   "roadmap exits 0"                     0 roadmap
+expect_output "roadmap shows In Progress"           "In Progress" roadmap
+expect_output "roadmap shows Planned"               "Planned" roadmap
+expect_output "roadmap shows Shipped"               "Shipped" roadmap
+
+# ── feedback / roadmap in help ───────────────────────────────────────────────
+expect_output "help shows feedback command"         "feedback" help
+expect_output "help shows roadmap command"          "roadmap" help
+
+# ── ROADMAP.md exists ────────────────────────────────────────────────────────
+ROADMAP_FILE="$(cd "$(dirname "$0")/.." && pwd)/ROADMAP.md"
+if [ -f "$ROADMAP_FILE" ]; then _ok "ROADMAP.md exists"
+else _fail "ROADMAP.md exists" "file not found at $ROADMAP_FILE"; fi
+
 # ── summary ───────────────────────────────────────────────────────────────────
 echo ""
 echo "  ──────────────────────────────────────"
