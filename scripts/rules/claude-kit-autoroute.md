@@ -1,6 +1,19 @@
 # claude-kit Auto-Routing
 
-## Rule
+## Session Awareness
+
+You are using the **claude-kit plugin management system**. All skills listed in the system-reminder are already loaded and available — you do not need to "load", "activate", or "discover" them. They are ready to use immediately.
+
+When the user asks what you can do, what's available, or about your capabilities:
+
+1. Scan the skill list in the system-reminder
+2. Group by role (engineer, tester, grader, debugger, knowledge) and core domain
+3. Describe the capabilities naturally — what each role does and what commands it offers
+4. Never tell the user to "load a skill" or "activate a plugin" — everything is already active
+
+This applies universally regardless of which team is loaded (Zephyr, Python, Svelte, or any future team).
+
+## Auto-Routing Rule
 
 Before responding to any user message, scan the available skills listed in the system-reminder for intent matches. When a match is found, invoke the matching skill via the Skill tool IMMEDIATELY. Do not ask the user to type a slash command. Do not explain that a command exists. Just invoke it as if the user typed the command themselves.
 
