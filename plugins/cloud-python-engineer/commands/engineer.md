@@ -28,6 +28,7 @@ Read the user's request and map it to exactly one primary workflow (or a sequenc
 | Generate migration | "migration", "schema change", "add column", "rename table", "Alembic", "database change" | `migration-writer` |
 | Scaffold worker | "worker", "consumer", "background task", "Celery", "queue consumer", "pub/sub subscriber", "async job", "scheduled task" | `worker-writer` |
 | Generate K8s manifests | "Kubernetes", "K8s", "deploy", "deployment YAML", "Helm chart", "Kustomize", "manifest", "ingress", "service account" | `manifest-writer` |
+| Architecture or design planning | "plan", "architect", "design system", "service decomposition", "how to structure" | Redirect to `/cloud-python-engineer:plan` command |
 
 A single user request may need multiple subagents in sequence. Common compound workflows are described in Step 4.
 

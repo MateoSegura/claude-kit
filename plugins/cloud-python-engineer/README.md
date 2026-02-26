@@ -1,6 +1,6 @@
 # cloud-python-engineer
 
-> **Role:** Engineer · **Version:** 0.1.1
+> **Role:** Engineer · **Version:** 0.2.0
 
 Python cloud-backend engineer — scaffolds microservices, writes FastAPI endpoints, gRPC methods, Alembic migrations, background workers, and K8s manifests for modern distributed systems.
 
@@ -24,6 +24,7 @@ claude-kit --kit cloud-python
 | `migration-writer` | Generates Alembic database migrations for SQLAlchemy 2.0 models. Reads model definitions, produces upgrade/downgrade scripts, handles complex operations (data migrations, enum changes, foreign key constraints, index creation), and validates migration chain integrity. Use when the user needs database schema changes, new migrations, or migration troubleshooting. |
 | `worker-writer` | Scaffolds background workers and async task processors. Generates Celery tasks, Dramatiq actors, Kafka/NATS/Redis Streams consumers, and pure asyncio workers with graceful shutdown, dead-letter handling, retry policies (tenacity), circuit breakers, and OpenTelemetry instrumentation. Use when the user needs background job processing, event consumers, scheduled tasks, or message queue workers. |
 | `manifest-writer` | Generates Kubernetes manifests and Dockerfiles for Python microservices. Produces Deployment, Service, ConfigMap, Secret, HPA, Ingress, PodDisruptionBudget, init containers (Alembic migrations), Kustomize overlays, and multi-stage Dockerfiles with uv. Cloud-agnostic and production-ready. Use when the user needs to containerize a service, create K8s deployment configs, or set up Kustomize environments. |
+| `architect` | Read-only architecture planning agent for Python cloud-backend systems. Use when the user needs to decompose a system into microservices, design API boundaries, plan database schemas, choose inter-service communication patterns (REST vs gRPC vs events), design infrastructure topology, or evaluate architectural trade-offs before implementation. |
 
 ---
 
@@ -32,3 +33,4 @@ claude-kit --kit cloud-python
 | Command | What it does |
 |---------|-------------|
 | `/cloud-python-engineer:engineer` | Primary entry point for all cloud Python engineering workflows. Routes service scaffolding, HTTP endpoints, gRPC methods, database migrations, background workers, and Kubernetes manifests to the appropriate specialist subagent. |
+| `/cloud-python-engineer:plan` | Architecture planning for Python cloud services — service decomposition, API boundary design, database schema planning, inter-service communication strategy, and infrastructure topology. Dispatches the `architect` agent for detailed read-only design plans. |

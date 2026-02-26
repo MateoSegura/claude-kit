@@ -1,6 +1,6 @@
 # embedded-zephyr-engineer
 
-> **Role:** Engineer · **Version:** 0.1.1
+> **Role:** Engineer · **Version:** 0.2.0
 
 Zephyr RTOS embedded systems development agent — master-level firmware specialist with cloud-native patterns, runtime-driven initialization, full hardware portability, secure boot integration, and comprehensive architecture design patterns.
 
@@ -23,6 +23,7 @@ claude-kit --kit embedded-zephyr
 | `build-debug-analyst` | Expert diagnostician for Zephyr build failures, runtime crashes, hard faults, flash/debug issues, and hardware interaction problems. Use when the user reports errors, test failures, unexpected behavior, crash dumps, or needs help with west build/flash/debug commands. |
 | `code-reviewer` | Reviews Zephyr firmware code for MISRA C:2012 compliance, Zephyr coding guidelines, the 10 non-negotiable anti-patterns, devicetree correctness, Kconfig completeness, memory safety, and architecture quality. Use when the user requests a code review, wants to check code quality, or before merging changes. |
 | `test-engineer` | Creates and maintains Zephyr test suites using ztest, writes testcase.yaml configurations, manages twister execution, builds BabbleSim/Renode/HIL test harnesses, and generates coverage reports. Use when the user needs tests written, wants to run the test suite, or needs help with test infrastructure. |
+| `architect` | Read-only architecture planning agent for Zephyr RTOS firmware systems. Use when the user needs to design module structure, plan HAL layering, decompose a feature into subsystems, select communication protocols, plan memory layouts, design driver architectures, or evaluate architectural trade-offs before implementation. |
 
 ---
 
@@ -32,3 +33,4 @@ claude-kit --kit embedded-zephyr
 |---------|-------------|
 | `/embedded-zephyr-engineer:develop` | Primary entry point for firmware development. Routes feature builds, bug fixes, and refactors to the appropriate specialist subagent. Handles requirements analysis, context gathering, and agent dispatch. |
 | `/embedded-zephyr-engineer:review` | Performance-focused code review for Zephyr code. Analyzes memory usage, execution efficiency, Zephyr patterns, and MISRA compliance. Produces prioritized, actionable recommendations. Does NOT modify code. |
+| `/embedded-zephyr-engineer:plan` | Architecture planning for Zephyr firmware — module decomposition, HAL layering, memory layout, protocol selection, and design trade-offs. Dispatches the `architect` agent for detailed read-only design plans. |
