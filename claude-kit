@@ -9,6 +9,8 @@ import shutil
 import pathlib
 import difflib
 import textwrap
+import random
+import platform
 from datetime import datetime
 
 # ── Constants ────────────────────────────────────────────────────────────────
@@ -40,6 +42,34 @@ def col(color: str, text: str) -> str:
 
 def p(text: str = "") -> None:
     print(text)
+
+# ── Tips ──────────────────────────────────────────────────────────────────────
+
+_TIPS = [
+    ("\U0001f4a1", f"Run  {C.CY}claude-kit setup{C.N}  to get auto-routing and a status line"),
+    ("\U0001f680", f"Launch a full team:  {C.CY}claude-kit --kit embedded-zephyr{C.N}"),
+    ("\U0001f50d", f"See what's available:  {C.CY}claude-kit list -v{C.N}"),
+    ("\U0001f41b", f"Toggle debug routing:  {C.CY}claude-kit debug on{C.N}"),
+    ("\U0001f4e6", f"Pull latest plugins:  {C.CY}claude-kit update{C.N}"),
+    ("\u2705",     f"Validate before committing:  {C.CY}claude-kit validate --changed{C.N}"),
+    ("\U0001f4ac", f"Share feedback:  {C.CY}claude-kit feedback{C.N}"),
+    ("\U0001f5fa\ufe0f",  f"See what's coming:  {C.CY}claude-kit roadmap{C.N}"),
+    ("\U0001f916", f"Choose your model:  {C.CY}claude-kit -k <name> --model sonnet{C.N}"),
+    ("\u26a1",     f"Skip prompts:  {C.CY}claude-kit -k <name> --yolo{C.N}"),
+    ("\U0001f517", f"Combine kits:  {C.CY}claude-kit -k <name> -k core-spec{C.N}"),
+    ("\U0001f4cb", f"Load one plugin:  {C.CY}claude-kit --plugin core-kit{C.N}"),
+    ("\U0001f504", f"Resume last session:  {C.CY}claude-kit -k <name> --resume{C.N}"),
+    ("\U0001f6e0\ufe0f",  f"Build a new team:  {C.CY}claude-kit --kit system-maker{C.N}"),
+    ("\U0001f4c8", f"Check your version:  {C.CY}claude-kit version{C.N}"),
+]
+
+def _maybe_show_tip() -> None:
+    if random.random() >= 0.3:
+        return
+    emoji, msg = random.choice(_TIPS)
+    p()
+    p(f"  {col(C.DIM, chr(0x2500) * 38)}")
+    p(f"  {emoji}  {msg}")
 
 # ── Plugin helpers ────────────────────────────────────────────────────────────
 
@@ -1097,6 +1127,165 @@ def cmd_debug(args: list) -> None:
         p(f"  Usage: {col(C.CY, 'claude-kit debug [on|off]')}")
         p()
 
+# ── cmd_feedback ──────────────────────────────────────────────────────────────
+
+def cmd_feedback(args: list) -> None:
+    # Check gh is installed
+    if not shutil.which("gh"):
+        p()
+        p(f"  {col(C.R, 'Error:')} GitHub CLI (gh) is required for feedback.")
+        p(f"  Install it:  {col(C.CY, 'https://cli.github.com')}")
+        p()
+        sys.exit(1)
+
+    # Check gh auth
+    auth = subprocess.run(["gh", "auth", "status"], capture_output=True, text=True)
+    if auth.returncode != 0:
+        p()
+        p(f"  {col(C.R, 'Error:')} Not authenticated with GitHub.")
+        p(f"  Run:  {col(C.CY, 'gh auth login')}")
+        p()
+        sys.exit(1)
+
+    # Get message from args or interactive prompt
+    message = " ".join(args).strip() if args else ""
+    if not message:
+        p()
+        p(f"  {col(C.W, 'claude-kit feedback')}")
+        p(f"  {col(C.DIM, chr(0x2500) * 40)}")
+        p()
+        p(f"  Share your feedback — it creates a GitHub issue.")
+        p(f"  {col(C.DIM, 'Press Ctrl+C to cancel.')}")
+        p()
+        try:
+            message = input(f"  {col(C.W, '>')} ").strip()
+        except (KeyboardInterrupt, EOFError):
+            p()
+            p(f"  {col(C.DIM, 'Cancelled.')}")
+            p()
+            return
+        if not message:
+            p()
+            p(f"  {col(C.DIM, 'No feedback provided.')}")
+            p()
+            return
+
+    # Collect metadata
+    name  = _git(["config", "user.name"])  or "unknown"
+    email = _git(["config", "user.email"]) or "unknown"
+    ver   = _current_version()
+    os_info = f"{platform.system()} {platform.release()}"
+    date  = datetime.now().strftime("%Y-%m-%d")
+
+    title = f"Feedback: {message[:50]}"
+    body = f"""## Feedback
+
+{message}
+
+---
+**From:** {name} <{email}>
+**Version:** {ver}
+**OS:** {os_info}
+**Date:** {date}
+"""
+
+    # Try with --label feedback, fallback without
+    result = subprocess.run(
+        ["gh", "issue", "create",
+         "--repo", "MateoSegura/claude-kit",
+         "--title", title,
+         "--body", body,
+         "--label", "feedback"],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        # Retry without label (label may not exist)
+        result = subprocess.run(
+            ["gh", "issue", "create",
+             "--repo", "MateoSegura/claude-kit",
+             "--title", title,
+             "--body", body],
+            capture_output=True, text=True,
+        )
+
+    if result.returncode == 0:
+        url = result.stdout.strip()
+        p()
+        p(f"  {col(C.G, chr(0x2713))} Feedback submitted!")
+        p(f"  {col(C.CY, url)}")
+        p()
+    else:
+        p()
+        p(f"  {col(C.R, 'Error:')} Could not create issue.")
+        stderr = result.stderr.strip()
+        if stderr:
+            p(f"  {col(C.DIM, stderr)}")
+        p()
+        sys.exit(1)
+
+# ── cmd_roadmap ──────────────────────────────────────────────────────────────
+
+def cmd_roadmap() -> None:
+    roadmap_file = INSTALL_DIR / "ROADMAP.md"
+    if not roadmap_file.exists():
+        p()
+        p(f"  {col(C.R, 'Error:')} ROADMAP.md not found.")
+        p()
+        sys.exit(1)
+
+    p()
+    p(f"  {col(C.W, 'claude-kit roadmap')}")
+    p(f"  {col(C.DIM, chr(0x2500) * 40)}")
+
+    section_color = C.N
+    for line in roadmap_file.read_text().splitlines():
+        stripped = line.strip()
+
+        # Skip top-level heading
+        if stripped.startswith("# ") and not stripped.startswith("## "):
+            continue
+
+        # Section headers
+        if stripped.startswith("## "):
+            label = stripped[3:].strip()
+            if "in progress" in label.lower():
+                section_color = C.CY
+            elif "planned" in label.lower():
+                section_color = C.Y
+            elif "shipped" in label.lower():
+                section_color = C.DIM
+            else:
+                section_color = C.N
+            p()
+            p(f"  {col(section_color, label)}")
+            continue
+
+        # Blank lines
+        if not stripped:
+            continue
+
+        # Bullet items: - **Name** — detail
+        if stripped.startswith("- **"):
+            # Split on closing **
+            rest_after_dash = stripped[2:]  # remove "- "
+            bold_end = rest_after_dash.find("**", 2)
+            if bold_end > 0:
+                bold_text = rest_after_dash[2:bold_end]  # text inside **...**
+                remainder = rest_after_dash[bold_end + 2:]  # after closing **
+                p(f"    {col(C.W, bold_text)}{col(section_color, remainder)}")
+            else:
+                p(f"    {col(section_color, stripped[2:])}")
+            continue
+
+        # Indented continuation
+        if line.startswith("  "):
+            p(f"      {col(C.DIM, stripped)}")
+            continue
+
+    p()
+    p(f"  {col(C.DIM, 'github.com/MateoSegura/claude-kit')}")
+    p()
+
 # ── cmd_uninstall ─────────────────────────────────────────────────────────────
 
 def _remove_rc_lines(marker: str = "# claude-kit") -> list:
@@ -1217,6 +1406,8 @@ def cmd_help() -> None:
     {CY}claude-kit list{C.N}       show available kits (bundled + local)
     {CY}claude-kit update{C.N}     pull latest plugins, show version changes
     {CY}claude-kit version{C.N}    show current version and check for updates
+    {CY}claude-kit feedback [msg]{C.N}   share feedback — creates a GitHub issue
+    {CY}claude-kit roadmap{C.N}          see what's coming and what shipped
     {CY}claude-kit debug [on|off]{C.N}   toggle debug mode (shows [kit:*] routing info)
     {CY}claude-kit uninstall{C.N}  remove claude-kit and the CLI symlink
 """)
@@ -1256,7 +1447,7 @@ def main() -> None:
 
     # Extract -v/--verbose for subcommands (not for launch mode via cmd_run)
     subcommands = {"list", "update", "version", "setup", "restore", "debug",
-                   "validate", "uninstall"}
+                   "validate", "uninstall", "feedback", "roadmap"}
     if cmd in subcommands:
         if "-v" in rest or "--verbose" in rest:
             VERBOSE = True
@@ -1281,10 +1472,14 @@ def main() -> None:
         "debug":     lambda: cmd_debug(rest),
         "validate":  lambda: cmd_validate(rest),
         "uninstall": lambda: cmd_uninstall(),
+        "feedback":  lambda: cmd_feedback(rest),
+        "roadmap":   lambda: cmd_roadmap(),
     }
 
     if cmd in dispatch:
         dispatch[cmd]()
+        if cmd not in {"help"}:
+            _maybe_show_tip()
     else:
         # Any flag or positional not matching a subcommand goes to cmd_run,
         # which separates claude-kit flags from claude passthrough flags.
