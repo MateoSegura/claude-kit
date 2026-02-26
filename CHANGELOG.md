@@ -4,6 +4,8 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-02-26
+
 ### Fixed
 - **Remove unreliable Stop hooks** from all 14 team plugins — `prompt`/`agent`
   type stop hooks caused "JSON validation failed" errors on every session end;
