@@ -52,9 +52,8 @@ claude-kit validate embedded-zephyr-engineer
 # Undo setup changes
 claude-kit restore
 
-# Share feedback (creates a GitHub issue)
-claude-kit feedback "love the debug mode!"
-claude-kit feedback                        # interactive prompt
+# Share feedback (interactive — creates a GitHub issue)
+claude-kit feedback
 
 # See what's coming and what shipped
 claude-kit roadmap
