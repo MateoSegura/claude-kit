@@ -9,10 +9,10 @@ Specialized Claude Code plugins for your team. One command launches a domain exp
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/MateoSegura/claude-kit/main/install.sh | bash
+git clone https://github.com/MateoSegura/claude-kit.git ~/.claude-kit && bash ~/.claude-kit/install.sh
 ```
 
-Requires: `git`, `python3`. Claude Code CLI and `jq` are installed automatically if missing.
+Requires: `git`, `python3`, and repo access. Claude Code CLI and `jq` are installed automatically if missing.
 
 ## Usage
 
