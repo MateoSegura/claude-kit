@@ -3,7 +3,7 @@ name: architect
 model: opus
 description: "Read-only architecture planning agent for Python cloud-backend systems. Use when the user needs to decompose a system into microservices, design API boundaries, plan database schemas, choose inter-service communication patterns (REST vs gRPC vs events), design infrastructure topology, or evaluate architectural trade-offs before implementation."
 tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
-skills: identity, python-backend, design-patterns, cloud-python-knowledge:distributed-systems, cloud-python-knowledge:containerization
+skills: identity, python-backend, design-patterns, cloud-python-knowledge:distributed-systems, cloud-python-knowledge:containers-orchestration
 permissionMode: plan
 color: "#4A90D9"
 ---

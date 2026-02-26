@@ -1,7 +1,7 @@
 ---
 name: cloud-python-engineer:plan
 description: "Architecture planning for Python cloud services — service decomposition, API boundary design, database schema planning, inter-service communication strategy, and infrastructure topology"
-allowed-tools: Task, Read, Glob, Grep, Bash, AskFollowupQuestion, WebSearch
+allowed-tools: Task, Read, Glob, Grep, Bash, AskUserQuestion, WebSearch
 user-invocable: true
 ---
 
@@ -47,7 +47,7 @@ Bash: find . -name "docker-compose*.yml" -type f — service composition
 
 ## Step 3: Clarify Requirements
 
-If the request is ambiguous, use `AskFollowupQuestion` to clarify:
+If the request is ambiguous, use `AskUserQuestion` to clarify:
 
 - **Scale**: "Expected request volume? (requests/sec, concurrent users)"
 - **Communication**: "How do services communicate? (REST, gRPC, events, or mixed)"
@@ -78,7 +78,7 @@ The `architect` agent has these skills preloaded:
 - `python-backend` — FastAPI, async patterns, Pydantic, SQLAlchemy
 - `design-patterns` — cloud-native Python design patterns
 - `distributed-systems` — messaging, caching, consistency
-- `containerization` — Docker, Kubernetes, Helm
+- `containers-orchestration` — Docker, Kubernetes, Helm
 
 ## Step 5: Present the Architecture Plan
 
@@ -123,7 +123,7 @@ Offer follow-up actions:
 
 ## Error Handling
 
-- **Ambiguous scope** → Use `AskFollowupQuestion` to narrow the design challenge
+- **Ambiguous scope** → Use `AskUserQuestion` to narrow the design challenge
 - **No existing codebase** → Architecture plan assumes greenfield Python service
 - **Conflicting requirements** → Present trade-offs (e.g., consistency vs latency)
 - **Architect returns incomplete** → Report gaps, offer to re-run with more context

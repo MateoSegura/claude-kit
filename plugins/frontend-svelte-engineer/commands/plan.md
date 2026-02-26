@@ -1,7 +1,7 @@
 ---
 name: frontend-svelte-engineer:plan
 description: "Architecture planning for SvelteKit applications — route design, component hierarchy, state management strategy, data flow patterns, and rendering strategy decisions"
-allowed-tools: Task, Read, Glob, Grep, Bash, AskFollowupQuestion, WebSearch
+allowed-tools: Task, Read, Glob, Grep, Bash, AskUserQuestion, WebSearch
 user-invocable: true
 ---
 
@@ -44,7 +44,7 @@ Bash: du -sh node_modules/.vite 2>/dev/null — build cache status
 
 ## Step 3: Clarify Requirements
 
-If the request is ambiguous, use `AskFollowupQuestion` to clarify:
+If the request is ambiguous, use `AskUserQuestion` to clarify:
 
 - **Deployment target**: "What deployment target? (Vercel, Cloudflare, Tauri 2, Electron, static, Node.js)"
 - **Scale**: "How many routes/pages do you expect? Any complex interactive features?"
@@ -121,7 +121,7 @@ Offer follow-up actions:
 
 ## Error Handling
 
-- **Ambiguous scope** → Use `AskFollowupQuestion` to narrow the design challenge
+- **Ambiguous scope** → Use `AskUserQuestion` to narrow the design challenge
 - **No existing project** → Architecture plan assumes greenfield SvelteKit setup
 - **Conflicting requirements** → Present trade-offs, let user decide priority
 - **Architect returns incomplete** → Report gaps, offer to re-run with more context
