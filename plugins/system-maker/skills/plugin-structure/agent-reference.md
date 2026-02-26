@@ -81,13 +81,13 @@ allowed-tools: Read, Glob, Grep, Write, Edit, Bash
 
 Assign the MINIMUM tools needed for the agent's role:
 
-### Read-Only Agents (analysis, review, validation)
+### Read-Only Agents (analysis, review, validation, architecture)
 
 ```yaml
 tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
 ```
 
-These agents analyze but never modify. Giving them write tools is a design error — it means the agent's role is unclear.
+These agents analyze but never modify. Giving them write tools is a design error — it means the agent's role is unclear. Architecture/planning agents (`architect`) belong here — they use `permissionMode: plan` and `model: opus` to produce detailed design plans without modifying code.
 
 ### Write Agents (implementation, generation)
 

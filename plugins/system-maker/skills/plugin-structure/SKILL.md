@@ -314,13 +314,14 @@ For complete LSP and MCP specifications including all fields, multi-server examp
 5. **Skills for shared knowledge**: If multiple agents need the same reference info, put it in a skill.
 6. **Hooks for enforcement**: Use hooks to validate outputs and enforce hard constraints — not for things Claude handles well already.
 7. **Commands as orchestrators**: Commands coordinate workflows, spawning agents for the heavy lifting.
-8. **Use ${CLAUDE_PLUGIN_ROOT}**: Always use this variable in hooks and MCP/LSP configs instead of hardcoding paths.
-9. **Flat agent hierarchy**: Subagents cannot spawn other subagents. Design accordingly.
-10. **Required fields matter**: Agents require both `name` and `description`. Skills require both `name` and `description`.
-11. **Identity as a skill**: Use `user-invocable: false` skills for agent identity/methodology. Plugins do NOT read their own CLAUDE.md — only skills, agents, hooks, commands, and config files are loaded.
-12. **Multi-file skills**: Keep SKILL.md under 500 lines. Split into reference files for depth.
-13. **Rich hooks**: Use all 3 hook types (command, prompt, agent) — not just command hooks.
-14. **LSP for language intelligence**: Always include `.lsp.json` when the domain has a language server available.
+8. **Engineer plugins need three commands**: Every engineer-role plugin should provide a `develop` command (implementation orchestrator), a `review` command (read-only code review orchestrator), and a `plan` command (read-only architecture planning orchestrator with a dedicated `architect` agent using `permissionMode: plan` and `model: opus`).
+9. **Use ${CLAUDE_PLUGIN_ROOT}**: Always use this variable in hooks and MCP/LSP configs instead of hardcoding paths.
+10. **Flat agent hierarchy**: Subagents cannot spawn other subagents. Design accordingly.
+11. **Required fields matter**: Agents require both `name` and `description`. Skills require both `name` and `description`.
+12. **Identity as a skill**: Use `user-invocable: false` skills for agent identity/methodology. Plugins do NOT read their own CLAUDE.md — only skills, agents, hooks, commands, and config files are loaded.
+13. **Multi-file skills**: Keep SKILL.md under 500 lines. Split into reference files for depth.
+14. **Rich hooks**: Use all 3 hook types (command, prompt, agent) — not just command hooks.
+15. **LSP for language intelligence**: Always include `.lsp.json` when the domain has a language server available.
 
 </best-practices>
 

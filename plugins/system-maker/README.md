@@ -1,6 +1,6 @@
 # system-maker
 
-> **Role:** System · **Version:** 0.4.0
+> **Role:** System · **Version:** 0.4.1
 
 Member Maker — guides users through designing and building Claude Code domain-expert plugins (single or full teams) via structured multi-phase workflows with parallel subagent execution.
 
