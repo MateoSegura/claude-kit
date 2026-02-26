@@ -1,5 +1,5 @@
 {
   "name": "system-updater",
-  "description": "Member Updater \u2014 guides users through enhancing existing Claude Code plugins via structured workflows with fitness checking, surgical change planning, and staging-based safe implementation.",
-  "version": "0.2.0"
+  "description": "Team Updater \u2014 guides users through enhancing existing Claude Code plugins via structured workflows with fitness checking, surgical change planning, and staging-based safe implementation.",
+  "version": "0.3.0"
 }

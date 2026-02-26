@@ -315,7 +315,7 @@ If Phase 5 validation detects issues:
 
 ### Concept
 
-The orchestrator (update-member.md command) coordinates all work via the Task tool. Subagents never spawn other subagents — the hierarchy is flat.
+The orchestrator command coordinates all work via the Task tool. Subagents never spawn other subagents — the hierarchy is flat.
 
 ### Implementation
 
@@ -491,4 +491,4 @@ Review plugin 2/4: embedded-zephyr-grader (foreground)
 ...
 ```
 
-Each plugin gets one review pass plus one optional re-review (same as the single-plugin update-member workflow).
+Each plugin gets one review pass plus one optional re-review.

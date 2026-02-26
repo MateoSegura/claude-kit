@@ -1,8 +1,8 @@
 # system-updater
 
-> **Role:** System · **Version:** 0.2.0
+> **Role:** System · **Version:** 0.3.0
 
-Member Updater — guides users through enhancing existing Claude Code plugins via structured workflows with fitness checking, surgical change planning, and staging-based safe implementation. Supports single-plugin updates and batched team-wide updates.
+Team Updater — guides users through enhancing existing Claude Code plugins via structured workflows with fitness checking, surgical change planning, and staging-based safe implementation. Supports batched team-wide updates and comprehensive plugin review.
 
 ```bash
 claude-kit --kit system-updater
@@ -27,5 +27,6 @@ claude-kit --kit system-updater
 
 | Command | What it does |
 |---------|-------------|
-| `/system-updater:update-member` | Plugin enhancement orchestrator. Guides through a 7-phase workflow (plugin selection → analysis → fitness check → approval → implementation → deep review → finalization) with timestamped backups and staging-based safety. |
 | `/system-updater:update-team` | Team update orchestrator. Updates all members of a domain team (or a subset) in one session with shared intent, parallel analysis, per-plugin fitness checking, batched implementation, and sequential review. |
+| `/system-updater:review-all` | Read-only parallel review of all plugins (or a filtered subset). Spawns batched plugin-reviewer agents (5 per batch) via team-lead pattern, aggregates per-plugin grades into a health summary. |
+| `/system-updater:review-and-fix-all` | Full review-and-fix cycle for all plugins. Reviews in parallel batches, applies mechanical fixes directly, dispatches change-writer teams for content/structural fixes, re-reviews fixed plugins, and presents before/after grade comparison with user approval gate before finalizing. |

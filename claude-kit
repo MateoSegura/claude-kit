@@ -200,12 +200,13 @@ def _print_launch_header(plugin_names: list) -> None:
 
 def cmd_run(args: list) -> None:
     kit_names = []
+    plugin_names_raw = []  # --plugin/-p: exact plugin, no expansion
     model = "opus"
     skip_permissions = False
     passthrough = []  # flags/args forwarded to claude as-is
 
     # Flags we consume ourselves; everything else goes to claude.
-    OUR_KV_FLAGS = {"--kit", "-k", "--model", "-m"}
+    OUR_KV_FLAGS = {"--kit", "-k", "--plugin", "-p", "--model", "-m"}
     OUR_BOOL_FLAGS = {"--dangerously-skip-permissions", "--yolo", "-y"}
 
     i = 0
@@ -216,6 +217,11 @@ def cmd_run(args: list) -> None:
             if i >= len(args):
                 print("Error: --kit requires a name"); sys.exit(1)
             kit_names.append(args[i])
+        elif a in ("--plugin", "-p"):
+            i += 1
+            if i >= len(args):
+                print("Error: --plugin requires a name"); sys.exit(1)
+            plugin_names_raw.append(args[i])
         elif a in ("--model", "-m"):
             i += 1
             if i >= len(args):
@@ -235,14 +241,30 @@ def cmd_run(args: list) -> None:
                 kit_names.append(a)
         i += 1
 
-    if not kit_names:
-        print("Error: Specify at least one kit with --kit <name>")
+    if not kit_names and not plugin_names_raw:
+        print("Error: Specify at least one kit with --kit <name> or plugin with --plugin <name>")
         p()
         cmd_list()
         sys.exit(1)
 
     seen: set = set()
     all_plugins: list = []
+
+    # --plugin/-p: load exactly the named plugin, no prefix expansion,
+    # no companion resolution, no core auto-loading.
+    for pname in plugin_names_raw:
+        pdir = find_plugin_dir(pname)
+        if pdir is None:
+            print(f"Error: Plugin '{pname}' not found in {PLUGINS_DIR}/ or {LOCAL_DIR}/",
+                  file=sys.stderr)
+            p()
+            cmd_list()
+            sys.exit(1)
+        if pname not in seen:
+            seen.add(pname)
+            all_plugins.append(pname)
+
+    # --kit/-k: full expansion (prefix match + companions + core auto-load).
     for name in kit_names:
         all_plugins.extend(expand_kit(name, seen))
 
@@ -720,9 +742,12 @@ def _write_manifest(manifest: dict) -> None:
 
 def cmd_setup(args: list) -> None:
     CLAUDE_DIR      = pathlib.Path.home() / ".claude"
+    RULES_DIR       = CLAUDE_DIR / "rules"
     SETTINGS_FILE   = CLAUDE_DIR / "settings.json"
     STATUSLINE_DEST = CLAUDE_DIR / "statusline-command.sh"
     STATUSLINE_SRC  = INSTALL_DIR / "scripts" / "statusline-command.sh"
+    AUTOROUTE_DEST  = RULES_DIR / "claude-kit-autoroute.md"
+    AUTOROUTE_SRC   = INSTALL_DIR / "scripts" / "rules" / "claude-kit-autoroute.md"
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
@@ -797,6 +822,31 @@ def cmd_setup(args: list) -> None:
             keys.append("statusLine")
 
         p(f"  {col(C.G, '✓')} Status line installed")
+        p()
+
+    # ── Auto-routing rules ────────────────────────────────────────────────────
+
+    p(f"  {col(C.W, 'Auto-routing')}  {col(C.DIM, 'natural language → skill invocation')}")
+    p()
+
+    skip_autoroute = False
+
+    if AUTOROUTE_DEST.exists():
+        p(f"  {col(C.DIM, 'Already installed — skipping.')}")
+        skip_autoroute = True
+        p()
+
+    if not AUTOROUTE_SRC.exists():
+        p(f"  {col(C.Y, '!')} Source rules file not found — skipping.")
+        skip_autoroute = True
+        p()
+
+    if not skip_autoroute:
+        RULES_DIR.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(AUTOROUTE_SRC, AUTOROUTE_DEST)
+        if str(AUTOROUTE_DEST) not in manifest["files_added"]:
+            manifest["files_added"].append(str(AUTOROUTE_DEST))
+        p(f"  {col(C.G, '✓')} Auto-routing rules installed")
         p()
 
     _write_manifest(manifest)
@@ -897,11 +947,86 @@ def cmd_restore(args: list) -> None:
             fp.unlink()
             p(f"  {col(C.G, '✓')} Removed {fp.name}")
 
+    # Also clean up debug mode if active (not tracked in manifest)
+    debug_file = pathlib.Path.home() / ".claude" / "rules" / "claude-kit-debug.md"
+    if debug_file.exists():
+        debug_file.unlink()
+        p(f"  {col(C.G, '✓')} Removed claude-kit-debug.md (debug mode was on)")
+
     MANIFEST_FILE.unlink(missing_ok=True)
 
     p()
     p(f"  {col(C.G, 'Restore complete.')} All setup changes reverted.")
     p()
+
+# ── cmd_debug ─────────────────────────────────────────────────────────────────
+
+def cmd_debug(args: list) -> None:
+    CLAUDE_DIR  = pathlib.Path.home() / ".claude"
+    RULES_DIR   = CLAUDE_DIR / "rules"
+    DEBUG_DEST  = RULES_DIR / "claude-kit-debug.md"
+    DEBUG_SRC   = INSTALL_DIR / "scripts" / "rules" / "claude-kit-debug.md"
+
+    is_on = DEBUG_DEST.exists()
+
+    if not args:
+        state = col(C.G, "on") if is_on else col(C.DIM, "off")
+        p()
+        p(f"  Debug mode: {state}")
+        p()
+        if is_on:
+            p(f"  Claude will print {col(C.W, '[kit:*]')} blocks before every")
+            p(f"  skill invocation, agent spawn, and hook trigger.")
+            p()
+            p(f"  Turn off:  {col(C.CY, 'claude-kit debug off')}")
+        else:
+            p(f"  Turn on:   {col(C.CY, 'claude-kit debug on')}")
+        p()
+        return
+
+    action = args[0].lower()
+
+    if action == "on":
+        if is_on:
+            p()
+            p(f"  Debug mode is already {col(C.G, 'on')}.")
+            p()
+            return
+        if not DEBUG_SRC.exists():
+            p()
+            p(f"  {col(C.R, 'Error:')} Source debug rules file not found.")
+            p(f"  Expected: {DEBUG_SRC}")
+            p()
+            return
+        RULES_DIR.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(DEBUG_SRC, DEBUG_DEST)
+        p()
+        p(f"  {col(C.G, '✓')} Debug mode {col(C.G, 'on')}")
+        p()
+        p(f"  Claude will print {col(C.W, '[kit:*]')} blocks before every")
+        p(f"  skill invocation, agent spawn, and hook trigger.")
+        p()
+        p(f"  Takes effect on next {col(C.CY, 'claude-kit --kit')} session.")
+        p(f"  Turn off:  {col(C.CY, 'claude-kit debug off')}")
+        p()
+
+    elif action == "off":
+        if not is_on:
+            p()
+            p(f"  Debug mode is already {col(C.DIM, 'off')}.")
+            p()
+            return
+        DEBUG_DEST.unlink()
+        p()
+        p(f"  {col(C.G, '✓')} Debug mode {col(C.DIM, 'off')}")
+        p()
+        p(f"  Takes effect on next {col(C.CY, 'claude-kit --kit')} session.")
+        p()
+
+    else:
+        p()
+        p(f"  Usage: {col(C.CY, 'claude-kit debug [on|off]')}")
+        p()
 
 # ── cmd_uninstall ─────────────────────────────────────────────────────────────
 
@@ -998,8 +1123,10 @@ def cmd_help() -> None:
   {W}claude-kit{C.N}  Claude Code plugin manager
 
   {DIM}Launch:{C.N}
-    {CY}claude-kit --kit <name>{C.N}
+    {CY}claude-kit --kit <name>{C.N}                       {DIM}load a team (+ companions + core){C.N}
+    {CY}claude-kit --plugin <name>{C.N}                    {DIM}load exactly one plugin{C.N}
     {CY}claude-kit -k <name> -k core-spec{C.N}            {DIM}combine kits{C.N}
+    {CY}claude-kit -k <name> -p core-kit{C.N}             {DIM}add a single plugin to a kit{C.N}
     {CY}claude-kit -k <name> -y{C.N}                       {DIM}skip permission prompts{C.N}
     {CY}claude-kit -k <name> --model sonnet{C.N}           {DIM}choose model  (default: opus){C.N}
     {CY}claude-kit -k <name> --resume{C.N}                 {DIM}resume last session{C.N}
@@ -1009,7 +1136,8 @@ def cmd_help() -> None:
     {CY}--resume, --continue, --print, --verbose, --output-format, ...{C.N}
 
   {DIM}claude-kit flags:{C.N}
-    {CY}--kit, -k <name>{C.N}       plugin kit to load (repeatable)
+    {CY}--kit, -k <name>{C.N}       load a team (prefix match + companions + core auto-load)
+    {CY}--plugin, -p <name>{C.N}    load exactly one plugin (no expansion, no auto-load)
     {CY}--model, -m <model>{C.N}    model to use (default: opus)
     {CY}-y, --yolo{C.N}             shorthand for --dangerously-skip-permissions
 
@@ -1019,6 +1147,7 @@ def cmd_help() -> None:
     {CY}claude-kit list{C.N}       show available kits (bundled + local)
     {CY}claude-kit update{C.N}     pull latest plugins, show version changes
     {CY}claude-kit version{C.N}    show current version and check for updates
+    {CY}claude-kit debug [on|off]{C.N}   toggle debug mode (shows [kit:*] routing info)
     {CY}claude-kit validate [<name> | --all | --changed]{C.N}   check plugin structure
     {CY}claude-kit uninstall{C.N}  remove claude-kit and the CLI symlink
 """)
@@ -1041,6 +1170,7 @@ def main() -> None:
         "version":   lambda: cmd_version(),
         "setup":     lambda: cmd_setup(rest),
         "restore":   lambda: cmd_restore(rest),
+        "debug":     lambda: cmd_debug(rest),
         "validate":  lambda: cmd_validate(rest),
         "uninstall": lambda: cmd_uninstall(),
     }

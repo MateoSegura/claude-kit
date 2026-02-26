@@ -1,8 +1,8 @@
 # system-maker
 
-> **Role:** System · **Version:** 0.4.1
+> **Role:** System · **Version:** 0.5.0
 
-Member Maker — guides users through designing and building Claude Code domain-expert plugins (single or full teams) via structured multi-phase workflows with parallel subagent execution.
+Team Maker — guides users through designing and building Claude Code domain-expert plugin teams via structured multi-phase workflows with parallel subagent execution.
 
 ```bash
 claude-kit --kit system-maker
@@ -32,6 +32,5 @@ claude-kit --kit system-maker
 
 | Command | What it does |
 |---------|-------------|
-| `/system-maker:make-member` | Multi-phase plugin creation orchestrator. Guides through a 10-phase workflow (discovery → analysis → design → implementation → quality gate → finalization) to produce a complete, validated plugin. |
-| `/system-maker:make-team` | Batch team creation workflow. Builds all 4 role plugins (knowledge, engineer, grader, tester) for a domain in parallel, sharing domain analysis across all roles. |
+| `/system-maker:make-team` | Team creation workflow. Builds all role plugins (knowledge, engineer, grader, tester) for a domain in one session, sharing domain analysis across all roles with batched implementation. |
 | `/system-maker:validate` | Semantic validation and quality review of one or more plugins using the plugin-reviewer agent. Produces a structured PASS/FAIL report per plugin. |

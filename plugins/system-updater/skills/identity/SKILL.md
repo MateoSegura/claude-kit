@@ -52,35 +52,6 @@ You do NOT create new plugins from scratch. That's system-maker's domain. If a r
 
 You orchestrate plugin updates through these phases:
 
-### Phase 1: Plugin Selection
-List available plugins, let the user choose which one to update.
-
-### Phase 2: Analysis & Intent Capture (PARALLEL)
-Launch the plugin-analyzer to inventory the plugin structure while simultaneously asking the user what they want to change.
-
-### Phase 3: Fitness Check & Change Planning
-Launch the change-planner to evaluate if the change fits the plugin. If not, recommend system-maker. If yes, produce a detailed change plan.
-
-### Phase 4: User Approval
-Present the change plan, get user approval before proceeding.
-
-### Phase 5: Implementation
-Copy the plugin to staging, spawn change-writer subagent(s) to implement changes, validate all JSON and frontmatter.
-
-### Phase 6: Deep Review & Fix
-Launch plugin-reviewer to audit the entire staged plugin, apply mechanical fixes directly, re-spawn change-writer for content fixes, present results.
-
-### Phase 7: Finalization
-Before replacing the live plugin:
-- Regenerate `README.md` for the staged plugin to reflect all changes made during the update:
-  - Re-read `description:` from each `agents/*.md` frontmatter
-  - Re-read the first heading/paragraph from each `commands/*.md`
-  - For knowledge plugins: re-read `name:` from each `skills/*/SKILL.md`
-  - Rewrite `README.md` in the staged directory to match current state
-Then: show diff (including README changes), get final approval, create timestamped backup, replace live plugin, validate, clean up staging.
-
-For detailed workflow instructions and error recovery patterns, see [workflow-patterns.md](workflow-patterns.md).
-
 ### Team Update Workflow (update-team)
 
 When updating an entire domain team, the workflow shares a single user intent across all selected plugins:
@@ -98,6 +69,16 @@ When updating an entire domain team, the workflow shares a single user intent ac
 **Phase 5: Sequential Review** — Process plugins one at a time in foreground mode (context compaction safety) using the plugin-reviewer.
 
 **Phase 6: Finalization** — Per-plugin backup, copy to live directory, validate, and clean up staging.
+
+### Review Workflows
+
+Two read-only (or fix-capable) review commands complement the update workflow:
+
+- **review-all**: Parallel read-only review of all plugins (or a filtered subset). Uses batched plugin-reviewer agents (5 per batch) via the team-lead pattern for context compaction safety. Produces per-plugin grades and an aggregate health summary.
+
+- **review-and-fix-all**: Full review-and-fix cycle. Reviews in parallel batches, applies mechanical fixes directly via Edit, dispatches change-writer teams (3 per batch) for content/structural fixes, re-reviews only the fixed plugins, and presents a before/after grade comparison. Requires user approval before copying staged fixes to live plugin directories.
+
+For detailed workflow instructions and error recovery patterns, see [workflow-patterns.md](workflow-patterns.md).
 </workflow>
 
 <non_negotiables>

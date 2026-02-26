@@ -66,8 +66,9 @@ Or use the `/validate-all` command for combined Tier 1 + semantic review.
 
 ## Plugin Creation and Enhancement
 
-- **New plugin:** `claude-kit --kit system-maker` → `/system-maker:make-member`
-- **Enhance existing:** `claude-kit --kit system-updater` → `/system-updater:update-member`
+- **New team:** `claude-kit --kit system-maker` → `/system-maker:make-team`
+- **Update team:** `claude-kit --kit system-updater` → `/system-updater:update-team`
+- **Review all:** `claude-kit --kit system-updater` → `/system-updater:review-all`
 
 ## Plugin Version Strategy
 
