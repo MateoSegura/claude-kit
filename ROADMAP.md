@@ -9,6 +9,8 @@
 
 ## Shipped
 
+- **v0.9.2** — Interactive Feedback & Tips Polish (Feb 26, 2026)
+  Chat-like feedback flow, curated end-user tips, clear tip format
 - **v0.9.1** — Help & Roadmap Fixes (Feb 26, 2026)
   Consistent help alignment, real roadmap targets, release-roadmap step
 - **v0.9.0** — Tips, Feedback & Roadmap (Feb 26, 2026)
