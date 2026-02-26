@@ -54,10 +54,11 @@ expect_output "help shows --kit"     "--kit" help
 
 # ── list ──────────────────────────────────────────────────────────────────────
 expect_exit   "list exits 0"                      0 list
+expect_exit   "list with -v exits 0"              0 list -v
 expect_output "list shows Bundled section"        "Bundled" list
 expect_output "list shows a plugin"               "embedded-zephyr" list
-expect_output "list shows shortcut hint"          "claude-kit -k" list
-expect_output "list shows plugin version"         "0." list
+expect_output "list -v shows shortcut hint"       "claude-kit -k" list -v
+expect_output "list -v shows plugin version"      "0." list -v
 
 # ── validate ──────────────────────────────────────────────────────────────────
 expect_exit   "validate --all exits 0"            0 validate --all
