@@ -193,6 +193,12 @@ def _print_launch_header(plugin_names: list) -> None:
         p(f"  {col(C.W, name)}")
         p()
 
+    # Debug mode indicator
+    debug_rule = pathlib.Path.home() / ".claude" / "rules" / "claude-kit-debug.md"
+    if debug_rule.exists():
+        p(f"  {col(C.Y, 'debug')}  {col(C.DIM, '·  [kit:*] routing visible')}")
+        p()
+
     p(f"  {col(C.DIM, '─' * 40)}")
     p(f"  {col(C.DIM, 'Launching Claude Code...')}")
     p()

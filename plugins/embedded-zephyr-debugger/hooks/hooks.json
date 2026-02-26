@@ -10,18 +10,6 @@
           }
         ]
       }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "RESPOND WITH ONLY A JSON OBJECT. No other text, no explanation, no markdown. Format: {\"ok\": true} or {\"ok\": false, \"reason\": \"brief description\"}\n\nContext: $ARGUMENTS. FIRST: Determine if this session involved debugging or diagnosing a Zephyr issue (investigating crashes, analyzing logs, running GDB, inspecting registers). If NO debugging work was performed in this session (e.g. this was a grading, engineering, or testing session), respond {\"ok\": true} immediately \u2014 this hook only applies to debugging sessions. If debugging WAS performed, verify ALL required: (1) TRIAGE: failure domain classified with confidence. (2) INVESTIGATION: at least one specialist invoked. (3) EVIDENCE: every conclusion traces to artifact (register value, log line, memory address, config entry). (4) ROOT CAUSE: stated with confidence, OR ranked candidates listed. (5) FIX REC: actionable recommendation given. (6) NO MODIFICATIONS: no Write/Edit/flash operations. Respond {\"ok\": true} if complete, {\"ok\": false, \"reason\": \"Missing: ...\"} if incomplete.",
-            "model": "sonnet"
-          }
-        ]
-      }
     ]
   }
 }

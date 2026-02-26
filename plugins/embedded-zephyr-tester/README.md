@@ -1,6 +1,6 @@
 # embedded-zephyr-tester
 
-> **Role:** Tester · **Version:** 0.1.1
+> **Role:** Tester · **Version:** 0.1.2
 
 Zephyr RTOS test engineering specialist — ztest unit/integration tests, twister execution, FFF mocking, gcov/lcov coverage analysis, test scaffolding, and CI-ready test infrastructure for embedded firmware.
 
