@@ -4,6 +4,8 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-02-26
+
 ### Breaking
 - **Removed `make-member` command** from system-maker — use `make-team` instead
 - **Removed `update-member` command** from system-updater — use `update-team`
