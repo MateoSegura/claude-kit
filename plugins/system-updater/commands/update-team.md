@@ -6,7 +6,7 @@ description: Update all members of a domain team (or a subset) in one session wi
 
 # Update Team — Multi-Plugin Team Enhancement Orchestrator
 
-You are the orchestrator for updating an entire domain team of Claude Code plugins in one session. Instead of running `/system-updater:update-member` N times, this command applies a shared change intent across all (or a subset of) role plugins in a team — sharing analysis, pooling the user's intent, and batching implementation for efficiency.
+You are the orchestrator for updating an entire domain team of Claude Code plugins in one session. This command applies a shared change intent across all (or a subset of) role plugins in a team — sharing analysis, pooling the user's intent, and batching implementation for efficiency.
 
 You guide the user through a structured 7-phase workflow: select a team, capture shared intent while analyzing plugins in parallel, run per-plugin fitness checks and planning, approve per-plugin plans, batch implementation with staging directories, sequentially review each plugin, and finalize. You coordinate subagents via the Task tool — you never write plugin files yourself.
 
@@ -77,13 +77,12 @@ Detect all domain teams by scanning plugin directories, present them to the user
       Roles: engineer, grader, tester
       Plugins: <list each plugin name>
 
-   (If no teams found with 2+ members, individual plugins can be updated
-   via /system-updater:update-member instead.)
+   (If no teams found with 2+ members, no team update can be performed.)
 
    Which team would you like to update?
    ```
 
-   If no teams are found (no prefix has 2+ plugins), inform the user and recommend `/system-updater:update-member` for individual plugin updates. Stop the workflow.
+   If no teams are found (no prefix has 2+ plugins), inform the user that no teams were detected. Stop the workflow.
 
 4. Once the user selects a team, present the role subset selection via AskUserQuestion:
 
@@ -281,8 +280,7 @@ Evaluate whether the shared intent fits each plugin individually and produce a p
    The following plugins were excluded — the shared intent doesn't fit their role:
    - <PLUGIN_NAME>: <fitness_reasoning>
 
-   These plugins will be skipped. Use /system-updater:update-member for
-   role-specific changes, or /system-maker:make-member for a new plugin.
+   These plugins will be skipped. Use /system-maker:make-team for new plugins.
    ```
 
    Remove them from `SELECTED_PLUGINS` and update `PLUGIN_COUNT`.
@@ -307,7 +305,7 @@ Evaluate whether the shared intent fits each plugin individually and produce a p
 
    ```
    No plugins passed the fitness check for this shared intent.
-   Consider using /system-updater:update-member for targeted per-plugin changes.
+   Consider refining the request or targeting a different team.
    ```
 
 9. Present a summary:
@@ -950,7 +948,7 @@ If Phase 4 validation detects issues (invalid JSON, wrong frontmatter fields):
 - Phase 5: 3 sequential reviews + up to 3 fix writers
 - Total subagent dispatches: ~12-15
 
-**Key difference from update-member**: The team updater works on MULTIPLE plugins simultaneously with a shared intent. Each plugin gets its own staging directory (`/tmp/claude-kit-update-<PLUGIN_NAME>/`), its own fitness check, its own change plan, and its own review. The shared intent is the unifying thread — but the planner tailors changes per plugin's role and structure. Originals are untouched until the user explicitly finalizes. Timestamped backups are created before replacing live plugins.
+**Key design**: The team updater works on MULTIPLE plugins simultaneously with a shared intent. Each plugin gets its own staging directory (`/tmp/claude-kit-update-<PLUGIN_NAME>/`), its own fitness check, its own change plan, and its own review. The shared intent is the unifying thread — but the planner tailors changes per plugin's role and structure. Originals are untouched until the user explicitly finalizes. Timestamped backups are created before replacing live plugins.
 
 **Key difference from make-team**: The team updater does NOT create plugins from scratch. It enhances existing plugins. There is no domain analysis, no questionnaire, no architecture design. Instead, it reuses the 4 existing system-updater subagents (plugin-analyzer, change-planner, change-writer, plugin-reviewer) scaled to N plugins with parallel analysis, parallel planning, batched implementation, and sequential review.
 

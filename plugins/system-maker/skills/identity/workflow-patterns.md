@@ -306,7 +306,7 @@ Include in every writer prompt:
 
 ### Pattern: Orchestrator-Generated Config Files
 
-The orchestrator (make-member command) generates these files directly — no subagent needed.
+The orchestrator generates these files directly — no subagent needed.
 
 **Steps:**
 
