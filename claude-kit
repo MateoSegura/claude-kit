@@ -350,8 +350,7 @@ def _list_section(dirs: list, label: str, empty_msg: str) -> None:
 
     # ── Teams ──
     if teams:
-        if not VERBOSE:
-            p(f"  {col(C.W, 'Teams')}")
+        p(f"  {col(C.W, 'Teams')}")
         for prefix, members in sorted(teams.items()):
             if VERBOSE:
                 p(f"  {col(C.DIM, 'claude-kit -k')} {col(C.W, prefix)}")
@@ -674,16 +673,31 @@ def cmd_update() -> None:
         else:
             p(f"  {col(C.DIM, f'{name} {nv}')}")
 
-    # Auto-update statusline script if installed
-    sl_dest = pathlib.Path.home() / ".claude" / "statusline-command.sh"
-    sl_src  = INSTALL_DIR / "scripts" / "statusline-command.sh"
-    if sl_dest.exists() and sl_src.exists():
-        if sl_src.read_bytes() != sl_dest.read_bytes():
-            shutil.copy2(sl_src, sl_dest)
-            p()
-            p(f"  {col(C.W, 'Scripts:')}")
-            p()
-            p(f"    {col(C.Y, '↑')} {col(C.W, 'statusline-command.sh')}  {col(C.Y, 'updated')}")
+    # Auto-update installed files if they changed
+    auto_sync = [
+        ("statusline-command.sh",
+         INSTALL_DIR / "scripts" / "statusline-command.sh",
+         pathlib.Path.home() / ".claude" / "statusline-command.sh"),
+        ("claude-kit-autoroute.md",
+         INSTALL_DIR / "scripts" / "rules" / "claude-kit-autoroute.md",
+         pathlib.Path.home() / ".claude" / "rules" / "claude-kit-autoroute.md"),
+        ("claude-kit-debug.md",
+         INSTALL_DIR / "scripts" / "rules" / "claude-kit-debug.md",
+         pathlib.Path.home() / ".claude" / "rules" / "claude-kit-debug.md"),
+    ]
+    synced = []
+    for label, src, dest in auto_sync:
+        if dest.exists() and src.exists():
+            if src.read_bytes() != dest.read_bytes():
+                shutil.copy2(src, dest)
+                synced.append(label)
+
+    if synced:
+        p()
+        p(f"  {col(C.W, 'Scripts:')}")
+        p()
+        for label in synced:
+            p(f"    {col(C.Y, '↑')} {col(C.W, label)}  {col(C.Y, 'updated')}")
 
     p()
     p(f"  {col(C.G, 'Done.')}")
