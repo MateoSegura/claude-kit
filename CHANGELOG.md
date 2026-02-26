@@ -4,6 +4,20 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-02-26
+
+### Added
+- **Session awareness** in auto-routing rule — Claude now knows it's using the
+  claude-kit plugin management system and that all skills are already loaded;
+  no more "load the skills" prompts needed; works universally across all teams
+- **Auto-sync rule files** on `claude-kit update` — autoroute and debug rule
+  files are automatically updated when they differ from the source, alongside
+  the existing statusline script sync
+
+### Fixed
+- **Verbose `list -v` missing "Teams" header** — the "Teams" category header
+  now shows in both compact and verbose list modes
+
 ## [0.7.2] - 2026-02-26
 
 ### Fixed
