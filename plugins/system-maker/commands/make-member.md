@@ -48,7 +48,7 @@ Format: `<domain>-<tech>-<role>` where all segments are lowercase, hyphen-separa
 - `devops` — infrastructure, CI/CD, containers, orchestration
 
 **Standard roles** (the recurring archetypes across any discipline):
-- `engineer` — writes code, builds features, fixes bugs (the core developer agent)
+- `engineer` — writes code, builds features, fixes bugs (the core developer agent). Standard commands: `develop` (implementation orchestrator), `review` (code review orchestrator), `plan` (architecture planning orchestrator with dedicated `architect` agent using `permissionMode: plan` and `model: opus`)
 - `grader` — blind, objective code evaluation with quantitative scoring
 - `tester` — writes and runs tests, coverage analysis
 - `debugger` — diagnoses failures, reads logs/traces/dumps

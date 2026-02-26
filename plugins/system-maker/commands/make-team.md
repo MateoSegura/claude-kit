@@ -44,7 +44,7 @@ Format: `<domain>-<tech>-<role>` where all segments are lowercase, hyphen-separa
 - `role` — the team archetype
 
 **Standard roles** (the team archetypes — user selects which to build):
-- `engineer` — writes code, builds features, fixes bugs
+- `engineer` — writes code, builds features, fixes bugs. Standard commands: `develop` (implementation orchestrator), `review` (code review orchestrator), `plan` (architecture planning orchestrator with dedicated `architect` agent using `permissionMode: plan` and `model: opus`)
 - `grader` — blind, objective code evaluation with quantitative scoring
 - `tester` — writes and runs tests, coverage analysis
 - `debugger` — diagnoses failures, reads logs/traces/dumps

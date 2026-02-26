@@ -4,6 +4,25 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **`architect` agent** added to all 3 engineer plugins — read-only architecture
+  planning specialist using `model: opus` and `permissionMode: plan`:
+  - `embedded-zephyr-engineer` 0.1.1 → 0.2.0 — firmware module decomposition,
+    HAL layering, memory layout, protocol selection
+  - `frontend-svelte-engineer` 0.1.1 → 0.2.0 — route structure design,
+    component hierarchy, state management, rendering strategy
+  - `cloud-python-engineer` 0.1.1 → 0.2.0 — service decomposition, API
+    boundary design, database schema, infrastructure topology
+- **`/plan` command** added to all 3 engineer plugins — architecture planning
+  orchestrator that dispatches the `architect` agent for detailed design plans
+- **`/develop` commands** updated across all 3 engineer plugins to route
+  architecture/planning requests to the new `/plan` command
+
+### Changed
+- **system-maker** 0.4.0 → 0.4.1 — updated plugin-structure skill and
+  make-member/make-team commands to document `plan` + `architect` as standard
+  engineer role components
+
 ## [0.6.0] - 2026-02-25
 
 ### Added

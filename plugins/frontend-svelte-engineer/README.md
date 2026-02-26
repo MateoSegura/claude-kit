@@ -1,6 +1,6 @@
 # frontend-svelte-engineer
 
-> **Role:** Engineer · **Version:** 0.1.1
+> **Role:** Engineer · **Version:** 0.2.0
 
 Svelte 5 / SvelteKit frontend development agent — writes code, builds features, fixes bugs with runes-only patterns, TypeScript strict mode, Tailwind CSS, proactive performance management, WCAG 2.2 AA accessibility, and desktop targets (Tauri/Electron).
 
@@ -23,6 +23,7 @@ claude-kit --kit frontend-svelte
 | `scaffold-writer` | SvelteKit project and route scaffolding specialist. Use when the user needs to create a new project skeleton, add routes with correct file conventions, set up layouts, configure adapters, initialize TypeScript/Tailwind/tooling, or scaffold module structures. |
 | `style-engineer` | Styling, theming, and animation specialist for Svelte 5 applications. Use when the user needs to implement design systems, create theme configurations, build responsive layouts, add Svelte transitions or CSS animations, set up dark/light mode theming, or resolve visual/CSS issues. |
 | `performance-analyst` | Read-only performance analysis agent for Svelte 5 / SvelteKit applications. Use when the user needs a performance audit, bundle size analysis, SSR/CSR rendering strategy review, Core Web Vitals assessment, lazy loading evaluation, or optimization recommendations. |
+| `architect` | Read-only architecture planning agent for Svelte 5 / SvelteKit applications. Use when the user needs to design route structure, plan component hierarchy, choose state management strategy, design data flow patterns, plan API integration, evaluate rendering strategies (SSR/CSR/prerender), or make architectural decisions before implementation. |
 
 ---
 
@@ -32,3 +33,4 @@ claude-kit --kit frontend-svelte
 |---------|-------------|
 | `/frontend-svelte-engineer:develop` | Primary entry point for all Svelte/SvelteKit development work. Routes feature builds, component creation, styling, and project scaffolding to the appropriate specialist subagent. Handles bugs and refactors as well as new features. |
 | `/frontend-svelte-engineer:review` | Performance-focused code review for Svelte/SvelteKit code. Analyzes bundle size, rendering strategy (SSR/CSR/prerender), code splitting, lazy loading, Core Web Vitals impact, reactive performance, and accessibility compliance. Does NOT modify code. |
+| `/frontend-svelte-engineer:plan` | Architecture planning for SvelteKit applications — route design, component hierarchy, state management strategy, data flow patterns, and rendering strategy decisions. Dispatches the `architect` agent for detailed read-only design plans. |

@@ -19,6 +19,7 @@ Read the user's request and classify it into one or more of these categories:
 | Individual UI component | "component", "button", "modal", "form field", "card", "widget", specific reusable UI | `component-writer` |
 | Styling, theming, animations, responsive | "style", "theme", "dark mode", "animation", "transition", "responsive", "CSS", "Tailwind", "design" | `style-engineer` |
 | Bug fix | "bug", "broken", "error", "not working", "fix" | Classify by AFFECTED layer: routing/data → `feature-builder`; component UI → `component-writer`; styling → `style-engineer` |
+| Architecture or design planning | "plan", "architect", "design system", "route structure", "how should I structure" | Redirect to `/frontend-svelte-engineer:plan` command |
 
 A single request may require multiple subagents (e.g., "build a product listing page with filtering" needs `feature-builder` for data loading + `component-writer` for the product card + `style-engineer` for responsive grid).
 

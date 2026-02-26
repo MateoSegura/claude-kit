@@ -21,6 +21,7 @@ Read the user's request carefully and classify it:
 - **Test firmware** → Spawn `test-engineer` agent
 - **Devicetree or binding work** → Spawn `devicetree-specialist` agent
 - **Review code** → Spawn `code-reviewer` agent (or use `/review` command)
+- **Architecture or design planning** → Redirect to `/embedded-zephyr-engineer:plan` command
 - **Multiple concerns** → Spawn agents sequentially, pass context between them
 
 ### Step 2: Gather Context
