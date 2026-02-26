@@ -1,6 +1,6 @@
 # frontend-svelte-knowledge
 
-> **Role:** Knowledge companion · **Version:** 0.1.1
+> **Role:** Knowledge companion · **Version:** 0.1.2
 
 Svelte 5 / SvelteKit-specific frontend knowledge — runes, component patterns, scoped CSS, a11y compiler warnings, SvelteKit routing, desktop targets, and hardware communication (USB, BLE, LAN, audio/MIDI, IoT).
 

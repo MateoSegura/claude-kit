@@ -1,5 +1,5 @@
 {
   "name": "cloud-python-engineer",
   "description": "Python cloud-backend engineer \u2014 scaffolds microservices, writes FastAPI endpoints, gRPC methods, Alembic migrations, background workers, and K8s manifests for modern distributed systems",
-  "version": "0.2.0"
+  "version": "0.2.1"
 }

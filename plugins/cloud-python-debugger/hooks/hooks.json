@@ -23,18 +23,6 @@
           }
         ]
       }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "RESPOND WITH ONLY A JSON OBJECT. No other text, no explanation, no markdown. Format: {\"ok\": true} or {\"ok\": false, \"reason\": \"brief description\"}\n\nContext: $ARGUMENTS. FIRST: Determine if this session involved debugging or diagnosing a Python application issue (investigating errors, analyzing logs, profiling performance, tracing requests). If NO debugging work was performed in this session (e.g. this was a grading, engineering, or testing session), respond {\"ok\": true} immediately \u2014 this hook only applies to debugging sessions.\n\nIf debugging WAS performed, a complete investigation MUST contain all five elements: (1) PROBLEM CLASSIFICATION \u2014 the category of issue (e.g., memory leak, connection failure, deadlock, performance regression, configuration error); (2) EVIDENCE CHAIN \u2014 the specific logs, metrics, traces, or diagnostic outputs collected and what each demonstrates; (3) ROOT CAUSE IDENTIFICATION \u2014 a precise statement of the underlying cause, not just symptoms; (4) IMPACT ASSESSMENT \u2014 which services, users, or data are affected and to what degree; (5) RECOMMENDED FIX \u2014 a concrete, actionable remediation described in enough detail to implement, but NOT implemented by the agent (debugger role is analysis only, not modification). If any element is missing or only partially addressed, respond {\"ok\": false, \"reason\": \"Missing required investigation element(s): <list which ones are absent or incomplete>\"}. If all five are present and substantiated, respond {\"ok\": true}.",
-            "model": "sonnet"
-          }
-        ]
-      }
     ]
   }
 }

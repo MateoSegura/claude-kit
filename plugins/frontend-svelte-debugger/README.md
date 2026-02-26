@@ -1,6 +1,6 @@
 # frontend-svelte-debugger
 
-> **Role:** Debugger · **Version:** 0.1.1
+> **Role:** Debugger · **Version:** 0.1.2
 
 Svelte 5 / SvelteKit frontend debugger — diagnoses compiler errors, reactivity bugs, SSR failures, styling issues, accessibility violations, Tauri hardware integration failures, build errors, and test failure root causes with structured evidence-based diagnostic reports.
 

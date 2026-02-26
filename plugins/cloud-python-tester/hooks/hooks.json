@@ -27,18 +27,6 @@
           }
         ]
       }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "RESPOND WITH ONLY A JSON OBJECT. No other text, no explanation, no markdown. Format: {\"ok\": true} or {\"ok\": false, \"reason\": \"brief description\"}\n\nContext: $ARGUMENTS. FIRST: Determine if this session involved writing or running Python tests. If NO test files were created, modified, or executed in this session (e.g. this was a grading, engineering, or debugging session), respond {\"ok\": true} immediately \u2014 this hook only applies to testing sessions.\n\nIf tests WERE written or run, verify:\n1. All test files created \u2014 every test module or category mentioned in the task has a corresponding test_*.py file. If the task asked for tests covering multiple categories (unit, integration, contract, performance, etc.), verify at least one test file per category exists.\n2. Representative tests per category \u2014 each test file contains more than a trivial number of tests (more than one placeholder). Tests should cover the happy path, at least one error/edge case, and boundary conditions for the feature under test.\n3. TODOs for gaps \u2014 where full test coverage was not achievable in this session (e.g., requires a live service not available in CI), a TODO comment or pytest.mark.skip with an explanatory message is present so gaps are visible rather than hidden.\n4. conftest fixtures for all referenced fixtures \u2014 every fixture name used in test function arguments exists either in the same file, in a conftest.py in the same directory, or in a parent conftest.py. There should be no dangling fixture references.\n5. No broken imports \u2014 all import statements reference modules that exist in the project (standard library, installed packages, or local source). There should be no ImportError-causing imports left in the written files.\n\nRespond with {\"ok\": true} if all criteria are satisfied, or {\"ok\": false, \"reason\": \"<specific description of which criteria failed and what must be done to satisfy them before stopping>\"} if any are not met.",
-            "model": "sonnet"
-          }
-        ]
-      }
     ]
   }
 }

@@ -11,19 +11,6 @@
           }
         ]
       }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "RESPOND WITH ONLY A JSON OBJECT. No other text, no explanation, no markdown. Format: {\"ok\": true} or {\"ok\": false, \"reason\": \"brief description\"}\n\nContext: $ARGUMENTS. FIRST: Determine if this session involved diagnosing or debugging an issue (investigating bugs, analyzing errors, running diagnostic commands). If NO debugging or diagnostic work was performed in this session (e.g. this was a grading, engineering, or testing session), respond {\"ok\": true} immediately \u2014 this hook only applies to debugging sessions. If debugging WAS performed, verify: 1) Root cause identified (or explicitly marked Low confidence with evidence gaps), 2) Fix recipe provided with concrete steps, 3) Verification procedure included, 4) Confidence level (High/Medium/Low) explicitly stated. Respond {\"ok\": true} if complete, or {\"ok\": false, \"reason\": \"Missing: <element>\"} if incomplete.",
-            "model": "haiku",
-            "description": "Ensure every diagnostic session produces a complete report"
-          }
-        ]
-      }
     ]
   }
 }
