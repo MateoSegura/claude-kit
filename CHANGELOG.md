@@ -4,6 +4,8 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-02-26
+
 ### Added
 - **Tips system** — random helpful tips (~30% chance) shown after CLI commands
   with emoji and color formatting; covers setup, kits, feedback, roadmap, debug,
