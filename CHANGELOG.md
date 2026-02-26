@@ -4,6 +4,22 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-02-26
+
+### Added
+- **`-v` / `--verbose` CLI flag** for subcommands — compact output by default,
+  full details with `-v`; auto-enabled when debug mode is active
+- **Post-install setup banner** — yellow-bordered reminder in both the install
+  script and CLI when `claude-kit setup` hasn't been run yet
+- **Compact `list` output** — clean layout with bold category headers (Teams,
+  Core, System), no versions or launch hints unless `-v` is passed
+
+### Changed
+- **`update` command** — changelog shows only latest version by default
+  (all versions with `-v`); unchanged plugin groups hidden in non-verbose mode
+- **`validate` hidden from help** — still functional for developers, no longer
+  shown in `claude-kit help` output
+
 ## [0.7.0] - 2026-02-26
 
 ### Breaking
