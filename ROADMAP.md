@@ -9,6 +9,8 @@
 
 ## Shipped
 
+- **v0.9.1** — Help & Roadmap Fixes (Feb 26, 2026)
+  Consistent help alignment, real roadmap targets, release-roadmap step
 - **v0.9.0** — Tips, Feedback & Roadmap (Feb 26, 2026)
   Tips system, feedback command, roadmap command, gh auto-install
 - **v0.8.0** — Session Awareness (Feb 26, 2026)
