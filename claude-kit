@@ -539,6 +539,12 @@ def cmd_update() -> None:
     p(f"  {col(C.G, '✓ Updated to')} {col(C.W, new_ver)}  {col(C.DIM, f'({n_commits} new {commit_word})')}")
     p()
 
+    # Show changelog first — this is what the user cares about most
+    changelog = INSTALL_DIR / "CHANGELOG.md"
+    if changelog.exists():
+        _show_changelog(changelog, since_tag=old_tag)
+
+    # Then show plugin version changes
     new_versions: dict = {}
     if PLUGINS_DIR.exists():
         for d in sorted(PLUGINS_DIR.iterdir()):
@@ -601,11 +607,6 @@ def cmd_update() -> None:
             p(f"  {col(C.W, 'Scripts:')}")
             p()
             p(f"    {col(C.Y, '↑')} {col(C.W, 'statusline-command.sh')}  {col(C.Y, 'updated')}")
-
-    # Show changelog summary (all entries since the tag the user was on)
-    changelog = INSTALL_DIR / "CHANGELOG.md"
-    if changelog.exists():
-        _show_changelog(changelog, since_tag=old_tag)
 
     p()
     p(f"  {col(C.G, 'Done.')}")
