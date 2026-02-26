@@ -1401,15 +1401,15 @@ def cmd_help() -> None:
     {CY}-v, --verbose{C.N}          show full details (versions, hints, full changelog)
 
   {DIM}Commands:{C.N}
-    {CY}claude-kit setup{C.N}      install Claude Code features with backup
-    {CY}claude-kit restore{C.N}    undo setup — restores original files with diff preview
-    {CY}claude-kit list{C.N}       show available kits (bundled + local)
-    {CY}claude-kit update{C.N}     pull latest plugins, show version changes
-    {CY}claude-kit version{C.N}    show current version and check for updates
-    {CY}claude-kit feedback [msg]{C.N}   share feedback — creates a GitHub issue
-    {CY}claude-kit roadmap{C.N}          see what's coming and what shipped
-    {CY}claude-kit debug [on|off]{C.N}   toggle debug mode (shows [kit:*] routing info)
-    {CY}claude-kit uninstall{C.N}  remove claude-kit and the CLI symlink
+    {CY}claude-kit setup{C.N}              install Claude Code features with backup
+    {CY}claude-kit restore{C.N}            undo setup — restores original files
+    {CY}claude-kit list{C.N}               show available kits (bundled + local)
+    {CY}claude-kit update{C.N}             pull latest plugins, show version changes
+    {CY}claude-kit version{C.N}            show current version and check for updates
+    {CY}claude-kit feedback [msg]{C.N}     share feedback — creates a GitHub issue
+    {CY}claude-kit roadmap{C.N}            see what's coming and what shipped
+    {CY}claude-kit debug [on|off]{C.N}     toggle debug mode ([kit:*] routing info)
+    {CY}claude-kit uninstall{C.N}          remove claude-kit and the CLI symlink
 """)
 
 # ── dispatch ──────────────────────────────────────────────────────────────────
