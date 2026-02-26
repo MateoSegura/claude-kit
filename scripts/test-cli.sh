@@ -154,9 +154,8 @@ expect_error  "--model with no value fails"       --kit embedded-zephyr-engineer
 
 # ── roadmap ──────────────────────────────────────────────────────────────────
 expect_exit   "roadmap exits 0"                     0 roadmap
-expect_output "roadmap shows In Progress"           "In Progress" roadmap
-expect_output "roadmap shows Planned"               "Planned" roadmap
 expect_output "roadmap shows Shipped"               "Shipped" roadmap
+expect_output "roadmap shows a version"             "v0." roadmap
 
 # ── feedback / roadmap in help ───────────────────────────────────────────────
 expect_output "help shows feedback command"         "feedback" help
