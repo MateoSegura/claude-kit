@@ -4,7 +4,32 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+### Breaking
+- **Removed `make-member` command** from system-maker — use `make-team` instead
+- **Removed `update-member` command** from system-updater — use `update-team`
+  instead
+- **system-maker** renamed from "Member Maker" to "Team Maker" (0.4.1 → 0.5.0)
+- **system-updater** renamed from "Member Updater" to "Team Updater"
+  (0.2.0 → 0.3.0)
+
 ### Added
+- **`core-kit` plugin** 0.0.1 — auto-routing intelligence layer that maps
+  natural language intents to loaded skills and commands transparently, with
+  `routing` and `identity` skills (universal knowledge companion)
+- **`claude-kit debug [on|off]` command** — toggle debug mode that prints
+  `[kit:*]` blocks before every skill invocation, agent spawn, and hook trigger
+- **`--plugin` / `-p` CLI flag** — load exactly one plugin by name without
+  prefix expansion, companion resolution, or core auto-loading
+- **Auto-routing rules** installed by `claude-kit setup` — copies
+  `claude-kit-autoroute.md` to `~/.claude/rules/` for transparent intent
+  matching on every user message
+- **`review-all` command** added to system-updater — read-only parallel review
+  of all plugins (or a filtered subset) with batched plugin-reviewer agents
+  (5 per batch), aggregating per-plugin grades into a health summary
+- **`review-and-fix-all` command** added to system-updater — full review-and-fix
+  cycle: reviews in parallel batches, applies mechanical fixes directly,
+  dispatches change-writer teams for content/structural fixes, re-reviews fixed
+  plugins, and presents before/after grade comparison with user approval gate
 - **`architect` agent** added to all 3 engineer plugins — read-only architecture
   planning specialist using `model: opus` and `permissionMode: plan`:
   - `embedded-zephyr-engineer` 0.1.1 → 0.2.0 — firmware module decomposition,
@@ -22,6 +47,9 @@ All notable changes to claude-kit will be documented in this file.
 - **system-maker** 0.4.0 → 0.4.1 — updated plugin-structure skill and
   make-member/make-team commands to document `plan` + `architect` as standard
   engineer role components
+- **`claude-kit setup`** now installs auto-routing rules file alongside
+  statusline; **`claude-kit restore`** cleans up both auto-routing and debug
+  rules files
 
 ## [0.6.0] - 2026-02-25
 

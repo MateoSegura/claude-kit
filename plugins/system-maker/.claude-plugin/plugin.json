@@ -1,5 +1,5 @@
 {
   "name": "system-maker",
-  "description": "Member Maker \u2014 guides users through designing and building Claude Code domain-expert plugins (single or full teams) via structured multi-phase workflows with parallel subagent execution.",
-  "version": "0.4.1"
+  "description": "Team Maker \u2014 guides users through designing and building Claude Code domain-expert plugin teams via structured multi-phase workflows with parallel subagent execution.",
+  "version": "0.5.0"
 }

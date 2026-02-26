@@ -451,13 +451,19 @@ plugins/<name>/
 ## For Plugin Developers
 
 ```bash
-# Create a new plugin (guided 11-phase workflow)
+# Build a new domain team (guided multi-phase workflow)
 claude-kit --kit system-maker
-# → /system-maker:make-member
+# → /system-maker:make-team
 
-# Enhance an existing plugin (6-phase workflow)
+# Update an existing team (batched team-wide updates)
 claude-kit --kit system-updater
-# → /system-updater:update-member
+# → /system-updater:update-team
+
+# Review all plugins for quality issues
+# → /system-updater:review-all
+
+# Review and auto-fix all plugins
+# → /system-updater:review-and-fix-all
 
 # Validate your plugin before committing
 claude-kit validate --all          # Tier 1: JSON, fields, hooks
