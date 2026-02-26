@@ -46,30 +46,20 @@ def p(text: str = "") -> None:
 # ── Tips ──────────────────────────────────────────────────────────────────────
 
 _TIPS = [
-    ("\U0001f4a1", f"Run  {C.CY}claude-kit setup{C.N}  to get auto-routing and a status line"),
-    ("\U0001f680", f"Launch a full team:  {C.CY}claude-kit --kit embedded-zephyr{C.N}"),
-    ("\U0001f50d", f"See what's available:  {C.CY}claude-kit list -v{C.N}"),
-    ("\U0001f41b", f"Toggle debug routing:  {C.CY}claude-kit debug on{C.N}"),
-    ("\U0001f4e6", f"Pull latest plugins:  {C.CY}claude-kit update{C.N}"),
-    ("\u2705",     f"Validate before committing:  {C.CY}claude-kit validate --changed{C.N}"),
-    ("\U0001f4ac", f"Share feedback:  {C.CY}claude-kit feedback{C.N}"),
-    ("\U0001f5fa\ufe0f",  f"See what's coming:  {C.CY}claude-kit roadmap{C.N}"),
-    ("\U0001f916", f"Choose your model:  {C.CY}claude-kit -k <name> --model sonnet{C.N}"),
-    ("\u26a1",     f"Skip prompts:  {C.CY}claude-kit -k <name> --yolo{C.N}"),
-    ("\U0001f517", f"Combine kits:  {C.CY}claude-kit -k <name> -k core-spec{C.N}"),
-    ("\U0001f4cb", f"Load one plugin:  {C.CY}claude-kit --plugin core-kit{C.N}"),
-    ("\U0001f504", f"Resume last session:  {C.CY}claude-kit -k <name> --resume{C.N}"),
-    ("\U0001f6e0\ufe0f",  f"Build a new team:  {C.CY}claude-kit --kit system-maker{C.N}"),
-    ("\U0001f4c8", f"Check your version:  {C.CY}claude-kit version{C.N}"),
+    f"Run  {C.CY}claude-kit setup{C.N}  to get auto-routing and a status line",
+    f"Browse available kits:  {C.CY}claude-kit list -v{C.N}",
+    f"Stay up to date:  {C.CY}claude-kit update{C.N}",
+    f"Share feedback or ideas:  {C.CY}claude-kit feedback{C.N}",
+    f"See what's coming:  {C.CY}claude-kit roadmap{C.N}",
 ]
 
 def _maybe_show_tip() -> None:
     if random.random() >= 0.3:
         return
-    emoji, msg = random.choice(_TIPS)
+    tip = random.choice(_TIPS)
     p()
-    p(f"  {col(C.DIM, chr(0x2500) * 38)}")
-    p(f"  {emoji}  {msg}")
+    p(f"  {col(C.DIM, chr(0x2500) * 2)} tip {col(C.DIM, chr(0x2500) * 33)}")
+    p(f"  {tip}")
 
 # ── Plugin helpers ────────────────────────────────────────────────────────────
 
@@ -1129,6 +1119,20 @@ def cmd_debug(args: list) -> None:
 
 # ── cmd_feedback ──────────────────────────────────────────────────────────────
 
+def _feedback_ask(prompt: str, required: bool = True) -> str:
+    """Ask a single question in the feedback flow. Returns empty string on cancel."""
+    try:
+        p(f"  {col(C.W, prompt)}")
+        answer = input(f"  {col(C.DIM, '>')} ").strip()
+        if required and not answer:
+            p(f"  {col(C.DIM, 'Skipped.')}")
+            return ""
+        return answer
+    except (KeyboardInterrupt, EOFError):
+        p()
+        p(f"  {col(C.DIM, 'Cancelled.')}")
+        return ""
+
 def cmd_feedback(args: list) -> None:
     # Check gh is installed
     if not shutil.which("gh"):
@@ -1147,55 +1151,104 @@ def cmd_feedback(args: list) -> None:
         p()
         sys.exit(1)
 
-    # Get message from args or interactive prompt
-    message = " ".join(args).strip() if args else ""
-    if not message:
-        p()
-        p(f"  {col(C.W, 'claude-kit feedback')}")
-        p(f"  {col(C.DIM, chr(0x2500) * 40)}")
-        p()
-        p(f"  Share your feedback — it creates a GitHub issue.")
-        p(f"  {col(C.DIM, 'Press Ctrl+C to cancel.')}")
-        p()
-        try:
-            message = input(f"  {col(C.W, '>')} ").strip()
-        except (KeyboardInterrupt, EOFError):
-            p()
-            p(f"  {col(C.DIM, 'Cancelled.')}")
-            p()
-            return
-        if not message:
-            p()
-            p(f"  {col(C.DIM, 'No feedback provided.')}")
-            p()
-            return
+    p()
+    p(f"  {col(C.W, 'claude-kit feedback')}")
+    p(f"  {col(C.DIM, chr(0x2500) * 40)}")
+    p()
+    p(f"  {col(C.DIM, 'Press Ctrl+C at any time to cancel.')}")
+    p()
 
-    # Collect metadata
+    # 1. Type
+    p(f"  {col(C.W, 'What kind of feedback?')}")
+    p(f"    {col(C.CY, '1')}  Bug report")
+    p(f"    {col(C.CY, '2')}  Feature request")
+    p(f"    {col(C.CY, '3')}  General feedback")
+    p()
+    try:
+        choice = input(f"  {col(C.DIM, '>')} ").strip()
+    except (KeyboardInterrupt, EOFError):
+        p()
+        p(f"  {col(C.DIM, 'Cancelled.')}")
+        p()
+        return
+
+    type_map = {"1": "bug", "2": "feature", "3": "feedback"}
+    label_map = {"bug": "bug", "feature": "enhancement", "feedback": "feedback"}
+    title_prefix = {"bug": "Bug", "feature": "Feature", "feedback": "Feedback"}
+    fb_type = type_map.get(choice, "feedback")
+    p()
+
+    # 2. Summary
+    summary = _feedback_ask("Describe it in one sentence:")
+    if not summary:
+        p()
+        return
+    p()
+
+    # 3. Details (type-specific)
+    details = ""
+    if fb_type == "bug":
+        details = _feedback_ask("What happened vs what you expected? (or press Enter to skip)", required=False)
+    elif fb_type == "feature":
+        details = _feedback_ask("What problem would this solve? (or press Enter to skip)", required=False)
+    else:
+        details = _feedback_ask("Any additional context? (or press Enter to skip)", required=False)
+    p()
+
+    # 4. Build the issue
     name  = _git(["config", "user.name"])  or "unknown"
     email = _git(["config", "user.email"]) or "unknown"
     ver   = _current_version()
     os_info = f"{platform.system()} {platform.release()}"
     date  = datetime.now().strftime("%Y-%m-%d")
 
-    title = f"Feedback: {message[:50]}"
-    body = f"""## Feedback
+    title = f"{title_prefix[fb_type]}: {summary[:60]}"
 
-{message}
+    body_lines = [f"## {title_prefix[fb_type]}", "", summary, ""]
+    if details:
+        if fb_type == "bug":
+            body_lines += ["### Details", "", details, ""]
+        elif fb_type == "feature":
+            body_lines += ["### Motivation", "", details, ""]
+        else:
+            body_lines += ["### Details", "", details, ""]
 
----
-**From:** {name} <{email}>
-**Version:** {ver}
-**OS:** {os_info}
-**Date:** {date}
-"""
+    body_lines += [
+        "---",
+        f"**From:** {name} <{email}>",
+        f"**Version:** {ver}",
+        f"**OS:** {os_info}",
+        f"**Date:** {date}",
+    ]
+    body = "\n".join(body_lines)
 
-    # Try with --label feedback, fallback without
+    # 5. Confirm
+    p(f"  {col(C.DIM, chr(0x2500) * 40)}")
+    p(f"  {col(C.W, 'Ready to submit:')}")
+    p(f"    {col(C.CY, title)}")
+    if details:
+        p(f"    {col(C.DIM, details[:80])}")
+    p()
+    try:
+        confirm = input(f"  Open issue? {col(C.DIM, '[Y/n]')} ").strip().lower()
+    except (KeyboardInterrupt, EOFError):
+        p()
+        p(f"  {col(C.DIM, 'Cancelled.')}")
+        p()
+        return
+    if confirm in ("n", "no"):
+        p(f"  {col(C.DIM, 'Not submitted.')}")
+        p()
+        return
+
+    # 6. Create issue
+    label = label_map[fb_type]
     result = subprocess.run(
         ["gh", "issue", "create",
          "--repo", "MateoSegura/claude-kit",
          "--title", title,
          "--body", body,
-         "--label", "feedback"],
+         "--label", label],
         capture_output=True, text=True,
     )
     if result.returncode != 0:
@@ -1211,7 +1264,7 @@ def cmd_feedback(args: list) -> None:
     if result.returncode == 0:
         url = result.stdout.strip()
         p()
-        p(f"  {col(C.G, chr(0x2713))} Feedback submitted!")
+        p(f"  {col(C.G, chr(0x2713))} Issue created!")
         p(f"  {col(C.CY, url)}")
         p()
     else:
@@ -1406,7 +1459,7 @@ def cmd_help() -> None:
     {CY}claude-kit list{C.N}               show available kits (bundled + local)
     {CY}claude-kit update{C.N}             pull latest plugins, show version changes
     {CY}claude-kit version{C.N}            show current version and check for updates
-    {CY}claude-kit feedback [msg]{C.N}     share feedback — creates a GitHub issue
+    {CY}claude-kit feedback{C.N}            share feedback — creates a GitHub issue
     {CY}claude-kit roadmap{C.N}            see what's coming and what shipped
     {CY}claude-kit debug [on|off]{C.N}     toggle debug mode ([kit:*] routing info)
     {CY}claude-kit uninstall{C.N}          remove claude-kit and the CLI symlink
@@ -1472,7 +1525,7 @@ def main() -> None:
         "debug":     lambda: cmd_debug(rest),
         "validate":  lambda: cmd_validate(rest),
         "uninstall": lambda: cmd_uninstall(),
-        "feedback":  lambda: cmd_feedback(rest),
+        "feedback":  lambda: cmd_feedback(),
         "roadmap":   lambda: cmd_roadmap(),
     }
 

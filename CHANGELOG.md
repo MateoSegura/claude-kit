@@ -4,6 +4,15 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **Feedback command** — rewritten as an interactive chat-like flow: asks
+  feedback type (bug/feature/general), collects a summary and optional details,
+  shows a confirmation before submitting; uses proper issue labels (`bug`,
+  `enhancement`, `feedback`) and structured templates
+- **Tips curated** — removed developer-focused and passthrough-flag tips
+  (validate, debug, system-maker, launch, combine, resume, continue); kept
+  only end-user relevant tips (setup, list, update, feedback, roadmap)
+
 ## [0.9.1] - 2026-02-26
 
 ### Fixed
