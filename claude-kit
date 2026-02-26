@@ -284,7 +284,13 @@ def cmd_run(args: list) -> None:
 # ── cmd_list ──────────────────────────────────────────────────────────────────
 
 def _list_section(dirs: list, label: str, empty_msg: str) -> None:
-    """Render one section (Bundled or Local) with grouped plugins and versions."""
+    """Render one section (Bundled or Local) with grouped plugins and versions.
+
+    Plugins are split into three visual categories:
+    - Teams: domain-specific coding plugins (cloud-python, embedded-zephyr, ...)
+    - Core: shared knowledge plugins that auto-load (core-*)
+    - System: meta-tools like system-maker and system-updater (system-*)
+    """
     p(f"  {col(C.W, label)}")
     p()
     if not dirs:
@@ -292,27 +298,56 @@ def _list_section(dirs: list, label: str, empty_msg: str) -> None:
         p()
         return
 
-    # Any plugin with a hyphen groups under its prefix; no-hyphen names are standalone
-    groups: dict = {}
+    # Classify into teams, core, system, and standalone
+    teams: dict = {}
+    core: list = []
+    system: list = []
     standalones: list = []
     for d in dirs:
-        if "-" in d.name:
+        if d.name.startswith("core-"):
+            core.append(d)
+        elif d.name.startswith("system-"):
+            system.append(d)
+        elif "-" in d.name:
             prefix = d.name.rsplit("-", 1)[0]
-            groups.setdefault(prefix, []).append(d)
+            teams.setdefault(prefix, []).append(d)
         else:
             standalones.append(d)
 
     sep = f"  {col(C.DIM, '·')}  "
 
-    for prefix, members in sorted(groups.items()):
-        p(f"  {col(C.DIM, 'claude-kit -k')} {col(C.W, prefix)}")
+    # ── Teams ──
+    if teams:
+        for prefix, members in sorted(teams.items()):
+            p(f"  {col(C.DIM, 'claude-kit -k')} {col(C.W, prefix)}")
+            parts_str = sep.join(
+                f"{col(C.CY, d.name[len(prefix)+1:])}  {col(C.DIM, plugin_version(d))}"
+                for d in members
+            )
+            p(f"    {parts_str}")
+            p()
+
+    # ── Core ──
+    if core:
+        p(f"  {col(C.DIM, 'Core  ·  auto-loaded by domain')}")
         parts_str = sep.join(
-            f"{col(C.CY, d.name[len(prefix)+1:])}  {col(C.DIM, plugin_version(d))}"
-            for d in members
+            f"{col(C.DIM, d.name.removeprefix('core-'))}  {col(C.DIM, plugin_version(d))}"
+            for d in core
         )
         p(f"    {parts_str}")
         p()
 
+    # ── System ──
+    if system:
+        p(f"  {col(C.DIM, 'System')}")
+        parts_str = sep.join(
+            f"{col(C.DIM, d.name.removeprefix('system-'))}  {col(C.DIM, plugin_version(d))}"
+            for d in system
+        )
+        p(f"    {parts_str}")
+        p()
+
+    # ── Standalone ──
     if standalones:
         max_len = max(len(d.name) for d in standalones)
         for d in sorted(standalones, key=lambda x: x.name):

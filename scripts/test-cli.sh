@@ -143,7 +143,7 @@ _test_core_excludes "core resolve: frontend excludes core-backend" "frontend" "c
 _test_core_excludes "core resolve: embedded excludes core-frontend" "embedded" "core-frontend"
 
 # List command shows core plugins grouped
-expect_output "list shows core group"              "core" list
+expect_output "list shows core group"              "Core" list
 
 # ── error cases ───────────────────────────────────────────────────────────────
 expect_error  "unknown flag exits non-zero"       --unknown-flag-xyz
