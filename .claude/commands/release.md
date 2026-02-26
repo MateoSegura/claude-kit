@@ -65,20 +65,42 @@ In `CHANGELOG.md`:
 1. Replace `## [Unreleased]` with `## [x.y.z] - YYYY-MM-DD` (today's date)
 2. Add a new empty `## [Unreleased]` section above it for future drafts
 
-## Step 7 — Commit
+## Step 7 — Update Roadmap
+
+Read `ROADMAP.md` and update it to reflect the release:
+
+1. Add the new version to the **Shipped** section (top of the list, most recent
+   first) with a one-line summary and today's date:
+   ```
+   - **vX.Y.Z** — Short Summary (Mon DD, YYYY)
+     Brief description of what shipped
+   ```
+
+2. If any **In Progress** items were completed by this release, move them to
+   Shipped or remove them.
+
+3. If there are no remaining items in **In Progress** or **Planned**, remove
+   those sections entirely. An empty roadmap with only **Shipped** is valid.
+
+4. Show the updated roadmap to the user for confirmation before proceeding.
+
+The goal is to keep ROADMAP.md honest — it should only contain real plans, not
+placeholders. "No upcoming plans" is fine.
+
+## Step 8 — Commit
 
 ```bash
-git add CHANGELOG.md plugins/*/\\.claude-plugin/plugin.json
+git add CHANGELOG.md ROADMAP.md plugins/*/\\.claude-plugin/plugin.json
 git commit -m "chore: release vX.Y.Z"
 ```
 
-## Step 8 — Tag
+## Step 9 — Tag
 
 ```bash
 git tag -a "vX.Y.Z" -m "Release vX.Y.Z"
 ```
 
-## Step 9 — Confirm Before Push
+## Step 10 — Confirm Before Push
 
 Show the user:
 - The commit that was made
@@ -94,9 +116,9 @@ git push && git push --tags
 
 If declined, tell the user they can push manually when ready and **stop here**.
 
-If pushed, proceed to Step 10.
+If pushed, proceed to Step 11.
 
-## Step 10 — Monitor CI Until Complete
+## Step 11 — Monitor CI Until Complete
 
 After pushing, enter a monitoring loop. Two CI workflows will trigger:
 1. **fast-validate** (push.yml) — triggered by the branch push
@@ -132,16 +154,16 @@ CI status: fast-validate=in_progress, release=queued
    note this to the user but keep polling — the self-hosted runner may be busy.
 
 5. Once both workflows complete, check their conclusions:
-   - Both `success` → proceed to **Step 12** (Verify Release)
-   - Any `failure` → proceed to **Step 11** (Auto-Fix)
+   - Both `success` → proceed to **Step 13** (Verify Release)
+   - Any `failure` → proceed to **Step 12** (Auto-Fix)
    - Any `cancelled` → report and ask the user what to do
 
-## Step 11 — Auto-Fix CI Failures
+## Step 12 — Auto-Fix CI Failures
 
 When a CI workflow fails, attempt to diagnose and fix it locally. This step
 may loop up to **3 times** — if all 3 attempts fail, stop and report.
 
-### 11a. Fetch failure logs
+### 12a. Fetch failure logs
 
 ```bash
 gh run view <FAILED_RUN_ID> --log 2>&1 | tail -300
@@ -158,7 +180,7 @@ Read the log output and identify the root cause. Common failures:
 | CHANGELOG entry missing for tag | Fix CHANGELOG.md with Edit |
 | Release body extraction failed | Fix CHANGELOG formatting with Edit |
 
-### 11b. Apply the fix
+### 12b. Apply the fix
 
 Use Read and Edit to fix the identified issue. Run the same check locally to
 verify:
@@ -171,7 +193,7 @@ bash scripts/test-plugin-consistency.sh
 python3 -m py_compile claude-kit
 ```
 
-### 11c. Re-commit, re-tag, re-push
+### 12c. Re-commit, re-tag, re-push
 
 After fixing:
 
@@ -189,9 +211,9 @@ git tag -a "vX.Y.Z" -m "Release vX.Y.Z"
 git push && git push --tags
 ```
 
-### 11d. Resume monitoring
+### 12d. Resume monitoring
 
-Go back to **Step 10** with the new commit SHA. Increment the attempt counter.
+Go back to **Step 11** with the new commit SHA. Increment the attempt counter.
 
 If this is already the 3rd attempt, **stop** and report:
 
@@ -206,7 +228,7 @@ The tag vX.Y.Z has been left on the latest commit. You can:
 - Delete the tag with: git tag -d vX.Y.Z && git push origin :refs/tags/vX.Y.Z
 ```
 
-## Step 12 — Verify Release Published
+## Step 13 — Verify Release Published
 
 After both CI workflows succeed, verify the GitHub Release was actually created:
 
