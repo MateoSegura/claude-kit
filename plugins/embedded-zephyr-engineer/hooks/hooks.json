@@ -45,19 +45,6 @@
           }
         ]
       }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "agent",
-            "prompt": "RESPOND WITH ONLY A JSON OBJECT. No other text, no explanation, no markdown. Format: {\"ok\": true} or {\"ok\": false, \"reason\": \"brief description\"}\n\nContext: $ARGUMENTS. FIRST: Determine if this session involved writing or editing Zephyr C source code, devicetree overlays, or Kconfig files as an engineering task. If NO source code was written or edited in this session (e.g. this was a grading, testing, or debugging session), respond {\"ok\": true} immediately \u2014 this hook only applies to engineering sessions.\n\nIf source code WAS written, use Read, Grep, and Glob tools to verify:\n\n1. **Build success** - If C code was written, verify west build succeeded (check for build output)\n2. **DTS resolution** - All devicetree node references resolve (no missing phandles)\n3. **Kconfig dependencies** - All Kconfig symbols have satisfied dependencies\n4. **No unresolved TODOs** - No TODO/FIXME comments left in new files\n5. **Logging configured** - All .c files have LOG_MODULE_REGISTER if they use LOG_* macros\n6. **Error handling** - Functions that can fail return int error codes (not void)\n7. **Sysbuild verification** - If sysbuild was configured, both app and MCUboot images were produced\n\nIf ALL checks pass, respond:\n{\"ok\": true}\n\nIf ANY check fails, respond:\n{\"ok\": false, \"reason\": \"[Specific issue found and what needs to be fixed]\"}",
-            "timeout": 120,
-            "description": "Comprehensive deliverable verification before stop"
-          }
-        ]
-      }
     ]
   }
 }

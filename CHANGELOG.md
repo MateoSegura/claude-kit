@@ -4,6 +4,33 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Remove unreliable Stop hooks** from all 14 team plugins — `prompt`/`agent`
+  type stop hooks caused "JSON validation failed" errors on every session end;
+  affects all roles (engineer, grader, tester, debugger, knowledge) across all
+  3 teams (embedded-zephyr, frontend-svelte, cloud-python)
+  - `embedded-zephyr-engineer` 0.2.0 → 0.2.1
+  - `embedded-zephyr-grader` 0.2.2 → 0.2.3
+  - `embedded-zephyr-tester` 0.1.1 → 0.1.2
+  - `embedded-zephyr-debugger` 0.1.1 → 0.1.2
+  - `embedded-zephyr-knowledge` 0.2.1 → 0.2.2
+  - `frontend-svelte-engineer` 0.2.0 → 0.2.1
+  - `frontend-svelte-grader` 0.1.2 → 0.1.3
+  - `frontend-svelte-tester` 0.1.1 → 0.1.2
+  - `frontend-svelte-debugger` 0.1.1 → 0.1.2
+  - `frontend-svelte-knowledge` 0.1.1 → 0.1.2
+  - `cloud-python-engineer` 0.2.0 → 0.2.1
+  - `cloud-python-grader` 0.1.2 → 0.1.3
+  - `cloud-python-tester` 0.1.1 → 0.1.2
+  - `cloud-python-debugger` 0.1.1 → 0.1.2
+
+### Changed
+- **Debug mode launch indicator** — `claude-kit --kit` now shows a yellow
+  `debug  ·  [kit:*] routing visible` line in the launch header when debug
+  mode is active
+- **Debug output formatting** — switched from code blocks to blockquote style
+  with bold `[kit:*]` prefix for better visual distinction in Claude Code
+
 ## [0.7.1] - 2026-02-26
 
 ### Added
