@@ -4,6 +4,18 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-02-26
+
+### Fixed
+- **Help alignment** — all command descriptions now start at a consistent column
+- **Roadmap content** — replaced placeholder entries with real targets (cloud-csharp,
+  cloud-go for early March); added v0.9.0 to shipped with specific dates
+
+### Changed
+- **Release command** — added Step 7 (Update Roadmap) to ensure ROADMAP.md stays
+  current with every release; renumbered subsequent steps
+- **Roadmap test** — no longer requires a Planned section (valid to have none)
+
 ## [0.9.0] - 2026-02-26
 
 ### Added
