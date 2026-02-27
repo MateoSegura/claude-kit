@@ -4,6 +4,21 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Pre-release upgrade safety system** — deterministic bash script
+  (`scripts/test-upgrade-safety.sh`) compares plugin API surface between git
+  refs, classifying changes as BREAKING (deleted commands/agents/skills, renamed
+  skill names), CAUTIONARY (reduced agent tools/skills, changed permissionMode,
+  removed hooks/companions), or SAFE (additions, expansions, content changes);
+  supports `--json`, `--ci`, `--from`/`--to` flags
+- **CI integration** — `push.yml` runs upgrade safety on every push (BREAKING
+  fails CI), `pr.yml` posts an upgrade safety PR comment with change table,
+  `release.yml` runs informational check
+- **Release command Steps 3-5** — `/release` now runs structural upgrade safety
+  check (Step 3), Claude-powered semantic break analysis (Step 4), and CI test
+  gap identification (Step 5) before version computation; version guard warns
+  when BREAKING changes detected but CHANGELOG only shows minor/patch bumps
+
 ## [0.9.2] - 2026-02-26
 
 ### Changed

@@ -30,14 +30,69 @@ python3 scripts/validate-plugins.py --all --strict
 If any failures are found, stop and report them. Do not proceed with a release
 that has broken plugins.
 
-## Step 3 — Read the [Unreleased] Draft
+## Step 3 — Upgrade Safety Check (Deterministic)
+
+Run the upgrade safety script to detect breaking/cautionary API surface changes:
+
+```bash
+LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+if [ -n "$LAST_TAG" ]; then
+  bash scripts/test-upgrade-safety.sh --from "$LAST_TAG" --to HEAD
+fi
+```
+
+Show the full report to the user.
+
+- If **BREAKING** changes are found: warn that this **must** be a MAJOR version
+  bump. Ask the user to confirm they want to proceed despite breaking changes.
+- If **CAUTIONARY** changes are found: show them and ask to proceed.
+- If clean: note "No API surface breaking changes" and continue.
+
+## Step 4 — Semantic Break Analysis (Claude Reasoning)
+
+Generate the diff of all plugin changes since the last tag:
+
+```bash
+LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+if [ -n "$LAST_TAG" ]; then
+  git diff "$LAST_TAG"..HEAD -- plugins/
+fi
+```
+
+Reason about semantic and architectural breaks the structural check in Step 3
+cannot catch. Look for:
+
+- Hook script logic changes that alter enforcement behavior
+- Agent system prompt rewrites that change how the agent operates
+- Cross-plugin coherence breaks (e.g., a companion skill renamed but referencing
+  agents not updated)
+- Changed default values or implicit behaviors
+
+Output each concern with a risk level (high/medium/low). Show them to the user
+as an informational list. This step never blocks the release — it surfaces
+concerns for human judgment.
+
+## Step 5 — CI Test Gap Identification (Claude Reasoning)
+
+Based on findings from Steps 3 and 4, suggest deterministic CI tests that could
+catch these patterns automatically in future releases. For each suggestion:
+
+- **Description**: what the test checks
+- **What it catches**: the category of break it would prevent
+- **Where**: which script file it belongs in (e.g., `test-plugin-consistency.sh`)
+- **Priority**: high/medium/low
+
+This step is purely informational — it doesn't block the release. Show
+suggestions to the user as a numbered list.
+
+## Step 6 — Read the [Unreleased] Draft
 
 Read `CHANGELOG.md` and extract the content of the `## [Unreleased]` section.
 
 If the section is empty or missing, tell the user: "Nothing staged for release.
 Use `/bump-plugin` to prepare changes first."
 
-## Step 4 — Compute Release Version
+## Step 7 — Compute Release Version
 
 From the `[Unreleased]` content, identify the highest-severity bump across all
 plugin changes listed:
@@ -45,12 +100,17 @@ plugin changes listed:
 - If any plugin had a **minor** bump → repo version is minor bump from last tag
 - Otherwise → repo version is patch bump from last tag
 
+**Version guard**: If Step 3 detected BREAKING changes but the CHANGELOG only
+lists minor or patch bumps, warn the user: "Breaking API changes were detected
+in Step 3 but the CHANGELOG only shows minor/patch bumps. This should be a
+MAJOR version bump." Ask whether to override the version or proceed as-is.
+
 Show the computed version and ask for confirmation:
 > "Computed version: v1.2.0 — proceed?"
 
 The user may override with a specific version.
 
-## Step 5 — Get Last Tag
+## Step 8 — Get Last Tag
 
 ```bash
 git describe --tags --abbrev=0 2>/dev/null || echo "none"
@@ -59,13 +119,13 @@ git describe --tags --abbrev=0 2>/dev/null || echo "none"
 If no tags exist, the release version is the computed version (starting from
 the [Unreleased] content).
 
-## Step 6 — Finalize CHANGELOG
+## Step 9 — Finalize CHANGELOG
 
 In `CHANGELOG.md`:
 1. Replace `## [Unreleased]` with `## [x.y.z] - YYYY-MM-DD` (today's date)
 2. Add a new empty `## [Unreleased]` section above it for future drafts
 
-## Step 7 — Update Roadmap
+## Step 10 — Update Roadmap
 
 Read `ROADMAP.md` and update it to reflect the release:
 
@@ -87,20 +147,20 @@ Read `ROADMAP.md` and update it to reflect the release:
 The goal is to keep ROADMAP.md honest — it should only contain real plans, not
 placeholders. "No upcoming plans" is fine.
 
-## Step 8 — Commit
+## Step 11 — Commit
 
 ```bash
 git add CHANGELOG.md ROADMAP.md plugins/*/\\.claude-plugin/plugin.json
 git commit -m "chore: release vX.Y.Z"
 ```
 
-## Step 9 — Tag
+## Step 12 — Tag
 
 ```bash
 git tag -a "vX.Y.Z" -m "Release vX.Y.Z"
 ```
 
-## Step 10 — Confirm Before Push
+## Step 13 — Confirm Before Push
 
 Show the user:
 - The commit that was made
@@ -116,9 +176,9 @@ git push && git push --tags
 
 If declined, tell the user they can push manually when ready and **stop here**.
 
-If pushed, proceed to Step 11.
+If pushed, proceed to Step 14.
 
-## Step 11 — Monitor CI Until Complete
+## Step 14 — Monitor CI Until Complete
 
 After pushing, enter a monitoring loop. Two CI workflows will trigger:
 1. **fast-validate** (push.yml) — triggered by the branch push
@@ -154,16 +214,16 @@ CI status: fast-validate=in_progress, release=queued
    note this to the user but keep polling — the self-hosted runner may be busy.
 
 5. Once both workflows complete, check their conclusions:
-   - Both `success` → proceed to **Step 13** (Verify Release)
-   - Any `failure` → proceed to **Step 12** (Auto-Fix)
+   - Both `success` → proceed to **Step 16** (Verify Release)
+   - Any `failure` → proceed to **Step 15** (Auto-Fix)
    - Any `cancelled` → report and ask the user what to do
 
-## Step 12 — Auto-Fix CI Failures
+## Step 15 — Auto-Fix CI Failures
 
 When a CI workflow fails, attempt to diagnose and fix it locally. This step
 may loop up to **3 times** — if all 3 attempts fail, stop and report.
 
-### 12a. Fetch failure logs
+### 15a. Fetch failure logs
 
 ```bash
 gh run view <FAILED_RUN_ID> --log 2>&1 | tail -300
@@ -177,10 +237,11 @@ Read the log output and identify the root cause. Common failures:
 | CLI syntax error (py_compile) | Fix the CLI script with Edit |
 | Plugin consistency check (test-plugin-consistency.sh) | Fix cross-references, frontmatter, or hook config |
 | CLI smoke test failure (test-cli.sh) | Fix the CLI script or test expectations |
+| Upgrade safety breaking change (test-upgrade-safety.sh) | Ensure version bump matches severity |
 | CHANGELOG entry missing for tag | Fix CHANGELOG.md with Edit |
 | Release body extraction failed | Fix CHANGELOG formatting with Edit |
 
-### 12b. Apply the fix
+### 15b. Apply the fix
 
 Use Read and Edit to fix the identified issue. Run the same check locally to
 verify:
@@ -190,10 +251,11 @@ verify:
 python3 scripts/validate-plugins.py --all --strict
 bash scripts/test-cli.sh
 bash scripts/test-plugin-consistency.sh
+bash scripts/test-upgrade-safety.sh --from HEAD~1 --to HEAD --ci
 python3 -m py_compile claude-kit
 ```
 
-### 12c. Re-commit, re-tag, re-push
+### 15c. Re-commit, re-tag, re-push
 
 After fixing:
 
@@ -211,9 +273,9 @@ git tag -a "vX.Y.Z" -m "Release vX.Y.Z"
 git push && git push --tags
 ```
 
-### 12d. Resume monitoring
+### 15d. Resume monitoring
 
-Go back to **Step 11** with the new commit SHA. Increment the attempt counter.
+Go back to **Step 14** with the new commit SHA. Increment the attempt counter.
 
 If this is already the 3rd attempt, **stop** and report:
 
@@ -228,7 +290,7 @@ The tag vX.Y.Z has been left on the latest commit. You can:
 - Delete the tag with: git tag -d vX.Y.Z && git push origin :refs/tags/vX.Y.Z
 ```
 
-## Step 13 — Verify Release Published
+## Step 16 — Verify Release Published
 
 After both CI workflows succeed, verify the GitHub Release was actually created:
 
