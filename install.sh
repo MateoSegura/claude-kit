@@ -30,6 +30,11 @@ if ! command -v python3 &>/dev/null; then
   exit 1
 fi
 
+if ! command -v openssl &>/dev/null; then
+  err "openssl is required but not found. Install openssl and try again."
+  exit 1
+fi
+
 if ! command -v claude &>/dev/null; then
   info "Claude Code CLI ('claude') not found — installing ..."
   curl -fsSL https://claude.ai/install.sh | bash
@@ -116,22 +121,57 @@ fi
 # ── Clone or update ───────────────────────────────────────────────────────────
 
 _kit_version() {
-  local tag
-  tag=$(git -C "$KIT_HOME" tag --points-at HEAD --sort=-version:refname 2>/dev/null | head -1)
-  if [ -n "$tag" ]; then echo "$tag"; return; fi
-  tag=$(git -C "$KIT_HOME" describe --tags --abbrev=0 2>/dev/null)
-  if [ -n "$tag" ]; then echo "$tag"; return; fi
-  git -C "$KIT_HOME" rev-parse --short HEAD
+  # Read from .version file (user installs)
+  if [ -f "$KIT_HOME/.version" ]; then
+    cat "$KIT_HOME/.version"
+    return
+  fi
+  # Fallback: parse CHANGELOG.md
+  if [ -f "$KIT_HOME/CHANGELOG.md" ]; then
+    local ver
+    ver=$(grep -m1 '^## \[' "$KIT_HOME/CHANGELOG.md" | grep -v 'Unreleased' | sed 's/## \[\(.*\)\].*/v\1/')
+    if [ -n "$ver" ]; then echo "$ver"; return; fi
+  fi
+  echo "unknown"
 }
 
-if [ -d "$KIT_HOME/.git" ]; then
+_encrypt_and_seal() {
+  # Encrypt plugin content, remove plaintext, remove .git, write .version
+  local kit_dir="$1"
+
+  info "Securing plugin content ..."
+
+  # Encrypt all plugins in-place and remove plaintext
+  if [ -f "$kit_dir/scripts/encrypt-plugins.sh" ]; then
+    bash "$kit_dir/scripts/encrypt-plugins.sh" \
+      --plugins-dir "$kit_dir/plugins" \
+      --remove-plaintext
+  fi
+
+  # Write version file (before removing .git)
+  local ver
+  ver=$(_kit_version)
+  echo "$ver" > "$kit_dir/.version"
+
+  # Remove git history — users don't need it and it contains plaintext
+  rm -r "$kit_dir/.git"
+
+  ok "Plugins encrypted"
+}
+
+if [ -d "$KIT_HOME/.version" ] || [ -f "$KIT_HOME/.installed" ]; then
+  # Existing user install — use claude-kit update instead
   info "Updating ..."
-  git -C "$KIT_HOME" fetch --tags --force -q origin
-  git -C "$KIT_HOME" pull --ff-only -q
-  ok "Updated → $(_kit_version)"
+  if command -v claude-kit &>/dev/null; then
+    claude-kit update
+  else
+    # CLI not in PATH yet — call directly
+    python3 "$KIT_HOME/claude-kit" update
+  fi
 else
   info "Installing ..."
   git clone "$REPO_URL" "$KIT_HOME" -q
+  _encrypt_and_seal "$KIT_HOME"
   ok "Installed → $(_kit_version)"
 fi
 

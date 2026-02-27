@@ -9,6 +9,9 @@
 
 ## Shipped
 
+- **v0.10.0** — Instrumentation & Encryption (Feb 27, 2026)
+  core-ai plugin for repo instrumentation, AES-256-CBC plugin encryption,
+  user-mode update without git, auto-release command, commit validation hooks
 - **v0.9.2** — Interactive Feedback & Tips Polish (Feb 26, 2026)
   Chat-like feedback flow, curated end-user tips, clear tip format
 - **v0.9.1** — Help & Roadmap Fixes (Feb 26, 2026)
