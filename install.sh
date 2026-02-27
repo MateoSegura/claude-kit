@@ -130,7 +130,7 @@ _kit_version() {
   # Fallback: parse CHANGELOG.md
   if [ -f "$KIT_HOME/CHANGELOG.md" ]; then
     local ver
-    ver=$(grep -m1 '^## \[' "$KIT_HOME/CHANGELOG.md" | grep -v 'Unreleased' | sed 's/## \[\(.*\)\].*/v\1/')
+    ver=$(grep -m1 '^## \[[0-9]' "$KIT_HOME/CHANGELOG.md" | sed 's/## \[\(.*\)\].*/v\1/')
     if [ -n "$ver" ]; then echo "$ver"; return; fi
   fi
   echo "unknown"
@@ -163,7 +163,7 @@ _encrypt_and_seal() {
   if [ -f "$kit_dir/scripts/encrypt-plugins.sh" ]; then
     bash "$kit_dir/scripts/encrypt-plugins.sh" \
       --plugins-dir "$kit_dir/plugins" \
-      --remove-plaintext
+      --remove-plaintext >/dev/null
   fi
 
   # Remove git history if present (tarball won't have it, but just in case)
