@@ -16,6 +16,15 @@
 
 ## Shipped
 
+- **v0.10.3** — Install Polish (Feb 27, 2026)
+  Fix version display ("unknown" → correct version), suppress encryption noise
+- **v0.10.2** — Git-Free Install (Feb 27, 2026)
+  Tarball download via gh api — no git involvement, works with any credential setup
+- **v0.10.1** — Private Repo Install Fix (Feb 27, 2026)
+  gh repo clone replaces git clone — works with any existing credential setup
+- **v0.10.0** — Instrumentation & Encryption (Feb 27, 2026)
+  core-ai plugin for repo instrumentation, AES-256-CBC plugin encryption,
+  user-mode update without git, auto-release command, commit validation hooks
 - **v0.9.2** — Interactive Feedback & Tips Polish (Feb 26, 2026)
   Chat-like feedback flow, curated end-user tips, clear tip format
 - **v0.9.1** — Help & Roadmap Fixes (Feb 26, 2026)
