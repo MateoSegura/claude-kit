@@ -855,7 +855,7 @@ def _update_dev() -> None:
     p(f"  {col(C.G, 'Done.')}")
     p()
 
-REPO_URL = "https://github.com/MateoSegura/claude-kit.git"
+REPO_SLUG = "MateoSegura/claude-kit"
 
 def _update_user() -> None:
     """User-mode update: clone to temp, encrypt, sync to install dir."""
@@ -869,11 +869,17 @@ def _update_user() -> None:
     p(f"  {col(C.CY, 'Fetching latest release...')}")
     p()
 
-    # Clone repo to temp directory
+    if not shutil.which("gh"):
+        p(f"  {col(C.R, '✗ gh (GitHub CLI) is required for updates')}")
+        p(f"  Install it: https://cli.github.com")
+        p()
+        sys.exit(1)
+
+    # Clone repo to temp directory using gh (bypasses git credential issues)
     tmp_dir = tempfile.mkdtemp(prefix="ck-update-")
     try:
         clone_result = subprocess.run(
-            ["git", "clone", "--depth", "1", REPO_URL, tmp_dir],
+            ["gh", "repo", "clone", REPO_SLUG, tmp_dir, "--", "--depth", "1"],
             capture_output=True, text=True,
         )
         if clone_result.returncode != 0:
