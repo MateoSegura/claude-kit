@@ -11,6 +11,12 @@ import difflib
 import textwrap
 import random
 import platform
+import tempfile
+import signal
+import time
+import atexit
+import io
+import tarfile
 from datetime import datetime
 
 # ── Constants ────────────────────────────────────────────────────────────────
@@ -22,12 +28,97 @@ INSTALLED_MARKER = INSTALL_DIR / ".installed"
 MANIFEST_FILE    = INSTALL_DIR / "local" / "setup-manifest.json"
 BACKUP_DIR       = INSTALL_DIR / "local" / "backups"
 
-PROFILES_DIR     = INSTALL_DIR / "scripts" / "profiles"
-BEHAVIOR_DIR     = INSTALL_DIR / "scripts" / "rules"
-
 CK_MODE       = "user" if INSTALLED_MARKER.exists() else "dev"
 CK_OUTPUT_DIR = LOCAL_DIR if CK_MODE == "user" else PLUGINS_DIR
 VERBOSE       = False
+
+# Content directories that get encrypted (everything else stays plaintext)
+_CONTENT_DIRS = ("agents", "commands", "skills", "hooks", "scripts")
+
+# ── Encryption ──────────────────────────────────────────────────────────────
+
+# Temp directories created for decrypted plugins — cleaned up on exit.
+_temp_dirs: list = []
+
+def _get_key() -> str:
+    """Assemble the encryption passphrase from split parts."""
+    _p = ["cK9x@", "Vm4p", "Lw2R", "qJ7n", "Ht5Z", "bF3s"]
+    return "".join(_p)
+
+def _is_encrypted(plugin_dir: pathlib.Path) -> bool:
+    """Check if a plugin has encrypted content (content.enc present, no plaintext dirs)."""
+    return (plugin_dir / "content.enc").exists()
+
+def _decrypt_plugin(plugin_dir: pathlib.Path, dest_dir: pathlib.Path) -> pathlib.Path:
+    """Decrypt a plugin's content.enc into dest_dir, merging with metadata.
+
+    Returns the path to the fully reconstructed plugin directory.
+    """
+    plugin_name = plugin_dir.name
+    out_dir = dest_dir / plugin_name
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy metadata files (plaintext)
+    cp_dir = plugin_dir / ".claude-plugin"
+    if cp_dir.exists():
+        shutil.copytree(cp_dir, out_dir / ".claude-plugin", dirs_exist_ok=True)
+
+    enc_file = plugin_dir / "content.enc"
+    if not enc_file.exists():
+        return out_dir
+
+    key = _get_key()
+
+    # Decrypt with openssl → tar data in memory → extract
+    result = subprocess.run(
+        ["openssl", "enc", "-d", "-aes-256-cbc", "-pbkdf2", "-iter", "100000",
+         "-pass", f"pass:{key}", "-in", str(enc_file)],
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        print(f"Error: Failed to decrypt plugin '{plugin_name}'.", file=sys.stderr)
+        sys.exit(1)
+
+    with tarfile.open(fileobj=io.BytesIO(result.stdout), mode="r:gz") as tar:
+        tar.extractall(path=str(out_dir))
+
+    return out_dir
+
+def _cleanup_temp() -> None:
+    """Remove all temporary decryption directories."""
+    for d in _temp_dirs:
+        try:
+            shutil.rmtree(d, ignore_errors=True)
+        except Exception:
+            pass
+
+def _cleanup_stale_temps() -> None:
+    """Remove stale ck-* temp dirs older than 1 hour (crash recovery)."""
+    tmp = pathlib.Path(tempfile.gettempdir())
+    cutoff = time.time() - 3600
+    for d in tmp.glob("ck-*"):
+        if d.is_dir():
+            try:
+                if d.stat().st_mtime < cutoff:
+                    shutil.rmtree(d, ignore_errors=True)
+            except Exception:
+                pass
+
+def _setup_cleanup_handlers() -> None:
+    """Register cleanup for temp dirs on exit and signals."""
+    atexit.register(_cleanup_temp)
+    prev_term = signal.getsignal(signal.SIGTERM)
+    prev_int = signal.getsignal(signal.SIGINT)
+
+    def _on_signal(signum, frame):
+        _cleanup_temp()
+        prev = prev_term if signum == signal.SIGTERM else prev_int
+        if callable(prev):
+            prev(signum, frame)
+        sys.exit(128 + signum)
+
+    signal.signal(signal.SIGTERM, _on_signal)
+    signal.signal(signal.SIGINT, _on_signal)
 
 # ── Colors ───────────────────────────────────────────────────────────────────
 
@@ -104,13 +195,8 @@ def _read_ctl(plugin_dir: pathlib.Path) -> dict:
 def resolve_companions(plugin_dir: pathlib.Path) -> list:
     return _read_ctl(plugin_dir).get("companions", [])
 
-def resolve_core_plugins(domain) -> list:
-    """Find core-* plugins to auto-load.
-
-    - domain="always": loads unconditionally (infrastructure plugins like core-kit)
-    - domain="universal": loads when any team domain is active
-    - domain=<name>: loads when team domain matches
-    """
+def resolve_core_plugins(domain: str) -> list:
+    """Find core-* plugins whose domain is 'universal' or matches the given domain."""
     matches = []
     for base in [PLUGINS_DIR, LOCAL_DIR]:
         if not base.exists():
@@ -120,10 +206,9 @@ def resolve_core_plugins(domain) -> list:
                 continue
             ctl = _read_ctl(d)
             ctl_domain = ctl.get("domain")
-            if ctl_domain == "always":
-                matches.append(d.name)
-            elif domain and (ctl_domain == "universal" or ctl_domain == domain):
-                matches.append(d.name)
+            if ctl_domain == "universal" or ctl_domain == domain:
+                if d.name not in [m for m in matches]:
+                    matches.append(d.name)
     return sorted(set(matches))
 
 def expand_kit(kit_name: str, seen: set) -> list:
@@ -166,12 +251,11 @@ def expand_kit(kit_name: str, seen: set) -> list:
                 break
 
     core_result = []
-    # Auto-load core plugins: "always" plugins load unconditionally,
-    # "universal" and domain-matching plugins load when a domain is active.
-    for core_name in resolve_core_plugins(domain):
-        if core_name not in seen:
-            seen.add(core_name)
-            core_result.append(core_name)
+    if domain:
+        for core_name in resolve_core_plugins(domain):
+            if core_name not in seen:
+                seen.add(core_name)
+                core_result.append(core_name)
 
     # Core plugins go before team plugins (foundational knowledge first).
     return core_result + team_result
@@ -224,8 +308,8 @@ def _print_launch_header(plugin_names: list) -> None:
         p()
 
     # Debug mode indicator
-    debug_active = (pathlib.Path.home() / ".claude" / "rules" / "claude-kit-debug.md").exists()
-    if debug_active:
+    debug_rule = pathlib.Path.home() / ".claude" / "rules" / "claude-kit-debug.md"
+    if debug_rule.exists():
         p(f"  {col(C.Y, 'debug')}  {col(C.DIM, '·  [kit:*] routing visible')}")
         p()
 
@@ -314,30 +398,78 @@ def cmd_run(args: list) -> None:
 
     LOCAL_DIR.mkdir(parents=True, exist_ok=True)
 
-    claude_args = ["claude"]
-    for pname in all_plugins:
-        pdir = find_plugin_dir(pname)
-        claude_args.extend(["--plugin-dir", str(pdir)])
-    claude_args.extend(["--model", model])
-
-    if skip_permissions:
-        claude_args.append("--dangerously-skip-permissions")
-
-    # Append any flags we don't handle (--resume, --continue, --verbose, etc.)
-    claude_args.extend(passthrough)
-
     if not shutil.which("claude"):
         print("Error: Claude Code CLI ('claude') not found.")
         print("Install it first: https://claude.ai/code")
         sys.exit(1)
 
-    _print_launch_header(all_plugins)
+    # Determine which plugins need decryption (encrypted at rest).
+    # In dev mode, plugins are plaintext — no decryption needed.
+    needs_decrypt = False
+    if CK_MODE == "user":
+        for pname in all_plugins:
+            pdir = find_plugin_dir(pname)
+            if pdir and _is_encrypted(pdir):
+                needs_decrypt = True
+                break
 
-    if skip_permissions:
-        p(f"  {col(C.Y, 'Warning:')} running with --dangerously-skip-permissions")
-        p()
+    if needs_decrypt:
+        # Clean stale temp dirs from previous crashed sessions
+        _cleanup_stale_temps()
 
-    os.execvp("claude", claude_args)
+        temp_dir = tempfile.mkdtemp(prefix="ck-")
+        _temp_dirs.append(temp_dir)
+        _setup_cleanup_handlers()
+        temp_path = pathlib.Path(temp_dir)
+
+        if not shutil.which("openssl"):
+            print("Error: openssl is required for plugin decryption but not found.")
+            sys.exit(1)
+
+        claude_args = ["claude"]
+        for pname in all_plugins:
+            pdir = find_plugin_dir(pname)
+            if pdir and _is_encrypted(pdir):
+                decrypted = _decrypt_plugin(pdir, temp_path)
+                claude_args.extend(["--plugin-dir", str(decrypted)])
+            else:
+                # Local/unencrypted plugins: pass through directly
+                claude_args.extend(["--plugin-dir", str(pdir)])
+        claude_args.extend(["--model", model])
+
+        if skip_permissions:
+            claude_args.append("--dangerously-skip-permissions")
+        claude_args.extend(passthrough)
+
+        _print_launch_header(all_plugins)
+
+        if skip_permissions:
+            p(f"  {col(C.Y, 'Warning:')} running with --dangerously-skip-permissions")
+            p()
+
+        # Use subprocess.run so we can clean up the temp dir afterward.
+        result = subprocess.run(claude_args)
+        _cleanup_temp()
+        sys.exit(result.returncode)
+    else:
+        # Dev mode or no encrypted plugins — launch directly (faster).
+        claude_args = ["claude"]
+        for pname in all_plugins:
+            pdir = find_plugin_dir(pname)
+            claude_args.extend(["--plugin-dir", str(pdir)])
+        claude_args.extend(["--model", model])
+
+        if skip_permissions:
+            claude_args.append("--dangerously-skip-permissions")
+        claude_args.extend(passthrough)
+
+        _print_launch_header(all_plugins)
+
+        if skip_permissions:
+            p(f"  {col(C.Y, 'Warning:')} running with --dangerously-skip-permissions")
+            p()
+
+        os.execvp("claude", claude_args)
 
 # ── cmd_list ──────────────────────────────────────────────────────────────────
 
@@ -559,99 +691,27 @@ def _git(args: list) -> str:
         capture_output=True, text=True
     ).stdout.strip()
 
-def cmd_update() -> None:
-    p()
-    p(f"  {col(C.W, 'claude-kit update')}")
-    p(f"  {col(C.DIM, '─' * 40)}")
-    p()
+def _version_from_changelog(cl_path: pathlib.Path) -> str:
+    """Extract latest version from CHANGELOG.md."""
+    if not cl_path.exists():
+        return "unknown"
+    try:
+        for line in cl_path.read_text().splitlines():
+            if line.startswith("## [") and "Unreleased" not in line:
+                return "v" + line.split("]")[0].replace("## [", "").strip()
+    except OSError:
+        pass
+    return "unknown"
 
-    old_hash = _git(["rev-parse", "HEAD"]) or "?"
-    # Use the nearest ancestor tag as the version baseline so the diff
-    # matches the changelog.  If we read from the filesystem, commits
-    # pulled between releases (tag A → untagged → tag B) would already
-    # reflect intermediate bumps, hiding changes listed in the changelog.
-    old_tag = _git(["describe", "--tags", "--abbrev=0"])
-    old_versions: dict = {}
-    if old_tag and PLUGINS_DIR.exists():
-        for d in sorted(PLUGINS_DIR.iterdir()):
-            if not d.is_dir():
-                continue
-            blob = _git(["show", f"{old_tag}:plugins/{d.name}/.claude-plugin/plugin.json"])
-            if blob:
-                try:
-                    old_versions[d.name] = json.loads(blob).get("version", "?")
-                except Exception:
-                    old_versions[d.name] = plugin_version(d)
-            # Plugin didn't exist at old tag — will show as "(new)"
-
-    p(f"  {col(C.CY, 'Pulling from origin...')}")
-    p()
-
-    # Fetch tags with --force first so stale local tags (e.g. after an
-    # upstream history rewrite) never block the subsequent pull.
-    subprocess.run(
-        ["git", "-C", str(INSTALL_DIR), "fetch", "--tags", "--force", "-q", "origin"],
-        capture_output=True, text=True
-    )
-
-    result = subprocess.run(
-        ["git", "-C", str(INSTALL_DIR), "pull", "--ff-only"],
-        capture_output=True, text=True
-    )
-
-    if result.returncode != 0:
-        p(f"  {col(C.R, '✗ Pull failed')}")
-        p()
-        for line in (result.stdout + result.stderr).splitlines():
-            p(f"    {line}")
-        p()
-        sys.exit(1)
-
-    # Determine version from the freshly-pulled CHANGELOG.md on disk.
-    # We cannot call _current_version() here because the *running* Python
-    # process still has the OLD function definition in memory — the pull
-    # updated the file on disk but not the loaded bytecode.
-    new_ver = "unknown"
-    cl_path = INSTALL_DIR / "CHANGELOG.md"
-    if cl_path.exists():
-        try:
-            for cl_line in cl_path.read_text().splitlines():
-                if cl_line.startswith("## [") and "Unreleased" not in cl_line:
-                    new_ver = "v" + cl_line.split("]")[0].replace("## [", "").strip()
-                    break
-        except OSError:
-            pass
-    if new_ver == "unknown":
-        new_ver = _current_version()
-
-    if "Already up to date" in (result.stdout + result.stderr):
-        p(f"  {col(C.G, '✓ Already up to date')}  {col(C.DIM, f'({new_ver})')}")
-        p()
-        return
-
-    n_commits = _git(["rev-list", f"{old_hash}..HEAD", "--count"]) or "?"
-    commit_word = "commit" if n_commits == "1" else "commits"
-    p(f"  {col(C.G, '✓ Updated to')} {col(C.W, new_ver)}  {col(C.DIM, f'({n_commits} new {commit_word})')}")
-    p()
-
-    # Show changelog first — this is what the user cares about most
-    changelog = INSTALL_DIR / "CHANGELOG.md"
-    if changelog.exists():
-        _show_changelog(changelog, since_tag=old_tag)
-
-    # Then show plugin version changes
-    new_versions: dict = {}
-    if PLUGINS_DIR.exists():
-        for d in sorted(PLUGINS_DIR.iterdir()):
-            if d.is_dir():
-                new_versions[d.name] = plugin_version(d)
-
+def _show_version_diff(old_versions: dict, new_versions: dict) -> None:
+    """Display plugin version change summary."""
     all_names = set(old_versions) | set(new_versions)
+    if not all_names:
+        return
 
     p(f"  {col(C.W, 'Plugin versions:')}")
     p()
 
-    # Group by prefix (same logic as _list_section)
     groups: dict = {}
     standalones: list = []
     for name in sorted(all_names):
@@ -664,7 +724,6 @@ def cmd_update() -> None:
     sep = f"  {col(C.DIM, '·')}  "
 
     def _ver_entry(name: str, role: str) -> tuple:
-        """Return (display_str, changed_bool) for a plugin version entry."""
         ov = old_versions.get(name)
         nv = new_versions.get(name)
         if nv is None:
@@ -677,7 +736,6 @@ def cmd_update() -> None:
 
     for prefix, members in sorted(groups.items()):
         entries = [_ver_entry(n, n[len(prefix)+1:]) for n in members]
-        # In non-verbose mode, skip groups where nothing changed
         if not VERBOSE:
             changed = [e for e, c in entries if c]
             if not changed:
@@ -702,14 +760,18 @@ def cmd_update() -> None:
         else:
             p(f"  {col(C.DIM, f'{name} {nv}')}")
 
-    # Auto-update installed files if they changed
-    # Note: claude-kit.md is NOT auto-synced because it has user-specific
-    # behavioral profile content appended during setup. Only the statusline
-    # (a standalone script) is safe to auto-sync.
+def _sync_installed_files() -> list:
+    """Auto-update setup files (statusline, rules) if they changed."""
     auto_sync = [
         ("statusline-command.sh",
          INSTALL_DIR / "scripts" / "statusline-command.sh",
          pathlib.Path.home() / ".claude" / "statusline-command.sh"),
+        ("claude-kit-autoroute.md",
+         INSTALL_DIR / "scripts" / "rules" / "claude-kit-autoroute.md",
+         pathlib.Path.home() / ".claude" / "rules" / "claude-kit-autoroute.md"),
+        ("claude-kit-debug.md",
+         INSTALL_DIR / "scripts" / "rules" / "claude-kit-debug.md",
+         pathlib.Path.home() / ".claude" / "rules" / "claude-kit-debug.md"),
     ]
     synced = []
     for label, src, dest in auto_sync:
@@ -717,7 +779,71 @@ def cmd_update() -> None:
             if src.read_bytes() != dest.read_bytes():
                 shutil.copy2(src, dest)
                 synced.append(label)
+    return synced
 
+def _update_dev() -> None:
+    """Dev-mode update: git pull (has .git directory)."""
+    old_hash = _git(["rev-parse", "HEAD"]) or "?"
+    old_tag = _git(["describe", "--tags", "--abbrev=0"])
+    old_versions: dict = {}
+    if old_tag and PLUGINS_DIR.exists():
+        for d in sorted(PLUGINS_DIR.iterdir()):
+            if not d.is_dir():
+                continue
+            blob = _git(["show", f"{old_tag}:plugins/{d.name}/.claude-plugin/plugin.json"])
+            if blob:
+                try:
+                    old_versions[d.name] = json.loads(blob).get("version", "?")
+                except Exception:
+                    old_versions[d.name] = plugin_version(d)
+
+    p(f"  {col(C.CY, 'Pulling from origin...')}")
+    p()
+
+    subprocess.run(
+        ["git", "-C", str(INSTALL_DIR), "fetch", "--tags", "--force", "-q", "origin"],
+        capture_output=True, text=True
+    )
+    result = subprocess.run(
+        ["git", "-C", str(INSTALL_DIR), "pull", "--ff-only"],
+        capture_output=True, text=True
+    )
+
+    if result.returncode != 0:
+        p(f"  {col(C.R, '✗ Pull failed')}")
+        p()
+        for line in (result.stdout + result.stderr).splitlines():
+            p(f"    {line}")
+        p()
+        sys.exit(1)
+
+    new_ver = _version_from_changelog(INSTALL_DIR / "CHANGELOG.md")
+    if new_ver == "unknown":
+        new_ver = _current_version()
+
+    if "Already up to date" in (result.stdout + result.stderr):
+        p(f"  {col(C.G, '✓ Already up to date')}  {col(C.DIM, f'({new_ver})')}")
+        p()
+        return
+
+    n_commits = _git(["rev-list", f"{old_hash}..HEAD", "--count"]) or "?"
+    commit_word = "commit" if n_commits == "1" else "commits"
+    p(f"  {col(C.G, '✓ Updated to')} {col(C.W, new_ver)}  {col(C.DIM, f'({n_commits} new {commit_word})')}")
+    p()
+
+    changelog = INSTALL_DIR / "CHANGELOG.md"
+    if changelog.exists():
+        _show_changelog(changelog, since_tag=old_tag)
+
+    new_versions: dict = {}
+    if PLUGINS_DIR.exists():
+        for d in sorted(PLUGINS_DIR.iterdir()):
+            if d.is_dir():
+                new_versions[d.name] = plugin_version(d)
+
+    _show_version_diff(old_versions, new_versions)
+
+    synced = _sync_installed_files()
     if synced:
         p()
         p(f"  {col(C.W, 'Scripts:')}")
@@ -725,29 +851,152 @@ def cmd_update() -> None:
         for label in synced:
             p(f"    {col(C.Y, '↑')} {col(C.W, label)}  {col(C.Y, 'updated')}")
 
-    # Clean up stale files from previous versions (pre-1.0 layout changes)
-    RULES_DIR = pathlib.Path.home() / ".claude" / "rules"
-    stale_files = [
-        RULES_DIR / "claude-kit-autoroute.md",   # replaced by claude-kit.md
-        RULES_DIR / "claude-kit-behavior.md",     # merged into claude-kit.md section 4
-        RULES_DIR / "plan-protocol.md",           # merged into claude-kit.md section 2
-    ]
-    removed = []
-    for stale in stale_files:
-        if stale.exists():
-            stale.unlink()
-            removed.append(stale.name)
-
-    if removed:
-        p()
-        p(f"  {col(C.W, 'Cleanup:')}")
-        p()
-        for name in removed:
-            p(f"    {col(C.R, '-')} {col(C.DIM, name)}  {col(C.DIM, '(stale, replaced by claude-kit.md)')}")
-
     p()
     p(f"  {col(C.G, 'Done.')}")
     p()
+
+REPO_SLUG = "MateoSegura/claude-kit"
+
+def _update_user() -> None:
+    """User-mode update: clone to temp, encrypt, sync to install dir."""
+    old_ver = _current_version()
+    old_versions: dict = {}
+    if PLUGINS_DIR.exists():
+        for d in sorted(PLUGINS_DIR.iterdir()):
+            if d.is_dir():
+                old_versions[d.name] = plugin_version(d)
+
+    p(f"  {col(C.CY, 'Fetching latest release...')}")
+    p()
+
+    if not shutil.which("gh"):
+        p(f"  {col(C.R, '✗ gh (GitHub CLI) is required for updates')}")
+        p(f"  Install it: https://cli.github.com")
+        p()
+        sys.exit(1)
+
+    # Download repo as tarball via gh api (no git involved — avoids credential
+    # helper conflicts with Bitbucket, GitLab, stale gh paths, etc.)
+    tmp_dir = tempfile.mkdtemp(prefix="ck-update-")
+    try:
+        tar_file = pathlib.Path(tmp_dir) / "repo.tar.gz"
+        with open(tar_file, "wb") as tf:
+            dl_result = subprocess.run(
+                ["gh", "api", f"repos/{REPO_SLUG}/tarball/main"],
+                stdout=tf, stderr=subprocess.PIPE, text=False,
+            )
+        if dl_result.returncode != 0 or tar_file.stat().st_size == 0:
+            p(f"  {col(C.R, '✗ Download failed')}")
+            p()
+            stderr_text = dl_result.stderr.decode("utf-8", errors="replace") if isinstance(dl_result.stderr, bytes) else (dl_result.stderr or "")
+            for line in stderr_text.splitlines():
+                p(f"    {line}")
+            p()
+            sys.exit(1)
+
+        # Extract tarball (strip top-level directory)
+        extract_dir = pathlib.Path(tmp_dir) / "extract"
+        extract_dir.mkdir()
+        subprocess.run(
+            ["tar", "xzf", str(tar_file), "-C", str(extract_dir),
+             "--strip-components=1"],
+            capture_output=True,
+        )
+        tar_file.unlink()
+
+        # Check new version
+        new_ver = _version_from_changelog(extract_dir / "CHANGELOG.md")
+        if new_ver == "unknown":
+            new_ver = "?"
+
+        if new_ver == old_ver:
+            p(f"  {col(C.G, '✓ Already up to date')}  {col(C.DIM, f'({new_ver})')}")
+            p()
+            return
+
+        p(f"  {col(C.G, '✓ Updated to')} {col(C.W, new_ver)}  {col(C.DIM, f'(from {old_ver})')}")
+        p()
+
+        # Encrypt plugins in the downloaded source
+        encrypt_script = extract_dir / "scripts" / "encrypt-plugins.sh"
+        if encrypt_script.exists():
+            enc_result = subprocess.run(
+                ["bash", str(encrypt_script),
+                 "--plugins-dir", str(extract_dir / "plugins"),
+                 "--remove-plaintext"],
+                capture_output=True, text=True,
+            )
+            if enc_result.returncode != 0:
+                p(f"  {col(C.R, '✗ Encryption failed')}")
+                p()
+                for line in enc_result.stderr.splitlines():
+                    p(f"    {line}")
+                sys.exit(1)
+
+        # Sync: replace CLI, scripts, plugins, metadata
+        new_cli = extract_dir / "claude-kit"
+        if new_cli.exists():
+            shutil.copy2(new_cli, INSTALL_DIR / "claude-kit")
+            (INSTALL_DIR / "claude-kit").chmod(0o755)
+
+        new_scripts = extract_dir / "scripts"
+        if new_scripts.exists():
+            if (INSTALL_DIR / "scripts").exists():
+                shutil.rmtree(INSTALL_DIR / "scripts")
+            shutil.copytree(new_scripts, INSTALL_DIR / "scripts")
+
+        for fname in ("CHANGELOG.md", "ROADMAP.md"):
+            src = extract_dir / fname
+            if src.exists():
+                shutil.copy2(src, INSTALL_DIR / fname)
+
+        new_plugins = extract_dir / "plugins"
+        if new_plugins.exists():
+            if PLUGINS_DIR.exists():
+                shutil.rmtree(PLUGINS_DIR)
+            shutil.copytree(new_plugins, PLUGINS_DIR)
+
+        # Write .version file
+        (INSTALL_DIR / ".version").write_text(new_ver + "\n")
+
+        # Show changelog
+        changelog = INSTALL_DIR / "CHANGELOG.md"
+        if changelog.exists():
+            _show_changelog(changelog, since_tag=old_ver)
+
+        # Show version diff
+        new_versions: dict = {}
+        if PLUGINS_DIR.exists():
+            for d in sorted(PLUGINS_DIR.iterdir()):
+                if d.is_dir():
+                    new_versions[d.name] = plugin_version(d)
+        _show_version_diff(old_versions, new_versions)
+
+        synced = _sync_installed_files()
+        if synced:
+            p()
+            p(f"  {col(C.W, 'Scripts:')}")
+            p()
+            for label in synced:
+                p(f"    {col(C.Y, '↑')} {col(C.W, label)}  {col(C.Y, 'updated')}")
+
+        p()
+        p(f"  {col(C.G, 'Done.')}")
+        p()
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+def cmd_update() -> None:
+    p()
+    p(f"  {col(C.W, 'claude-kit update')}")
+    p(f"  {col(C.DIM, '─' * 40)}")
+    p()
+
+    # Dev mode: has .git, use git pull. User mode: clone + encrypt + sync.
+    if (INSTALL_DIR / ".git").is_dir():
+        _update_dev()
+    else:
+        _update_user()
 
 # ── cmd_version ───────────────────────────────────────────────────────────────
 
@@ -755,11 +1004,16 @@ def _current_version() -> str:
     """Return the version of the local claude-kit installation.
 
     Resolution order:
-    1. Exact tag at HEAD (rare — only right after tagging on this branch)
-    2. Latest versioned entry in CHANGELOG.md (authoritative after squash-merge,
-       because the release tag lives on the now-deleted feature branch commit)
-    3. Nearest ancestor tag via ``git describe`` (last resort)
+    1. .version file (user installs without .git)
+    2. Exact tag at HEAD (dev mode)
+    3. Latest versioned entry in CHANGELOG.md
+    4. Nearest ancestor tag via ``git describe`` (dev fallback)
     """
+    ver_file = INSTALL_DIR / ".version"
+    if ver_file.exists():
+        ver = ver_file.read_text().strip()
+        if ver:
+            return ver
     tag = _git(["tag", "--points-at", "HEAD", "--sort=-version:refname"])
     if tag:
         return tag.splitlines()[0]
@@ -853,485 +1107,6 @@ def _write_manifest(manifest: dict) -> None:
     MANIFEST_FILE.parent.mkdir(parents=True, exist_ok=True)
     MANIFEST_FILE.write_text(json.dumps(manifest, indent=2) + "\n")
 
-# ── Interactive menu ──────────────────────────────────────────────────────────
-
-def _read_key() -> str:
-    """Read a single keypress, returning arrow keys as 'up'/'down' and Enter as 'enter'."""
-    import tty as _tty, termios as _termios
-    fd = sys.stdin.fileno()
-    old = _termios.tcgetattr(fd)
-    try:
-        _tty.setraw(fd)
-        ch = sys.stdin.read(1)
-        if ch == '\x1b':
-            seq = sys.stdin.read(2)
-            if seq == '[A': return 'up'
-            if seq == '[B': return 'down'
-            return 'esc'
-        if ch in ('\r', '\n'):
-            return 'enter'
-        if ch == '\x03':
-            raise KeyboardInterrupt
-        return ch
-    finally:
-        _termios.tcsetattr(fd, _termios.TCSADRAIN, old)
-
-
-def _select_menu(options: list, indent: int = 4) -> int:
-    """Show an interactive arrow-key menu. Returns selected index, or -1 on ESC.
-
-    Each option is a dict with 'icon', 'label', 'tagline'.
-    All labels are padded to the same width for alignment.
-    """
-    if not options:
-        return -1
-    cur = 0
-    pad = " " * indent
-    max_label = max(len(o["label"]) for o in options)
-
-    def render():
-        for i, opt in enumerate(options):
-            icon    = opt.get("icon", " ")
-            label   = opt["label"].ljust(max_label)
-            tagline = opt.get("tagline", "")
-            if i == cur:
-                prefix = f"{pad}  {col(C.CY, '❯')} {icon}  {col(C.W, label)}  {col(C.DIM, '—')} {tagline}"
-            else:
-                prefix = f"{pad}    {icon}  {col(C.DIM, label)}  {col(C.DIM, '—')} {tagline}"
-            print(prefix)
-
-    # Hide cursor
-    sys.stdout.write('\033[?25l')
-    sys.stdout.flush()
-
-    render()
-
-    try:
-        while True:
-            key = _read_key()
-            if key == 'up':
-                cur = (cur - 1) % len(options)
-            elif key == 'down':
-                cur = (cur + 1) % len(options)
-            elif key == 'enter':
-                break
-            elif key == 'esc':
-                cur = -1
-                break
-            # Move cursor up N lines and re-render
-            sys.stdout.write(f'\033[{len(options)}A\r')
-            render()
-    except KeyboardInterrupt:
-        sys.stdout.write('\033[?25h')
-        sys.stdout.flush()
-        p()
-        p(f"{pad}{col(C.DIM, 'Cancelled.')}")
-        p()
-        sys.exit(0)
-    finally:
-        # Show cursor
-        sys.stdout.write('\033[?25h')
-        sys.stdout.flush()
-
-    return cur
-
-
-def _select_single(question: str, options: list, indent: int = 4) -> int:
-    """Ask a question with selectable options. Returns selected index, or -1 on ESC."""
-    pad = " " * indent
-    p(f"{pad}{col(C.W, question)}")
-    p()
-    idx = _select_menu(options, indent)
-    p()
-    return idx
-
-
-# ── Profile loading ──────────────────────────────────────────────────────────
-
-def _load_profile(name: str) -> dict:
-    """Load a profile by name from the profiles directory."""
-    path = PROFILES_DIR / f"{name}.json"
-    if not path.exists():
-        p(f"  {col(C.R, 'Error:')} Profile '{name}' not found.")
-        available = ', '.join(f.stem for f in sorted(PROFILES_DIR.glob('*.json')))
-        p(f"  Available: {available}")
-        sys.exit(1)
-    try:
-        return json.loads(path.read_text())
-    except json.JSONDecodeError as e:
-        p(f"  {col(C.R, 'Error:')} Malformed profile '{name}': {e}")
-        sys.exit(1)
-
-
-def _load_profile_file(path_str: str) -> dict:
-    """Load a profile from an arbitrary JSON file path."""
-    path = pathlib.Path(path_str)
-    if not path.exists():
-        p(f"  {col(C.R, 'Error:')} Profile file not found: {path}")
-        sys.exit(1)
-    try:
-        return json.loads(path.read_text())
-    except json.JSONDecodeError as e:
-        p(f"  {col(C.R, 'Error:')} Malformed profile file: {e}")
-        sys.exit(1)
-
-
-def _load_all_profiles() -> list:
-    """Load all built-in profiles in display order."""
-    order = ["assistant", "pair", "autonomous"]
-    profiles = []
-    for name in order:
-        path = PROFILES_DIR / f"{name}.json"
-        if path.exists():
-            try:
-                profiles.append(json.loads(path.read_text()))
-            except json.JSONDecodeError:
-                pass  # skip malformed profiles
-    return profiles
-
-
-# ── Profile application ──────────────────────────────────────────────────────
-
-def _merge_profile_settings(profile: dict, settings_file: pathlib.Path,
-                            manifest: dict) -> None:
-    """Deep-merge a profile's settings into settings.json."""
-    try:
-        settings = json.loads(settings_file.read_text()) if settings_file.exists() else {}
-    except Exception:
-        settings = {}
-
-    profile_settings = profile.get("settings", {})
-
-    # Deep merge permissions
-    if "permissions" in profile_settings:
-        perms = settings.setdefault("permissions", {})
-        for key, val in profile_settings["permissions"].items():
-            if isinstance(val, list):
-                existing = set(perms.get(key, []))
-                existing.update(val)
-                perms[key] = sorted(existing)
-            else:
-                perms[key] = val
-
-    # Deep merge sandbox
-    if "sandbox" in profile_settings:
-        sandbox = settings.setdefault("sandbox", {})
-        for key, val in profile_settings["sandbox"].items():
-            if isinstance(val, dict):
-                sub = sandbox.setdefault(key, {})
-                sub.update(val)
-            else:
-                sandbox[key] = val
-
-    # Deep merge env
-    if "env" in profile_settings:
-        env = settings.setdefault("env", {})
-        env.update(profile_settings["env"])
-
-    settings_file.write_text(json.dumps(settings, indent=2) + "\n")
-
-    # Track which keys we added
-    keys = manifest["settings_keys"].setdefault(str(settings_file), [])
-    for k in profile_settings:
-        if k not in keys:
-            keys.append(k)
-
-    mode = profile_settings.get("permissions", {}).get("defaultMode", "default")
-    p(f"    {col(C.G, '✓')} Settings updated  {col(C.DIM, '(' + mode + ' mode)')}")
-
-
-def _get_behavior_content(profile: dict) -> str:
-    """Return the behavioral rules content for a profile.
-
-    For built-in profiles, reads from the behavior file on disk.
-    For custom (questionnaire) profiles, returns the inline content.
-    """
-    # Custom profile: inline content
-    if profile.get("_behavior_content"):
-        return profile["_behavior_content"]
-
-    # Built-in profile: read from file
-    behavior_filename = profile.get("behavior_file")
-    if behavior_filename:
-        src = BEHAVIOR_DIR / behavior_filename
-        if src.exists():
-            return src.read_text()
-
-    return ""
-
-
-# ── Questionnaire ────────────────────────────────────────────────────────────
-
-_QUESTIONS = [
-    {
-        "key": "involvement",
-        "question": "How involved do you want to be in decisions?",
-        "options": [
-            {"icon": " ", "label": "Fully involved",    "tagline": "Claude asks before every action"},
-            {"icon": " ", "label": "Major decisions",    "tagline": "Claude handles small things, asks on big ones"},
-            {"icon": " ", "label": "Minimal",            "tagline": "Claude decides everything, reports results"},
-        ],
-    },
-    {
-        "key": "file_edits",
-        "question": "Should Claude edit files without asking?",
-        "options": [
-            {"icon": " ", "label": "Always ask",         "tagline": "Confirm before every file change"},
-            {"icon": " ", "label": "Auto-approve edits", "tagline": "Edit and write freely, ask for shell commands"},
-            {"icon": " ", "label": "Full access",        "tagline": "Edit, write, and run commands freely"},
-        ],
-    },
-    {
-        "key": "shell_commands",
-        "question": "Should Claude run shell commands freely?",
-        "options": [
-            {"icon": " ", "label": "Ask every time",     "tagline": "Confirm before any shell command"},
-            {"icon": " ", "label": "Allow dev tools",    "tagline": "Auto-approve build, test, lint, git"},
-            {"icon": " ", "label": "Allow everything",   "tagline": "Run any command without asking"},
-        ],
-    },
-    {
-        "key": "architecture",
-        "question": "Should Claude make architectural decisions on its own?",
-        "options": [
-            {"icon": " ", "label": "Always ask",         "tagline": "Present options and let you choose"},
-            {"icon": " ", "label": "Tactical only",      "tagline": "Small decisions yes, big ones ask"},
-            {"icon": " ", "label": "Full autonomy",      "tagline": "Decide everything, document choices"},
-        ],
-    },
-    {
-        "key": "error_recovery",
-        "question": "When something fails, what should Claude do?",
-        "options": [
-            {"icon": " ", "label": "Stop and ask",       "tagline": "Show the error and wait for guidance"},
-            {"icon": " ", "label": "Try to fix it",      "tagline": "Attempt up to 3 fixes, then ask"},
-            {"icon": " ", "label": "Research and fix",   "tagline": "Web search + 3 attempts, then report"},
-        ],
-    },
-    {
-        "key": "web_research",
-        "question": "Should Claude search the web for documentation?",
-        "options": [
-            {"icon": " ", "label": "Never",              "tagline": "Use only what it already knows"},
-            {"icon": " ", "label": "When useful",        "tagline": "Research unfamiliar APIs and errors"},
-            {"icon": " ", "label": "Always",             "tagline": "Verify docs before every implementation"},
-        ],
-    },
-    {
-        "key": "thoroughness",
-        "question": "How thorough should verification be?",
-        "options": [
-            {"icon": " ", "label": "Basic",              "tagline": "Run tests if asked"},
-            {"icon": " ", "label": "Standard",           "tagline": "Run tests + lint after changes"},
-            {"icon": " ", "label": "Comprehensive",      "tagline": "Lint, typecheck, test, build — fix all failures"},
-        ],
-    },
-    {
-        "key": "dangerous_ops",
-        "question": "What dangerous operations should be blocked?",
-        "options": [
-            {"icon": " ", "label": "Block destructive",  "tagline": "No rm -rf, force push, reset --hard"},
-            {"icon": " ", "label": "Block most",         "tagline": "Above + no deploy, no push to main"},
-            {"icon": " ", "label": "Allow all",          "tagline": "No restrictions (use with sandbox)"},
-        ],
-    },
-    {
-        "key": "environment",
-        "question": "Is this running in a container or CI environment?",
-        "options": [
-            {"icon": " ", "label": "No",                 "tagline": "Local machine, normal development"},
-            {"icon": " ", "label": "Yes",                "tagline": "Container or CI — enable sandbox"},
-        ],
-    },
-    {
-        "key": "communication",
-        "question": "How verbose should Claude be?",
-        "options": [
-            {"icon": " ", "label": "Explain everything", "tagline": "Reasoning, alternatives, tradeoffs"},
-            {"icon": " ", "label": "Concise",            "tagline": "State action and result, skip rationale"},
-            {"icon": " ", "label": "Minimal",            "tagline": "Only report errors and completions"},
-        ],
-    },
-]
-
-
-def _run_questionnaire() -> dict:
-    """Run the Advanced questionnaire and compose a custom profile from answers."""
-    p(f"    {col(C.DIM, 'Answer each question using ↑/↓ arrows and Enter.')}")
-    p()
-
-    answers = {}
-    for q in _QUESTIONS:
-        idx = _select_single(q["question"], q["options"])
-        if idx == -1:
-            return None  # user cancelled
-        answers[q["key"]] = idx
-
-    return _compose_profile(answers)
-
-
-def _compose_profile(answers: dict) -> dict:
-    """Compose a profile dict from questionnaire answers."""
-    profile = {
-        "name": "custom",
-        "label": "Custom",
-        "icon": "⚙️",
-        "tagline": "Custom profile from questionnaire",
-        "settings": {"permissions": {}},
-    }
-
-    perms = profile["settings"]["permissions"]
-
-    # ── Permission mode ───────────────────────────────────────────────────────
-    involvement = answers.get("involvement", 0)
-    file_edits  = answers.get("file_edits", 0)
-
-    if involvement == 2 or file_edits == 2:
-        perms["defaultMode"] = "bypassPermissions"
-    elif involvement == 1 or file_edits == 1:
-        perms["defaultMode"] = "acceptEdits"
-    else:
-        perms["defaultMode"] = "default"
-
-    # ── Allow list ────────────────────────────────────────────────────────────
-    allow = ["Read", "Glob", "Grep"]
-
-    shell = answers.get("shell_commands", 0)
-    if shell >= 1:
-        allow.extend([
-            "Bash(git status)", "Bash(git diff *)", "Bash(git log *)",
-            "Bash(git add *)", "Bash(git commit *)",
-            "Bash(npm run *)", "Bash(npm test *)", "Bash(npx *)",
-            "Bash(make *)", "Bash(python *)", "Bash(cargo *)", "Bash(go *)",
-        ])
-    if shell >= 1:
-        allow.extend([
-            "Task", "TaskCreate", "TaskUpdate", "TaskList", "TaskGet",
-            "TeamCreate", "TeamDelete", "SendMessage",
-        ])
-    if shell >= 2 or file_edits >= 1:
-        allow.extend(["Edit", "Write"])
-
-    perms["allow"] = sorted(set(allow))
-
-    # ── Deny list ─────────────────────────────────────────────────────────────
-    deny = []
-    dangerous = answers.get("dangerous_ops", 0)
-    if dangerous <= 1:
-        deny.extend(["Bash(rm -rf *)", "Bash(git push --force *)", "Bash(git reset --hard *)"])
-    if dangerous == 1:
-        deny.extend(["Bash(git push * main)", "Bash(git push * master)"])
-
-    if deny:
-        perms["deny"] = sorted(set(deny))
-
-    # ── Sandbox ───────────────────────────────────────────────────────────────
-    env = answers.get("environment", 0)
-    if env == 1:
-        profile["settings"]["sandbox"] = {
-            "enabled": True,
-            "autoAllowBashIfSandboxed": True,
-        }
-
-    # ── Agent teams ────────────────────────────────────────────────────────────
-    profile["settings"]["env"] = {"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"}
-
-    # ── Compose behavior rules ────────────────────────────────────────────────
-    rules = ["# claude-kit Behavioral Profile: Custom", ""]
-
-    # Decision protocol
-    rules.append("## Decision Protocol")
-    rules.append("")
-    arch = answers.get("architecture", 0)
-    if arch == 0:
-        rules.append("- ALWAYS present your plan before making changes. List the files you intend to modify.")
-        rules.append("- When multiple approaches exist, present the top 2 with tradeoffs. Let the user choose.")
-        rules.append("- Ask before creating, deleting, or modifying files outside the current request scope.")
-    elif arch == 1:
-        rules.append("- Make tactical decisions independently: variable names, function structure, error handling, test organization.")
-        rules.append("- IMPORTANT: Ask before architectural decisions: new dependencies, new modules, schema changes, API changes.")
-        rules.append("- Fix test failures and lint errors without asking. Report what you fixed.")
-    else:
-        rules.append("- YOU MUST make all decisions independently. Do not use AskUserQuestion.")
-        rules.append("- Proceed with the most reasonable approach. Document your choice in a commit message.")
-        rules.append("- If requirements are ambiguous, implement the most common interpretation and note the assumption.")
-    rules.append("")
-
-    # Error recovery
-    rules.append("## Error Recovery")
-    rules.append("")
-    recovery = answers.get("error_recovery", 0)
-    if recovery == 0:
-        rules.append("- When you encounter an error, show the error output and propose a fix. Wait for confirmation.")
-    elif recovery == 1:
-        rules.append("- When a command fails, read the full error, attempt a fix, and retry. Up to 3 attempts.")
-        rules.append("- After 3 failed attempts, stop and report what you tried and your suspected root cause.")
-        rules.append("- Never retry the exact same command expecting different results.")
-    else:
-        rules.append("- IMPORTANT: When a command fails, read the FULL error output before attempting a fix.")
-        rules.append("- Try up to 3 different approaches. Each attempt must be meaningfully different.")
-        rules.append("- Use WebSearch to research unfamiliar errors before guessing at fixes.")
-        rules.append("- After 3 failed attempts, write a failure report and move to the next task.")
-        rules.append("- Never retry the exact same command expecting different results.")
-    rules.append("")
-
-    # Web research
-    research = answers.get("web_research", 0)
-    if research >= 1:
-        rules.append("## Research Protocol")
-        rules.append("")
-        if research == 1:
-            rules.append("- Use WebSearch when encountering unfamiliar APIs, libraries, or error messages.")
-            rules.append("- Verify function signatures against official docs when unsure.")
-        else:
-            rules.append("- Before implementing with any library or API, use WebSearch to find current documentation.")
-            rules.append("- Verify function signatures and required parameters against official docs.")
-            rules.append("- When an approach seems wrong, search for the recommended pattern before continuing.")
-        rules.append("")
-
-    # Verification
-    rules.append("## Verification")
-    rules.append("")
-    thorough = answers.get("thoroughness", 0)
-    if thorough == 0:
-        rules.append("- Run tests when asked or when the task specifically requires it.")
-    elif thorough == 1:
-        rules.append("- Run tests after implementation. Fix failures before reporting completion.")
-        rules.append("- Run the linter if available. Fix issues before reporting completion.")
-    else:
-        rules.append("- IMPORTANT: After every implementation, run: linter, type checker, relevant tests, build.")
-        rules.append("- Fix all failures before considering the task complete.")
-        rules.append("- If a test is flaky, note it and move on.")
-    rules.append("")
-
-    # Communication
-    rules.append("## Communication")
-    rules.append("")
-    comm = answers.get("communication", 0)
-    if comm == 0:
-        rules.append("- Explain your reasoning for each significant decision in 1-2 sentences.")
-        rules.append("- Summarize what you changed after each set of modifications.")
-    elif comm == 1:
-        rules.append("- State what you are doing and why in one sentence before doing it.")
-        rules.append("- Report progress at task boundaries: file saved, tests passing, commit created.")
-    else:
-        rules.append("- Do not explain reasoning in conversation. Put rationale in code comments and commit messages.")
-        rules.append("- Only report errors and task completions.")
-    rules.append("")
-
-    # Loop prevention (for autonomous-leaning configs)
-    if involvement >= 2 or recovery >= 2:
-        rules.append("## Loop Prevention")
-        rules.append("")
-        rules.append("- Never read the same file more than twice in a single task.")
-        rules.append("- If you find yourself attempting the same fix repeatedly, try a fundamentally different approach.")
-        rules.append("- Maximum 3 retries per subtask. After that, document and move on.")
-        rules.append("")
-
-    profile["_behavior_content"] = "\n".join(rules)
-    return profile
-
-
 # ── cmd_setup ─────────────────────────────────────────────────────────────────
 
 def cmd_setup(args: list) -> None:
@@ -1340,38 +1115,8 @@ def cmd_setup(args: list) -> None:
     SETTINGS_FILE   = CLAUDE_DIR / "settings.json"
     STATUSLINE_DEST = CLAUDE_DIR / "statusline-command.sh"
     STATUSLINE_SRC  = INSTALL_DIR / "scripts" / "statusline-command.sh"
-    KITRULES_DEST   = RULES_DIR / "claude-kit.md"
-    KITRULES_SRC    = INSTALL_DIR / "scripts" / "rules" / "claude-kit.md"
-    # Legacy files that the consolidated claude-kit.md replaces
-    # Stale files from previous versions that claude-kit.md replaces.
-    # NOTE: claude-kit-debug.md is NOT stale — it's the active debug mechanism.
-    LEGACY_RULES    = [
-        RULES_DIR / "claude-kit-autoroute.md",
-        RULES_DIR / "claude-kit-behavior.md",
-        RULES_DIR / "plan-protocol.md",
-    ]
-
-    # ── Parse setup-specific flags ────────────────────────────────────────────
-    profile_name = None
-    profile_file = None
-    rest = list(args)
-
-    i = 0
-    while i < len(rest):
-        if rest[i] == "--profile":
-            if i + 1 >= len(rest):
-                p(f"  {col(C.R, 'Error:')} --profile requires a name (assistant, pair, autonomous)")
-                sys.exit(1)
-            profile_name = rest[i + 1]
-            rest = rest[:i] + rest[i + 2:]
-        elif rest[i] == "-f":
-            if i + 1 >= len(rest):
-                p(f"  {col(C.R, 'Error:')} -f requires a path to a profile JSON file")
-                sys.exit(1)
-            profile_file = rest[i + 1]
-            rest = rest[:i] + rest[i + 2:]
-        else:
-            i += 1
+    AUTOROUTE_DEST  = RULES_DIR / "claude-kit-autoroute.md"
+    AUTOROUTE_SRC   = INSTALL_DIR / "scripts" / "rules" / "claude-kit-autoroute.md"
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
@@ -1391,81 +1136,7 @@ def cmd_setup(args: list) -> None:
     p(f"  {col(C.DIM, '─' * 40)}")
     p()
 
-    # ── Backup settings.json before any modifications ─────────────────────────
-    if SETTINGS_FILE.exists() and str(SETTINGS_FILE) not in manifest["backups"]:
-        backup_path = BACKUP_DIR / f"settings.json.{timestamp}"
-        shutil.copy2(SETTINGS_FILE, backup_path)
-        manifest["backups"][str(SETTINGS_FILE)] = str(backup_path)
-        p(f"  {col(C.DIM, f'Backed up settings.json → {backup_path.name}')}")
-        p()
-
-    # ── 1. Profile selection ──────────────────────────────────────────────────
-
-    p(f"  {col(C.W, 'Profile')}  {col(C.DIM, 'how Claude works with you')}")
-    p()
-
-    selected_profile = None
-
-    if profile_file:
-        # Non-interactive: load from file
-        selected_profile = _load_profile_file(profile_file)
-        p(f"    Loading profile from {col(C.CY, profile_file)}")
-        p()
-    elif profile_name:
-        # Non-interactive: load by name
-        selected_profile = _load_profile(profile_name)
-        p(f"    Using profile: {col(C.CY, profile_name)}")
-        p()
-    else:
-        # Interactive: show menu
-        profiles = _load_all_profiles()
-        menu_options = [
-            {"icon": pr["icon"], "label": pr["label"], "tagline": pr["tagline"]}
-            for pr in profiles
-        ]
-        menu_options.append({
-            "icon": "⚙️",
-            "label": "Advanced",
-            "tagline": "Answer detailed questions to build a custom profile",
-        })
-
-        p(f"    {col(C.DIM, 'How should Claude work with you?')}")
-        p()
-        choice = _select_menu(menu_options)
-        p()
-
-        if choice == -1:
-            p(f"    {col(C.DIM, 'Cancelled.')}")
-            p()
-            return
-        elif choice < len(profiles):
-            selected_profile = profiles[choice]
-        # else: Advanced — handled below
-
-    # ── Apply profile or run questionnaire ────────────────────────────────────
-
-    behavior_content = ""
-
-    if selected_profile:
-        _merge_profile_settings(selected_profile, SETTINGS_FILE, manifest)
-        behavior_content = _get_behavior_content(selected_profile)
-        manifest["profile"] = selected_profile.get("name", "unknown")
-    else:
-        # Advanced questionnaire
-        p(f"  {col(C.W, 'Advanced configuration')}")
-        p()
-        custom = _run_questionnaire()
-        if custom is None:
-            p(f"    {col(C.DIM, 'Cancelled.')}")
-            p()
-            return
-        _merge_profile_settings(custom, SETTINGS_FILE, manifest)
-        behavior_content = _get_behavior_content(custom)
-        manifest["profile"] = "custom"
-
-    p()
-
-    # ── 2. Status line ────────────────────────────────────────────────────────
+    # ── Statusline ─────────────────────────────────────────────────────────────
 
     p(f"  {col(C.W, 'Status line')}  {col(C.DIM, 'ctx %, tokens, model in Claude Code footer')}")
     p()
@@ -1478,21 +1149,28 @@ def cmd_setup(args: list) -> None:
             existing_cmd = settings.get("statusLine", {}).get("command", "")
             expected_cmd = f"bash {STATUSLINE_DEST}"
             if existing_cmd and existing_cmd != expected_cmd:
-                p(f"    {col(C.Y, '!')} Existing statusLine detected:")
-                p(f"        {col(C.DIM, existing_cmd)}")
+                p(f"  {col(C.Y, '!')} Existing statusLine detected:")
+                p(f"      {col(C.DIM, existing_cmd)}")
                 p()
-                p(f"      {col(C.W, '[o]')} overwrite  {col(C.W, '[s]')} skip  {col(C.DIM, '(default: o)')}")
-                choice = input("      Choice: ").strip().lower() or "o"
+                p(f"    {col(C.W, '[o]')} overwrite  {col(C.W, '[s]')} skip  {col(C.DIM, '(default: o)')}")
+                choice = input("    Choice: ").strip().lower() or "o"
                 if choice == "s":
                     skip_statusline = True
-                    p(f"    {col(C.DIM, 'Skipped.')}")
+                    p(f"  {col(C.DIM, 'Skipped.')}")
                 else:
-                    p(f"    {col(C.Y, 'Overwriting.')}")
+                    p(f"  {col(C.Y, 'Overwriting — backup created.')}")
                 p()
         except Exception:
             pass
 
     if not skip_statusline:
+        # Backup settings.json before first touch
+        if SETTINGS_FILE.exists() and str(SETTINGS_FILE) not in manifest["backups"]:
+            backup_path = BACKUP_DIR / f"settings.json.{timestamp}"
+            shutil.copy2(SETTINGS_FILE, backup_path)
+            manifest["backups"][str(SETTINGS_FILE)] = str(backup_path)
+            p(f"  {col(C.DIM, f'Backed up settings.json → {backup_path.name}')}")
+
         # Install script
         shutil.copy2(STATUSLINE_SRC, STATUSLINE_DEST)
         STATUSLINE_DEST.chmod(0o755)
@@ -1512,61 +1190,40 @@ def cmd_setup(args: list) -> None:
         if "statusLine" not in keys:
             keys.append("statusLine")
 
-        p(f"    {col(C.G, '✓')} Status line installed")
+        p(f"  {col(C.G, '✓')} Status line installed")
         p()
 
-    # ── 3. System rules (routing, debug, plan protocol) ──────────────────────
+    # ── Auto-routing rules ────────────────────────────────────────────────────
 
-    p(f"  {col(C.W, 'System rules')}  {col(C.DIM, 'routing + debug + plan protocol + behavior')}")
+    p(f"  {col(C.W, 'Auto-routing')}  {col(C.DIM, 'natural language → skill invocation')}")
     p()
 
-    skip_kitrules = False
+    skip_autoroute = False
 
-    if not KITRULES_SRC.exists():
-        p(f"    {col(C.Y, '!')} Source rules file not found — skipping.")
-        skip_kitrules = True
+    if AUTOROUTE_DEST.exists():
+        p(f"  {col(C.DIM, 'Already installed — skipping.')}")
+        skip_autoroute = True
         p()
 
-    if not skip_kitrules:
+    if not AUTOROUTE_SRC.exists():
+        p(f"  {col(C.Y, '!')} Source rules file not found — skipping.")
+        skip_autoroute = True
+        p()
+
+    if not skip_autoroute:
         RULES_DIR.mkdir(parents=True, exist_ok=True)
-
-        # Remove legacy individual rules files that claude-kit.md replaces
-        for legacy in LEGACY_RULES:
-            if legacy.exists():
-                legacy.unlink()
-                p(f"    {col(C.DIM, f'Removed legacy {legacy.name}')}")
-                # Clean from manifest
-                legacy_str = str(legacy)
-                if legacy_str in manifest["files_added"]:
-                    manifest["files_added"].remove(legacy_str)
-
-        # Copy base rules (sections 1-3) and append behavioral profile (section 4)
-        base_content = KITRULES_SRC.read_text()
-        if behavior_content:
-            # Strip the top-level heading from the behavior file since it becomes section 4
-            lines = behavior_content.strip().splitlines()
-            if lines and lines[0].startswith("# "):
-                # Replace "# claude-kit Behavioral Profile: X" with "## 4. Behavioral Profile"
-                profile_label = manifest.get("profile", "custom").title()
-                lines[0] = f"## 4. Behavioral Profile ({profile_label})"
-            assembled = base_content.rstrip() + "\n\n---\n\n" + "\n".join(lines) + "\n"
-        else:
-            assembled = base_content
-
-        KITRULES_DEST.write_text(assembled)
-
-        if str(KITRULES_DEST) not in manifest["files_added"]:
-            manifest["files_added"].append(str(KITRULES_DEST))
-        p(f"    {col(C.G, '✓')} System rules installed  {col(C.DIM, '(sections 1-4)')}")
+        shutil.copy2(AUTOROUTE_SRC, AUTOROUTE_DEST)
+        if str(AUTOROUTE_DEST) not in manifest["files_added"]:
+            manifest["files_added"].append(str(AUTOROUTE_DEST))
+        p(f"  {col(C.G, '✓')} Auto-routing rules installed")
         p()
 
     _write_manifest(manifest)
 
     p(f"  {col(C.DIM, '─' * 40)}")
-    p(f"  {col(C.G, 'Setup complete.')}  {col(C.DIM, 'Profile: ' + manifest.get('profile', '?'))}")
+    p(f"  {col(C.G, 'Setup complete.')}")
     p()
-    p(f"  Undo anytime:    {col(C.CY, 'claude-kit restore')}")
-    p(f"  Change profile:  {col(C.CY, 'claude-kit setup --profile <name>')}")
+    p(f"  Undo anytime:  {col(C.CY, 'claude-kit restore')}")
     p()
 
 # ── cmd_restore ───────────────────────────────────────────────────────────────
@@ -1674,48 +1331,25 @@ def cmd_restore(args: list) -> None:
 # ── cmd_debug ─────────────────────────────────────────────────────────────────
 
 def cmd_debug(args: list) -> None:
-    CLAUDE_DIR = pathlib.Path.home() / ".claude"
-    RULES_DIR  = CLAUDE_DIR / "rules"
-    DEBUGFILE  = RULES_DIR / "claude-kit-debug.md"
+    CLAUDE_DIR  = pathlib.Path.home() / ".claude"
+    RULES_DIR   = CLAUDE_DIR / "rules"
+    DEBUG_DEST  = RULES_DIR / "claude-kit-debug.md"
+    DEBUG_SRC   = INSTALL_DIR / "scripts" / "rules" / "claude-kit-debug.md"
 
-    DEBUG_CONTENT = """\
-# claude-kit Debug Output
-
-Print a visible debug line **before** every skill invocation, agent spawn,
-or plugin component usage.
-
-| Event | Format |
-|-------|--------|
-| Skill invocation | `> **[kit:route]** "intent" → skill-name · match: reason` |
-| Agent spawn | `> **[kit:agent]** spawning agent-name · mode: permissionMode` |
-| Hook trigger | `> **[kit:hook]** event → description · result: allowed/blocked` |
-| Knowledge skill | `> **[kit:skill]** using skill-name for what` |
-
-At the start of each action turn, print a session summary:
-
-> **[kit:session]** core: *list* | teams: *list or "none"* | system: *list or "none"* | profile: *assistant/pair/autonomous/custom* | routing: active
-
-Determine the active profile by checking section 4 of `~/.claude/rules/claude-kit.md` for "Behavioral Profile (ProfileName)".
-"""
-
-    is_on = DEBUGFILE.exists()
-
-    # Read the active profile from manifest
-    manifest = _read_manifest()
-    active_profile = manifest.get("profile", "none") if manifest else "none"
+    is_on = DEBUG_DEST.exists()
 
     if not args:
         state = col(C.G, "on") if is_on else col(C.DIM, "off")
         p()
-        p(f"  Debug mode: {state}    Profile: {col(C.CY, active_profile)}")
+        p(f"  Debug mode: {state}")
         p()
         if is_on:
             p(f"  Claude will print {col(C.W, '[kit:*]')} blocks before every")
             p(f"  skill invocation, agent spawn, and hook trigger.")
             p()
-            p(f"  {col(C.DIM, 'Managed via ~/.claude/rules/claude-kit-debug.md')}")
+            p(f"  Turn off:  {col(C.CY, 'claude-kit debug off')}")
         else:
-            p(f"  Run {col(C.CY, 'claude-kit debug on')} to enable debug output.")
+            p(f"  Turn on:   {col(C.CY, 'claude-kit debug on')}")
         p()
         return
 
@@ -1727,12 +1361,22 @@ Determine the active profile by checking section 4 of `~/.claude/rules/claude-ki
             p(f"  Debug mode is already {col(C.G, 'on')}.")
             p()
             return
-
+        if not DEBUG_SRC.exists():
+            p()
+            p(f"  {col(C.R, 'Error:')} Source debug rules file not found.")
+            p(f"  Expected: {DEBUG_SRC}")
+            p()
+            return
         RULES_DIR.mkdir(parents=True, exist_ok=True)
-        DEBUGFILE.write_text(DEBUG_CONTENT)
+        shutil.copy2(DEBUG_SRC, DEBUG_DEST)
         p()
         p(f"  {col(C.G, '✓')} Debug mode {col(C.G, 'on')}")
-        p(f"  {col(C.DIM, 'Created ~/.claude/rules/claude-kit-debug.md')}")
+        p()
+        p(f"  Claude will print {col(C.W, '[kit:*]')} blocks before every")
+        p(f"  skill invocation, agent spawn, and hook trigger.")
+        p()
+        p(f"  Takes effect on next {col(C.CY, 'claude-kit --kit')} session.")
+        p(f"  Turn off:  {col(C.CY, 'claude-kit debug off')}")
         p()
 
     elif action == "off":
@@ -1741,11 +1385,11 @@ Determine the active profile by checking section 4 of `~/.claude/rules/claude-ki
             p(f"  Debug mode is already {col(C.DIM, 'off')}.")
             p()
             return
-
-        DEBUGFILE.unlink()
+        DEBUG_DEST.unlink()
         p()
         p(f"  {col(C.G, '✓')} Debug mode {col(C.DIM, 'off')}")
-        p(f"  {col(C.DIM, 'Removed ~/.claude/rules/claude-kit-debug.md')}")
+        p()
+        p(f"  Takes effect on next {col(C.CY, 'claude-kit --kit')} session.")
         p()
 
     else:
@@ -2143,7 +1787,8 @@ def main() -> None:
             rest = [a for a in rest if a not in ("-v", "--verbose")]
 
     # Auto-enable verbose if debug mode is active
-    if (pathlib.Path.home() / ".claude" / "rules" / "claude-kit-debug.md").exists():
+    debug_rule = pathlib.Path.home() / ".claude" / "rules" / "claude-kit-debug.md"
+    if debug_rule.exists():
         VERBOSE = True
 
     # Show setup banner for user installs where setup hasn't been run
