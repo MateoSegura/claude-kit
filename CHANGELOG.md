@@ -4,6 +4,17 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-02-27
+
+### Fixed
+- **Private repo install** — replaced `git clone` with `gh repo clone` in
+  `install.sh` and `claude-kit update`; `gh` handles its own OAuth auth,
+  bypassing git's credential system entirely — no more conflicts with existing
+  Bitbucket/GitLab credential helpers or stale `gh` credential helper paths
+- **Install command** — updated from `curl` (fails on private repos) to
+  `gh api` fetch; `gh` is now a hard prerequisite (auto-installed if missing,
+  must be authenticated)
+
 ## [0.10.0] - 2026-02-27
 
 ### Added

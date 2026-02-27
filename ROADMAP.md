@@ -9,6 +9,8 @@
 
 ## Shipped
 
+- **v0.10.1** — Private Repo Install Fix (Feb 27, 2026)
+  gh repo clone replaces git clone — works with any existing credential setup
 - **v0.10.0** — Instrumentation & Encryption (Feb 27, 2026)
   core-ai plugin for repo instrumentation, AES-256-CBC plugin encryption,
   user-mode update without git, auto-release command, commit validation hooks
