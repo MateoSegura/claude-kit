@@ -69,13 +69,15 @@ Located at `.claude-plugin/ctl.json` (alongside plugin.json). Read by claude-kit
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `role` | string | no | Plugin archetype. Standard values: `engineer`, `grader`, `tester`, `knowledge`, `system` |
+| `role` | string | no | Plugin archetype. Standard values: `engineer`, `grader`, `tester`, `debugger`, `knowledge`, `system` |
 | `companions` | string[] | no | Companion plugin names to auto-load. Example: `["embedded-zephyr-knowledge"]` |
+| `domain` | string | no | Controls auto-loading for core-* plugins: `"always"` (every kit), `"universal"` (any domain team), `"<name>"` (matching domain only) |
 
 ```json
 {
   "role": "engineer",
-  "companions": ["embedded-zephyr-knowledge"]
+  "companions": ["embedded-zephyr-knowledge"],
+  "domain": "embedded"
 }
 ```
 

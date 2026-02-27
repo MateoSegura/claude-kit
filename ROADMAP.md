@@ -2,9 +2,16 @@
 
 ## In Progress
 
-- **Cloud C# Backend Team** — Target: early March 2026
+- **Benchmarking & Testing Framework** — Target: early March 2026
+  End-to-end benchmarking suite for plugin quality, auto-routing accuracy, and behavioral profile correctness. Solidifying the core before expanding.
+- **Core Hardening** — Target: early March 2026
+  Setup flow polish, edge-case fixes, CI coverage for profiles and questionnaire, debug toggle reliability
+
+## Planned
+
+- **Cloud C# Backend Team** — After core stabilization
   Backend development team with ASP.NET Core, Entity Framework, and Azure focus
-- **Cloud Go Backend Team** — Target: early March 2026
+- **Cloud Go Backend Team** — After core stabilization
   Backend development team with Go, gRPC, Chi router, and Kubernetes-native patterns
 
 ## Shipped
