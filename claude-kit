@@ -11,6 +11,12 @@ import difflib
 import textwrap
 import random
 import platform
+import tempfile
+import signal
+import time
+import atexit
+import io
+import tarfile
 from datetime import datetime
 
 # ── Constants ────────────────────────────────────────────────────────────────
@@ -25,6 +31,94 @@ BACKUP_DIR       = INSTALL_DIR / "local" / "backups"
 CK_MODE       = "user" if INSTALLED_MARKER.exists() else "dev"
 CK_OUTPUT_DIR = LOCAL_DIR if CK_MODE == "user" else PLUGINS_DIR
 VERBOSE       = False
+
+# Content directories that get encrypted (everything else stays plaintext)
+_CONTENT_DIRS = ("agents", "commands", "skills", "hooks", "scripts")
+
+# ── Encryption ──────────────────────────────────────────────────────────────
+
+# Temp directories created for decrypted plugins — cleaned up on exit.
+_temp_dirs: list = []
+
+def _get_key() -> str:
+    """Assemble the encryption passphrase from split parts."""
+    _p = ["cK9x@", "Vm4p", "Lw2R", "qJ7n", "Ht5Z", "bF3s"]
+    return "".join(_p)
+
+def _is_encrypted(plugin_dir: pathlib.Path) -> bool:
+    """Check if a plugin has encrypted content (content.enc present, no plaintext dirs)."""
+    return (plugin_dir / "content.enc").exists()
+
+def _decrypt_plugin(plugin_dir: pathlib.Path, dest_dir: pathlib.Path) -> pathlib.Path:
+    """Decrypt a plugin's content.enc into dest_dir, merging with metadata.
+
+    Returns the path to the fully reconstructed plugin directory.
+    """
+    plugin_name = plugin_dir.name
+    out_dir = dest_dir / plugin_name
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy metadata files (plaintext)
+    cp_dir = plugin_dir / ".claude-plugin"
+    if cp_dir.exists():
+        shutil.copytree(cp_dir, out_dir / ".claude-plugin", dirs_exist_ok=True)
+
+    enc_file = plugin_dir / "content.enc"
+    if not enc_file.exists():
+        return out_dir
+
+    key = _get_key()
+
+    # Decrypt with openssl → tar data in memory → extract
+    result = subprocess.run(
+        ["openssl", "enc", "-d", "-aes-256-cbc", "-pbkdf2", "-iter", "100000",
+         "-pass", f"pass:{key}", "-in", str(enc_file)],
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        print(f"Error: Failed to decrypt plugin '{plugin_name}'.", file=sys.stderr)
+        sys.exit(1)
+
+    with tarfile.open(fileobj=io.BytesIO(result.stdout), mode="r:gz") as tar:
+        tar.extractall(path=str(out_dir))
+
+    return out_dir
+
+def _cleanup_temp() -> None:
+    """Remove all temporary decryption directories."""
+    for d in _temp_dirs:
+        try:
+            shutil.rmtree(d, ignore_errors=True)
+        except Exception:
+            pass
+
+def _cleanup_stale_temps() -> None:
+    """Remove stale ck-* temp dirs older than 1 hour (crash recovery)."""
+    tmp = pathlib.Path(tempfile.gettempdir())
+    cutoff = time.time() - 3600
+    for d in tmp.glob("ck-*"):
+        if d.is_dir():
+            try:
+                if d.stat().st_mtime < cutoff:
+                    shutil.rmtree(d, ignore_errors=True)
+            except Exception:
+                pass
+
+def _setup_cleanup_handlers() -> None:
+    """Register cleanup for temp dirs on exit and signals."""
+    atexit.register(_cleanup_temp)
+    prev_term = signal.getsignal(signal.SIGTERM)
+    prev_int = signal.getsignal(signal.SIGINT)
+
+    def _on_signal(signum, frame):
+        _cleanup_temp()
+        prev = prev_term if signum == signal.SIGTERM else prev_int
+        if callable(prev):
+            prev(signum, frame)
+        sys.exit(128 + signum)
+
+    signal.signal(signal.SIGTERM, _on_signal)
+    signal.signal(signal.SIGINT, _on_signal)
 
 # ── Colors ───────────────────────────────────────────────────────────────────
 
@@ -304,31 +398,78 @@ def cmd_run(args: list) -> None:
 
     LOCAL_DIR.mkdir(parents=True, exist_ok=True)
 
-    claude_args = ["claude"]
-    for pname in all_plugins:
-        pdir = find_plugin_dir(pname)
-        claude_args.extend(["--plugin-dir", str(pdir)])
-    claude_args.extend(["--model", model])
-
-    if skip_permissions:
-        claude_args.append("--dangerously-skip-permissions")
-
-    # Append any flags we don't handle (--resume, --continue, --verbose, etc.)
-    claude_args.extend(passthrough)
-
-    import shutil
     if not shutil.which("claude"):
         print("Error: Claude Code CLI ('claude') not found.")
         print("Install it first: https://claude.ai/code")
         sys.exit(1)
 
-    _print_launch_header(all_plugins)
+    # Determine which plugins need decryption (encrypted at rest).
+    # In dev mode, plugins are plaintext — no decryption needed.
+    needs_decrypt = False
+    if CK_MODE == "user":
+        for pname in all_plugins:
+            pdir = find_plugin_dir(pname)
+            if pdir and _is_encrypted(pdir):
+                needs_decrypt = True
+                break
 
-    if skip_permissions:
-        p(f"  {col(C.Y, 'Warning:')} running with --dangerously-skip-permissions")
-        p()
+    if needs_decrypt:
+        # Clean stale temp dirs from previous crashed sessions
+        _cleanup_stale_temps()
 
-    os.execvp("claude", claude_args)
+        temp_dir = tempfile.mkdtemp(prefix="ck-")
+        _temp_dirs.append(temp_dir)
+        _setup_cleanup_handlers()
+        temp_path = pathlib.Path(temp_dir)
+
+        if not shutil.which("openssl"):
+            print("Error: openssl is required for plugin decryption but not found.")
+            sys.exit(1)
+
+        claude_args = ["claude"]
+        for pname in all_plugins:
+            pdir = find_plugin_dir(pname)
+            if pdir and _is_encrypted(pdir):
+                decrypted = _decrypt_plugin(pdir, temp_path)
+                claude_args.extend(["--plugin-dir", str(decrypted)])
+            else:
+                # Local/unencrypted plugins: pass through directly
+                claude_args.extend(["--plugin-dir", str(pdir)])
+        claude_args.extend(["--model", model])
+
+        if skip_permissions:
+            claude_args.append("--dangerously-skip-permissions")
+        claude_args.extend(passthrough)
+
+        _print_launch_header(all_plugins)
+
+        if skip_permissions:
+            p(f"  {col(C.Y, 'Warning:')} running with --dangerously-skip-permissions")
+            p()
+
+        # Use subprocess.run so we can clean up the temp dir afterward.
+        result = subprocess.run(claude_args)
+        _cleanup_temp()
+        sys.exit(result.returncode)
+    else:
+        # Dev mode or no encrypted plugins — launch directly (faster).
+        claude_args = ["claude"]
+        for pname in all_plugins:
+            pdir = find_plugin_dir(pname)
+            claude_args.extend(["--plugin-dir", str(pdir)])
+        claude_args.extend(["--model", model])
+
+        if skip_permissions:
+            claude_args.append("--dangerously-skip-permissions")
+        claude_args.extend(passthrough)
+
+        _print_launch_header(all_plugins)
+
+        if skip_permissions:
+            p(f"  {col(C.Y, 'Warning:')} running with --dangerously-skip-permissions")
+            p()
+
+        os.execvp("claude", claude_args)
 
 # ── cmd_list ──────────────────────────────────────────────────────────────────
 
@@ -550,99 +691,27 @@ def _git(args: list) -> str:
         capture_output=True, text=True
     ).stdout.strip()
 
-def cmd_update() -> None:
-    p()
-    p(f"  {col(C.W, 'claude-kit update')}")
-    p(f"  {col(C.DIM, '─' * 40)}")
-    p()
+def _version_from_changelog(cl_path: pathlib.Path) -> str:
+    """Extract latest version from CHANGELOG.md."""
+    if not cl_path.exists():
+        return "unknown"
+    try:
+        for line in cl_path.read_text().splitlines():
+            if line.startswith("## [") and "Unreleased" not in line:
+                return "v" + line.split("]")[0].replace("## [", "").strip()
+    except OSError:
+        pass
+    return "unknown"
 
-    old_hash = _git(["rev-parse", "HEAD"]) or "?"
-    # Use the nearest ancestor tag as the version baseline so the diff
-    # matches the changelog.  If we read from the filesystem, commits
-    # pulled between releases (tag A → untagged → tag B) would already
-    # reflect intermediate bumps, hiding changes listed in the changelog.
-    old_tag = _git(["describe", "--tags", "--abbrev=0"])
-    old_versions: dict = {}
-    if old_tag and PLUGINS_DIR.exists():
-        for d in sorted(PLUGINS_DIR.iterdir()):
-            if not d.is_dir():
-                continue
-            blob = _git(["show", f"{old_tag}:plugins/{d.name}/.claude-plugin/plugin.json"])
-            if blob:
-                try:
-                    old_versions[d.name] = json.loads(blob).get("version", "?")
-                except Exception:
-                    old_versions[d.name] = plugin_version(d)
-            # Plugin didn't exist at old tag — will show as "(new)"
-
-    p(f"  {col(C.CY, 'Pulling from origin...')}")
-    p()
-
-    # Fetch tags with --force first so stale local tags (e.g. after an
-    # upstream history rewrite) never block the subsequent pull.
-    subprocess.run(
-        ["git", "-C", str(INSTALL_DIR), "fetch", "--tags", "--force", "-q", "origin"],
-        capture_output=True, text=True
-    )
-
-    result = subprocess.run(
-        ["git", "-C", str(INSTALL_DIR), "pull", "--ff-only"],
-        capture_output=True, text=True
-    )
-
-    if result.returncode != 0:
-        p(f"  {col(C.R, '✗ Pull failed')}")
-        p()
-        for line in (result.stdout + result.stderr).splitlines():
-            p(f"    {line}")
-        p()
-        sys.exit(1)
-
-    # Determine version from the freshly-pulled CHANGELOG.md on disk.
-    # We cannot call _current_version() here because the *running* Python
-    # process still has the OLD function definition in memory — the pull
-    # updated the file on disk but not the loaded bytecode.
-    new_ver = "unknown"
-    cl_path = INSTALL_DIR / "CHANGELOG.md"
-    if cl_path.exists():
-        try:
-            for cl_line in cl_path.read_text().splitlines():
-                if cl_line.startswith("## [") and "Unreleased" not in cl_line:
-                    new_ver = "v" + cl_line.split("]")[0].replace("## [", "").strip()
-                    break
-        except OSError:
-            pass
-    if new_ver == "unknown":
-        new_ver = _current_version()
-
-    if "Already up to date" in (result.stdout + result.stderr):
-        p(f"  {col(C.G, '✓ Already up to date')}  {col(C.DIM, f'({new_ver})')}")
-        p()
-        return
-
-    n_commits = _git(["rev-list", f"{old_hash}..HEAD", "--count"]) or "?"
-    commit_word = "commit" if n_commits == "1" else "commits"
-    p(f"  {col(C.G, '✓ Updated to')} {col(C.W, new_ver)}  {col(C.DIM, f'({n_commits} new {commit_word})')}")
-    p()
-
-    # Show changelog first — this is what the user cares about most
-    changelog = INSTALL_DIR / "CHANGELOG.md"
-    if changelog.exists():
-        _show_changelog(changelog, since_tag=old_tag)
-
-    # Then show plugin version changes
-    new_versions: dict = {}
-    if PLUGINS_DIR.exists():
-        for d in sorted(PLUGINS_DIR.iterdir()):
-            if d.is_dir():
-                new_versions[d.name] = plugin_version(d)
-
+def _show_version_diff(old_versions: dict, new_versions: dict) -> None:
+    """Display plugin version change summary."""
     all_names = set(old_versions) | set(new_versions)
+    if not all_names:
+        return
 
     p(f"  {col(C.W, 'Plugin versions:')}")
     p()
 
-    # Group by prefix (same logic as _list_section)
     groups: dict = {}
     standalones: list = []
     for name in sorted(all_names):
@@ -655,7 +724,6 @@ def cmd_update() -> None:
     sep = f"  {col(C.DIM, '·')}  "
 
     def _ver_entry(name: str, role: str) -> tuple:
-        """Return (display_str, changed_bool) for a plugin version entry."""
         ov = old_versions.get(name)
         nv = new_versions.get(name)
         if nv is None:
@@ -668,7 +736,6 @@ def cmd_update() -> None:
 
     for prefix, members in sorted(groups.items()):
         entries = [_ver_entry(n, n[len(prefix)+1:]) for n in members]
-        # In non-verbose mode, skip groups where nothing changed
         if not VERBOSE:
             changed = [e for e, c in entries if c]
             if not changed:
@@ -693,7 +760,8 @@ def cmd_update() -> None:
         else:
             p(f"  {col(C.DIM, f'{name} {nv}')}")
 
-    # Auto-update installed files if they changed
+def _sync_installed_files() -> list:
+    """Auto-update setup files (statusline, rules) if they changed."""
     auto_sync = [
         ("statusline-command.sh",
          INSTALL_DIR / "scripts" / "statusline-command.sh",
@@ -711,7 +779,71 @@ def cmd_update() -> None:
             if src.read_bytes() != dest.read_bytes():
                 shutil.copy2(src, dest)
                 synced.append(label)
+    return synced
 
+def _update_dev() -> None:
+    """Dev-mode update: git pull (has .git directory)."""
+    old_hash = _git(["rev-parse", "HEAD"]) or "?"
+    old_tag = _git(["describe", "--tags", "--abbrev=0"])
+    old_versions: dict = {}
+    if old_tag and PLUGINS_DIR.exists():
+        for d in sorted(PLUGINS_DIR.iterdir()):
+            if not d.is_dir():
+                continue
+            blob = _git(["show", f"{old_tag}:plugins/{d.name}/.claude-plugin/plugin.json"])
+            if blob:
+                try:
+                    old_versions[d.name] = json.loads(blob).get("version", "?")
+                except Exception:
+                    old_versions[d.name] = plugin_version(d)
+
+    p(f"  {col(C.CY, 'Pulling from origin...')}")
+    p()
+
+    subprocess.run(
+        ["git", "-C", str(INSTALL_DIR), "fetch", "--tags", "--force", "-q", "origin"],
+        capture_output=True, text=True
+    )
+    result = subprocess.run(
+        ["git", "-C", str(INSTALL_DIR), "pull", "--ff-only"],
+        capture_output=True, text=True
+    )
+
+    if result.returncode != 0:
+        p(f"  {col(C.R, '✗ Pull failed')}")
+        p()
+        for line in (result.stdout + result.stderr).splitlines():
+            p(f"    {line}")
+        p()
+        sys.exit(1)
+
+    new_ver = _version_from_changelog(INSTALL_DIR / "CHANGELOG.md")
+    if new_ver == "unknown":
+        new_ver = _current_version()
+
+    if "Already up to date" in (result.stdout + result.stderr):
+        p(f"  {col(C.G, '✓ Already up to date')}  {col(C.DIM, f'({new_ver})')}")
+        p()
+        return
+
+    n_commits = _git(["rev-list", f"{old_hash}..HEAD", "--count"]) or "?"
+    commit_word = "commit" if n_commits == "1" else "commits"
+    p(f"  {col(C.G, '✓ Updated to')} {col(C.W, new_ver)}  {col(C.DIM, f'({n_commits} new {commit_word})')}")
+    p()
+
+    changelog = INSTALL_DIR / "CHANGELOG.md"
+    if changelog.exists():
+        _show_changelog(changelog, since_tag=old_tag)
+
+    new_versions: dict = {}
+    if PLUGINS_DIR.exists():
+        for d in sorted(PLUGINS_DIR.iterdir()):
+            if d.is_dir():
+                new_versions[d.name] = plugin_version(d)
+
+    _show_version_diff(old_versions, new_versions)
+
+    synced = _sync_installed_files()
     if synced:
         p()
         p(f"  {col(C.W, 'Scripts:')}")
@@ -723,17 +855,151 @@ def cmd_update() -> None:
     p(f"  {col(C.G, 'Done.')}")
     p()
 
+REPO_URL = "https://github.com/MateoSegura/claude-kit.git"
+
+def _update_user() -> None:
+    """User-mode update: clone to temp, encrypt, sync to install dir."""
+    old_ver = _current_version()
+    old_versions: dict = {}
+    if PLUGINS_DIR.exists():
+        for d in sorted(PLUGINS_DIR.iterdir()):
+            if d.is_dir():
+                old_versions[d.name] = plugin_version(d)
+
+    p(f"  {col(C.CY, 'Fetching latest release...')}")
+    p()
+
+    # Clone repo to temp directory
+    tmp_dir = tempfile.mkdtemp(prefix="ck-update-")
+    try:
+        clone_result = subprocess.run(
+            ["git", "clone", "--depth", "1", REPO_URL, tmp_dir],
+            capture_output=True, text=True,
+        )
+        if clone_result.returncode != 0:
+            p(f"  {col(C.R, '✗ Clone failed')}")
+            p()
+            for line in clone_result.stderr.splitlines():
+                p(f"    {line}")
+            p()
+            sys.exit(1)
+
+        tmp_path = pathlib.Path(tmp_dir)
+
+        # Check new version
+        new_ver = _version_from_changelog(tmp_path / "CHANGELOG.md")
+        if new_ver == "unknown":
+            new_ver = "?"
+
+        if new_ver == old_ver:
+            p(f"  {col(C.G, '✓ Already up to date')}  {col(C.DIM, f'({new_ver})')}")
+            p()
+            return
+
+        p(f"  {col(C.G, '✓ Updated to')} {col(C.W, new_ver)}  {col(C.DIM, f'(from {old_ver})')}")
+        p()
+
+        # Encrypt plugins in the temp clone
+        encrypt_script = tmp_path / "scripts" / "encrypt-plugins.sh"
+        if encrypt_script.exists():
+            enc_result = subprocess.run(
+                ["bash", str(encrypt_script),
+                 "--plugins-dir", str(tmp_path / "plugins"),
+                 "--remove-plaintext"],
+                capture_output=True, text=True,
+            )
+            if enc_result.returncode != 0:
+                p(f"  {col(C.R, '✗ Encryption failed')}")
+                p()
+                for line in enc_result.stderr.splitlines():
+                    p(f"    {line}")
+                sys.exit(1)
+
+        # Sync: replace CLI, scripts, plugins, metadata
+        # Update CLI script
+        new_cli = tmp_path / "claude-kit"
+        if new_cli.exists():
+            shutil.copy2(new_cli, INSTALL_DIR / "claude-kit")
+            (INSTALL_DIR / "claude-kit").chmod(0o755)
+
+        # Update scripts/
+        new_scripts = tmp_path / "scripts"
+        if new_scripts.exists():
+            if (INSTALL_DIR / "scripts").exists():
+                shutil.rmtree(INSTALL_DIR / "scripts")
+            shutil.copytree(new_scripts, INSTALL_DIR / "scripts")
+
+        # Update CHANGELOG.md, ROADMAP.md
+        for fname in ("CHANGELOG.md", "ROADMAP.md"):
+            src = tmp_path / fname
+            if src.exists():
+                shutil.copy2(src, INSTALL_DIR / fname)
+
+        # Update plugins/ (encrypted)
+        new_plugins = tmp_path / "plugins"
+        if new_plugins.exists():
+            if PLUGINS_DIR.exists():
+                shutil.rmtree(PLUGINS_DIR)
+            shutil.copytree(new_plugins, PLUGINS_DIR)
+
+        # Write .version file
+        (INSTALL_DIR / ".version").write_text(new_ver + "\n")
+
+        # Show changelog
+        changelog = INSTALL_DIR / "CHANGELOG.md"
+        if changelog.exists():
+            _show_changelog(changelog, since_tag=old_ver)
+
+        # Show version diff
+        new_versions: dict = {}
+        if PLUGINS_DIR.exists():
+            for d in sorted(PLUGINS_DIR.iterdir()):
+                if d.is_dir():
+                    new_versions[d.name] = plugin_version(d)
+        _show_version_diff(old_versions, new_versions)
+
+        synced = _sync_installed_files()
+        if synced:
+            p()
+            p(f"  {col(C.W, 'Scripts:')}")
+            p()
+            for label in synced:
+                p(f"    {col(C.Y, '↑')} {col(C.W, label)}  {col(C.Y, 'updated')}")
+
+        p()
+        p(f"  {col(C.G, 'Done.')}")
+        p()
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+def cmd_update() -> None:
+    p()
+    p(f"  {col(C.W, 'claude-kit update')}")
+    p(f"  {col(C.DIM, '─' * 40)}")
+    p()
+
+    # Dev mode: has .git, use git pull. User mode: clone + encrypt + sync.
+    if (INSTALL_DIR / ".git").is_dir():
+        _update_dev()
+    else:
+        _update_user()
+
 # ── cmd_version ───────────────────────────────────────────────────────────────
 
 def _current_version() -> str:
     """Return the version of the local claude-kit installation.
 
     Resolution order:
-    1. Exact tag at HEAD (rare — only right after tagging on this branch)
-    2. Latest versioned entry in CHANGELOG.md (authoritative after squash-merge,
-       because the release tag lives on the now-deleted feature branch commit)
-    3. Nearest ancestor tag via ``git describe`` (last resort)
+    1. .version file (user installs without .git)
+    2. Exact tag at HEAD (dev mode)
+    3. Latest versioned entry in CHANGELOG.md
+    4. Nearest ancestor tag via ``git describe`` (dev fallback)
     """
+    ver_file = INSTALL_DIR / ".version"
+    if ver_file.exists():
+        ver = ver_file.read_text().strip()
+        if ver:
+            return ver
     tag = _git(["tag", "--points-at", "HEAD", "--sort=-version:refname"])
     if tag:
         return tag.splitlines()[0]

@@ -114,24 +114,98 @@ after every commit. A release makes sense when:
 
 ---
 
-## CI Checks
+## CI Workflows
 
-Two workflows run on every PR:
+Seven workflows run across the repository. Two are required merge gates; the
+rest are informational, scheduled, or reactive.
 
 ### `fast-validate` (push.yml) — required
-- Python syntax check on the CLI script
-- Tier 1 structural validation on all plugins
-- Branch naming enforcement
-- Runs in ~10 seconds
 
-### `claude-validate` (pr.yml) — informational only
-- Runs on every PR but is **NOT a required merge gate**
-- For non-plugin PRs: exits immediately with "no plugin changes" message
-- For plugin PRs: runs a full Claude semantic review (~5–10 min, costs tokens)
-- Results are posted as a PR comment for human review
-- Because it's slow and expensive, it is **not** required to pass before merging
+Triggers on every push to any branch and on PRs to main.
 
-### Nightly semantic review (`nightly.yml`) — scheduled
-- Runs `claude-validate` on all plugins against main at 02:00 UTC every night
-- Catches drift between plugin content and quality standards over time
-- Does not block any PR or release
+- **Branch naming enforcement** — rejects branches not matching
+  `<type>/<description>` (skipped on pushes to main)
+- **Python syntax check** — `python3 -m py_compile claude-kit`
+- **CLI smoke tests** — `bash scripts/test-cli.sh`
+- **Plugin consistency checks** — `bash scripts/test-plugin-consistency.sh`
+- **Tier 1 changed plugins** — `python3 scripts/validate-plugins.py --changed --json`
+- Runs in ~10 seconds on self-hosted runner
+
+### `pr-validate` (pr.yml) — required + informational
+
+Triggers on PRs to main (opened, synchronize, reopened). Two jobs:
+
+1. **`validate-tier1`** (required) — runs Tier 1 on ALL plugins (`--all --json`),
+   posts results as a PR comment (updates existing comment on re-push)
+2. **`semantic-check`** (informational) — only runs when plugins changed. Uses
+   Claude Haiku (`--model haiku`) with a focused prompt built by
+   `scripts/build-semantic-prompt.py`. Reviews only CHANGED plugins for identity
+   coherence, content depth, domain specificity, and cross-agent contradictions.
+   Posts results as a separate PR comment. Timeout: 4 minutes. **Not a merge gate.**
+
+### `pr-autofix` (pr-autofix.yml) — reactive
+
+Triggers when `fast-validate` completes. Only runs when:
+- `fast-validate` **failed**
+- The branch is **not main**
+- An open PR exists for the branch
+- The PR has **fewer than 3** `autofix-attempt-N` labels
+
+When triggered:
+1. Fetches the failure logs from the failed `fast-validate` run
+2. Builds a fix prompt via `scripts/build-autofix-prompt.py`
+3. Runs Claude with full edit tools to auto-fix the issue
+4. If changes are made: commits, pushes, and labels the PR with
+   `autofix-attempt-N` (where N increments 1→2→3)
+5. If no changes: posts a comment suggesting the failure may be transient
+6. Maximum 3 attempts per PR — after that, manual intervention is required
+
+### `release` (release.yml) — tag-triggered
+
+Triggers on tag pushes matching `v*.*.*`.
+
+1. Tier 1 strict validation (`--all --strict --json`)
+2. Verifies a matching `## [x.y.z]` entry exists in `CHANGELOG.md`
+3. Extracts the CHANGELOG section for the release body
+4. Creates (or updates) the GitHub Release via `actions/github-script`
+
+### `nightly-plugin-review` (nightly.yml) — scheduled
+
+Runs at 02:00 UTC daily on main.
+
+1. Full semantic review of ALL plugins using `system-maker:validate`
+2. If WARN or FATAL findings exist: creates a `fix/nightly-plugin-review-YYYYMMDD`
+   branch, runs Claude auto-fix, opens a PR with auto-merge enabled
+3. The fix PR auto-merges once `fast-validate` and `validate-tier1` pass
+4. Writes a workflow summary to the GitHub Actions step summary
+
+### `weekly-full-audit` (weekly.yml) — scheduled
+
+Runs every Monday at 09:00 UTC.
+
+1. Tier 1 strict on all plugins (`--all --strict --json`)
+2. Full Claude cross-coherence semantic review (checks companion relationships,
+   contradictions across same-team plugins)
+3. On failure: creates a GitHub issue with the `audit-failure` label (skips if
+   an open audit-failure issue already exists)
+
+### `publish-devcontainer` (publish-devcontainer.yml) — main only
+
+Triggers on pushes to main when `.devcontainer/Dockerfile` or the workflow file
+itself changes. Builds and pushes `ghcr.io/mateosegura/dev-env-claude-kit:latest`
+using BuildKit with dual-layer caching (local Docker cache + registry cache).
+
+---
+
+### Summary table
+
+| Workflow | Trigger | Required? | Auto-fixes? |
+|----------|---------|-----------|-------------|
+| `fast-validate` | push, PR | Yes | No |
+| `pr-validate` (tier1) | PR | Yes | No |
+| `pr-validate` (semantic) | PR + plugins changed | No | No |
+| `pr-autofix` | fast-validate failure | No | Yes (3 max) |
+| `release` | tag `v*.*.*` | N/A (gate) | No |
+| `nightly-plugin-review` | 02:00 UTC daily | No | Yes (opens PR) |
+| `weekly-full-audit` | Monday 09:00 UTC | No | No (opens issue) |
+| `publish-devcontainer` | push to main + Dockerfile | N/A | No |

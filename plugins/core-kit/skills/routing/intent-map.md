@@ -14,6 +14,7 @@ Complete mapping of natural language patterns to claude-kit skills. Each row sho
 | "semantic review of plugins", "deep review plugin quality" | `system-maker:validate` |
 | "bump the version", "increment version", "update the version number" | `bump-plugin` |
 | "release", "publish", "cut a release", "tag a release" | `release` |
+| "auto release", "CI release", "unattended release", "automated release", "release without prompts" | `auto-release` |
 
 ## Engineering — Develop
 
@@ -122,6 +123,14 @@ All teams use `scaffold-tests` as the command name.
 |---|---|
 | "create a spec", "plan this project", "write the requirements", "spec out this feature" | `core-spec:new` |
 | "what's the plan status", "show progress", "where are we", "plan status" | `core-spec:status` |
+
+## Repository Instrumentation
+
+| User says something like... | Skill to invoke |
+|---|---|
+| "instrument this repo", "set up AI rules", "configure claude for this project", "make this repo AI-ready", "generate .claude config" | `core-ai:instrument` |
+| "update instrumentation", "refresh rules", "re-instrument", "update AI configuration" | `core-ai:instrument` |
+| "audit AI configuration", "check instrumentation", "what's instrumented" | `core-ai:instrument` |
 
 ## Domain Knowledge
 

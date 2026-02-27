@@ -1,0 +1,95 @@
+{
+  "version": "1",
+  "created": "2026-02-27",
+  "updated": "2026-02-27",
+  "generator": "core-ai:instrument",
+  "detection": {
+    "primary_language": "python",
+    "framework": null,
+    "package_manager": null,
+    "test_framework": "bash-scripts",
+    "linter": null,
+    "formatter": "ruff",
+    "ci_system": "github-actions",
+    "ci_workflow_count": 7,
+    "containerized": true,
+    "commit_format": "conventional",
+    "branch_convention": "type/description",
+    "merge_strategy": "squash",
+    "layout": "custom-plugin-architecture",
+    "latest_tag": "v0.10.0",
+    "plugin_count": 27,
+    "team_count": 3
+  },
+  "files": {
+    ".claude/rules/testing-standards.md": {
+      "generated": "2026-02-27",
+      "action": "created",
+      "sources": ["scripts/test-cli.sh", "scripts/validate-plugins.py", "scripts/test-plugin-consistency.sh", ".github/workflows/push.yml"],
+      "hash": "822c063f46350a5d55e4b48228808d4e47f89c9819fd2fbcc59de3d126a0b909"
+    },
+    ".claude/rules/architecture.md": {
+      "generated": "2026-02-27",
+      "updated": "2026-02-27",
+      "action": "enriched",
+      "sources": ["plugins/*/.claude-plugin/ctl.json", "claude-kit", "plugins/ directory structure", "docs/", "scripts/", "templates/", "local/", "test/"],
+      "hash": "3fcdea58fad9c81ed4d2e8fd1896c22b36f70cb4b1b2594667a8d3756804eb77",
+      "enrichment_summary": "Added Project Root Structure section documenting all top-level directories: plugins/, scripts/, docs/, templates/, local/, test/, .devcontainer/, .github/workflows/, .claude/"
+    },
+    ".claude/rules/security.md": {
+      "generated": "2026-02-27",
+      "action": "created",
+      "sources": ["claude-kit (_get_key, _decrypt_plugin)", "scripts/encrypt-plugins.sh", "user input"],
+      "hash": "638614fa1368c059fe0b007e7cbe86004f665afd0646e183122763a16105e770"
+    },
+    ".claude/rules/code-style.md": {
+      "generated": "2026-02-27",
+      "action": "created",
+      "sources": ["claude-kit", "scripts/*.sh", ".devcontainer/devcontainer.json", "plugin frontmatter conventions"],
+      "hash": "6fd8183edbfb50f56e5393b74133ffe0541478a8aa501f0b571a09ab99d83d22"
+    },
+    ".claude/rules/devcontainer.md": {
+      "generated": "2026-02-27",
+      "action": "created",
+      "sources": [".devcontainer/devcontainer.json", ".devcontainer/Dockerfile", ".devcontainer/ctl.sh", ".github/workflows/publish-devcontainer.yml"],
+      "hash": "b2c4dd97f0ca5ccee0e6e6b2fb402505852a88d5e92f1938b9281b7ab3708750"
+    },
+    ".claude/hooks.json": {
+      "generated": "2026-02-27",
+      "action": "created",
+      "sources": ["git-workflow.md conventions", "plugin-conventions.md", "security detection"],
+      "hash": "bbc0f10fd076c07ac78a5a18878a63b376e8beb772c00eed1a392aaa50232dce"
+    },
+    ".claude/rules/git-workflow.md": {
+      "updated": "2026-02-27",
+      "action": "enriched",
+      "sources": [".github/workflows/push.yml", ".github/workflows/pr.yml", ".github/workflows/pr-autofix.yml", ".github/workflows/release.yml", ".github/workflows/nightly.yml", ".github/workflows/weekly.yml", ".github/workflows/publish-devcontainer.yml"],
+      "hash": "b1078b3197e1806e114f8d7aff238d4758af185f282f1cf78acb2f2e9835f3f3",
+      "enrichment_summary": "Replaced CI Checks section (2 workflows) with comprehensive CI Workflows section documenting all 7 workflows: fast-validate, pr-validate (tier1 + semantic), pr-autofix (3-attempt loop), release (tag-triggered), nightly-plugin-review (auto-fix PR), weekly-full-audit (issue creation), publish-devcontainer (image lifecycle). Added summary table."
+    },
+    ".claude/commands/release.md": {
+      "updated": "2026-02-27",
+      "action": "enriched",
+      "sources": ["architecture.md", "plugin-conventions.md", "code-style.md", "plugin-versions.md", "cross-team-consistency.md", "git-workflow.md"],
+      "hash": "c95e8603c2c2334551265fa8b51f2ed1a900af8550280fff2b2df40eff8a899d",
+      "enrichment_summary": "Added Step 3 — Semantic Impact Analysis: architectural integrity checks (knowledge plugins, companion resolution, ctl.json roles, frontmatter keys), version bump severity validation (breaking/new/fix vs actual bump), cross-team consistency checks, auto-fix for simple issues, and user-facing report for complex violations. Renumbered Steps 3-13 to 4-14."
+    }
+  },
+  "user_answers": {
+    "detection_accuracy": "looks_correct",
+    "boundaries": "standard_safety",
+    "enforcement_level": "strict",
+    "scope": ["testing", "architecture", "security", "code_style_and_deps", "ci_cd", "devcontainer", "project_structure", "release_process"],
+    "release_improvement": "more thorough about what changes mean — catch architectural/core concept violations, auto-fix simple issues, report complex ones to user",
+    "devcontainer_note": "developer-only, not for end users",
+    "ci_docs_strategy": "enrich git-workflow.md (keep CI info in one file)"
+  },
+  "preserved_user_files": [
+    ".claude/rules/documentation.md",
+    ".claude/rules/plugin-versions.md",
+    ".claude/rules/cross-team-consistency.md",
+    ".claude/rules/plugin-conventions.md",
+    ".claude/commands/validate-all.md",
+    ".claude/commands/bump-plugin.md"
+  ]
+}

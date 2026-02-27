@@ -1,0 +1,57 @@
+{
+  "_generated_by": "core-ai:hook-generator",
+  "_generated_on": "2026-02-27",
+  "_enforcement_level": "strict",
+  "_signals": [
+    "Conventional Commits detected in git history",
+    "Branch naming enforced by push.yml CI",
+    "AES-256 encryption key in single-file CLI",
+    "Plugin directory under plugins/"
+  ],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c '\ninput=$(cat)\ncmd=$(echo \"$input\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get(\\\"command\\\",\\\"\\\"))\" 2>/dev/null || echo \"\")\n\n# Only validate when git commit is in the command\nif ! echo \"$cmd\" | grep -qE \"git commit\"; then\n  exit 0\nfi\n\n# Extract the commit message from -m flag\nmsg=$(echo \"$cmd\" | grep -oP \"(?<=-m )[\\x27\\\"][^\\x27\\\"]*[\\x27\\\"]\" | head -1 | sed \"s/^[\\x27\\\"]//;s/[\\x27\\\"]$//\")\n\n# Also handle heredoc-style (cat <<EOF piped to git commit)\nif [ -z \"$msg\" ]; then\n  msg=$(echo \"$cmd\" | grep -oP \"(?<=-m )\\$\\(cat <<.*?EOF.*?EOF\\)\" 2>/dev/null || echo \"\")\nfi\n\n# If no -m flag found, allow (interactive commit or --amend without message)\nif [ -z \"$msg\" ]; then\n  exit 0\nfi\n\n# Validate Conventional Commits format\nvalid_types=\"feat|fix|chore|docs|test|refactor|perf|ci|build|style\"\nsubject=$(echo \"$msg\" | head -1)\n\nif ! echo \"$subject\" | grep -qP \"^($valid_types)(\\\\([^)]+\\\\))?!?: .{1,72}$\"; then\n  echo \"ERROR: Commit message does not follow Conventional Commits format.\"\n  echo \"\"\n  echo \"  Expected format:  <type>(<scope>): <description>\"\n  echo \"  Valid types:      feat, fix, chore, docs, test, refactor, perf, ci, build, style\"\n  echo \"  Subject line max: 72 characters\"\n  echo \"\"\n  echo \"  Examples:\"\n  echo \"    feat(plugins): add branch naming guard\"\n  echo \"    fix(cli): correct argument parsing in cmd_feedback\"\n  echo \"    chore: release v0.9.3\"\n  echo \"\"\n  echo \"  Your message: $subject\"\n  len=$(echo -n \"$subject\" | wc -c)\n  if [ \"$len\" -gt 72 ]; then\n    echo \"  Issue: subject line is $len characters (max 72)\"\n  fi\n  exit 1\nfi\nexit 0\n'",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c '\ninput=$(cat)\nfile_path=$(echo \"$input\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get(\\\"file_path\\\",\\\"\\\") or d.get(\\\"path\\\",\\\"\\\"))\" 2>/dev/null || echo \"\")\n\nif [ -z \"$file_path\" ]; then\n  exit 0\nfi\n\nbasename=$(basename \"$file_path\")\n\n# Check sensitive file patterns\nif echo \"$basename\" | grep -qiE \"^\\.(env)(\\..+)?$|^credentials|secret|^\\.secret\"; then\n  echo \"BLOCKED: Attempt to write to a sensitive file.\"\n  echo \"\"\n  echo \"  File: $file_path\"\n  echo \"\"\n  echo \"  Sensitive file patterns that are protected:\"\n  echo \"    .env, .env.*, *credentials*, *secret*\"\n  echo \"\"\n  echo \"  If this is intentional, perform the edit manually outside Claude Code.\"\n  exit 1\nfi\n\n# Check for encryption key file or patterns containing _get_key\nif echo \"$basename\" | grep -qiE \"\\.key$|\\.pem$|\\.p12$|\\.pfx$\"; then\n  echo \"BLOCKED: Attempt to write to a key or certificate file.\"\n  echo \"\"\n  echo \"  File: $file_path\"\n  echo \"\"\n  echo \"  Key/cert file extensions that are protected: .key, .pem, .p12, .pfx\"\n  echo \"  If this is intentional, perform the edit manually outside Claude Code.\"\n  exit 1\nfi\n\nexit 0\n'",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c '\ninput=$(cat)\ncmd=$(echo \"$input\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get(\\\"tool_input\\\",{}).get(\\\"command\\\",\\\"\\\"))\" 2>/dev/null || echo \"\")\n\n# Only check when git checkout -b or git branch (new branch creation) is in the command\nif ! echo \"$cmd\" | grep -qE \"git (checkout -b|branch [^-])\"; then\n  exit 0\nfi\n\n# Extract the branch name\n# Handle: git checkout -b feat/my-branch or git branch feat/my-branch [base]\nbranch=$(echo \"$cmd\" | grep -oP \"(?<=git checkout -b )\\S+\" | head -1)\nif [ -z \"$branch\" ]; then\n  branch=$(echo \"$cmd\" | grep -oP \"(?<=git branch )(?!-)[\\S]+\" | head -1)\nfi\n\nif [ -z \"$branch\" ]; then\n  exit 0\nfi\n\nvalid_pattern=\"^(feat|fix|chore|docs|test|refactor|perf|ci|build|style|release|hotfix)/[a-z0-9][a-z0-9-]*$\"\n\nif ! echo \"$branch\" | grep -qP \"$valid_pattern\"; then\n  echo \"WARNING: Branch name does not follow the required convention.\"\n  echo \"\"\n  echo \"  Branch created: $branch\"\n  echo \"\"\n  echo \"  Required format:  <type>/<short-description>\"\n  echo \"  Valid types:      feat, fix, chore, docs, test, refactor, perf, ci, build, style, release, hotfix\"\n  echo \"  Description:      lowercase alphanumeric and hyphens only, must start with a letter or digit\"\n  echo \"\"\n  echo \"  Examples:\"\n  echo \"    feat/new-plugin-xyz\"\n  echo \"    fix/install-claude-guard\"\n  echo \"    docs/update-readme\"\n  echo \"\"\n  echo \"  This branch WILL be rejected by CI (push.yml enforces naming).\"\n  echo \"  Rename it now with:\"\n  echo \"    git branch -m $branch <type>/<description>\"\nfi\n\nexit 0\n'",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c '\ninput=$(cat)\nfile_path=$(echo \"$input\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get(\\\"tool_input\\\",{}).get(\\\"file_path\\\",\\\"\\\") or d.get(\\\"tool_input\\\",{}).get(\\\"path\\\",\\\"\\\"))\" 2>/dev/null || echo \"\")\n\nif [ -z \"$file_path\" ]; then\n  exit 0\nfi\n\n# Only remind for files under the plugins/ directory\nif ! echo \"$file_path\" | grep -q \"/plugins/\"; then\n  exit 0\nfi\n\necho \"REMINDER: You modified a file under plugins/.\"\necho \"\"\necho \"  File: $file_path\"\necho \"\"\necho \"  Run validation before committing:\"\necho \"    claude-kit validate --changed\"\necho \"\"\necho \"  Also verify version + README badge consistency for any plugin you touched:\"\necho \"    jq -r .version plugins/<name>/.claude-plugin/plugin.json\"\necho \"    grep \\\"Version:\\\" plugins/<name>/README.md\"\n\nexit 0\n'",
+            "timeout": 5000
+          }
+        ]
+      }
+    ]
+  }
+}
