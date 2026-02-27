@@ -16,6 +16,8 @@
 
 ## Shipped
 
+- **v0.10.0** — Core Spec Rewrite & Setup Overhaul (Feb 27, 2026)
+  Rewrote core-spec with unified identity skill and tiered planning; overhauled setup files with dynamic dispatch algorithm, behavioral Kit Integration, and stale file cleanup
 - **v0.9.2** — Interactive Feedback & Tips Polish (Feb 26, 2026)
   Chat-like feedback flow, curated end-user tips, clear tip format
 - **v0.9.1** — Help & Roadmap Fixes (Feb 26, 2026)
