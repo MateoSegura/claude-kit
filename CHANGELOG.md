@@ -4,6 +4,8 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.10.3] - 2026-02-27
+
 ### Fixed
 - **Install shows "unknown" version** — `_kit_version()` used `grep -m1` which
   matched `[Unreleased]` first, then piped to `grep -v` which discarded it,
