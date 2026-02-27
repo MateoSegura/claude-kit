@@ -4,6 +4,53 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Pre-release upgrade safety system** — deterministic bash script
+  (`scripts/test-upgrade-safety.sh`) compares plugin API surface between git
+  refs, classifying changes as BREAKING (deleted commands/agents/skills, renamed
+  skill names), CAUTIONARY (reduced agent tools/skills, changed permissionMode,
+  removed hooks/companions), or SAFE (additions, expansions, content changes);
+  supports `--json`, `--ci`, `--from`/`--to` flags
+- **CI integration** — `push.yml` runs upgrade safety on every push (BREAKING
+  fails CI), `pr.yml` posts an upgrade safety PR comment with change table,
+  `release.yml` runs informational check
+- **Release command Steps 3-5** — `/release` now runs structural upgrade safety
+  check (Step 3), Claude-powered semantic break analysis (Step 4), and CI test
+  gap identification (Step 5) before version computation; version guard warns
+  when BREAKING changes detected but CHANGELOG only shows minor/patch bumps
+- **Behavioral profile system** — `scripts/profiles/` JSON files define
+  assistant, pair, and autonomous profiles with settings, behavior rules, and
+  Kit Integration subsections connecting profiles to TaskList, plans, and agent
+  delegation
+- **Kit Integration in behavior files** — each profile (pair, assistant,
+  autonomous) now includes instructions for TaskList usage, plan protocol
+  adherence, agent spawning, and compaction recovery
+
+### Changed
+- **core-spec rewrite** (0.0.1 → 0.2.0) — consolidated 3 identity companion
+  files into single SKILL.md; deleted context-recovery and plan-verifier agents
+  (functionality inlined); removed 6 shell scripts; simplified hooks from 7 to
+  1; added plan-protocol rules file and templates
+- **core-kit dispatch overhaul** (0.0.2 → 0.1.0) — deleted identity skill
+  (theory not actionable), deleted intent-map.md (static table), trimmed routing
+  skill from 104 to 32 lines (edge cases only); renamed from "auto-routing" to
+  "dispatch"
+- **Rules file rewrite** — merged sections 1 (Session Awareness) + 2
+  (Auto-Routing) into single "Dispatch" section with 5-step dynamic algorithm
+  replacing static 22-row intent table; removed section 3 (Debug Output) from
+  default install; renumbered to 4 sections; installed file reduced from ~260
+  to ~200 lines
+- **Debug mode simplified** — `claude-kit debug on/off` now creates/removes a
+  standalone `~/.claude/rules/claude-kit-debug.md` file instead of injecting
+  into the unified rules file; eliminates ~100 lines of string manipulation
+- **Stale file cleanup on update** — `claude-kit update` now removes stale
+  rule files from previous versions (autoroute, behavior, plan-protocol)
+
+### Fixed
+- **Debug file incorrectly in legacy cleanup** — `claude-kit-debug.md` was
+  listed in `LEGACY_RULES`, meaning `setup` would delete an active debug
+  session; removed from the list
+
 ## [0.10.3] - 2026-02-27
 
 ### Fixed
