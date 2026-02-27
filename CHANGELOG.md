@@ -4,6 +4,18 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-02-27
+
+### Fixed
+- **Install/update on machines with mixed git credentials** — replaced
+  `gh repo clone` (which still invokes git and inherits broken credential
+  helpers) with `gh api` tarball download + `tar` extract; pure HTTP request,
+  zero git involvement — works regardless of Bitbucket, GitLab, or stale
+  credential helper configurations
+- **Removed `git` as a hard install prerequisite** — only `gh`, `python3`,
+  and `openssl` are required; `git` is still used by some CLI features but
+  is no longer needed for install or update
+
 ## [0.10.1] - 2026-02-27
 
 ### Fixed
