@@ -875,25 +875,36 @@ def _update_user() -> None:
         p()
         sys.exit(1)
 
-    # Clone repo to temp directory using gh (bypasses git credential issues)
+    # Download repo as tarball via gh api (no git involved — avoids credential
+    # helper conflicts with Bitbucket, GitLab, stale gh paths, etc.)
     tmp_dir = tempfile.mkdtemp(prefix="ck-update-")
     try:
-        clone_result = subprocess.run(
-            ["gh", "repo", "clone", REPO_SLUG, tmp_dir, "--", "--depth", "1"],
+        tar_file = pathlib.Path(tmp_dir) / "repo.tar.gz"
+        dl_result = subprocess.run(
+            ["gh", "api", f"repos/{REPO_SLUG}/tarball/main",
+             "-o", str(tar_file)],
             capture_output=True, text=True,
         )
-        if clone_result.returncode != 0:
-            p(f"  {col(C.R, '✗ Clone failed')}")
+        if dl_result.returncode != 0 or not tar_file.exists():
+            p(f"  {col(C.R, '✗ Download failed')}")
             p()
-            for line in clone_result.stderr.splitlines():
+            for line in dl_result.stderr.splitlines():
                 p(f"    {line}")
             p()
             sys.exit(1)
 
-        tmp_path = pathlib.Path(tmp_dir)
+        # Extract tarball (strip top-level directory)
+        extract_dir = pathlib.Path(tmp_dir) / "extract"
+        extract_dir.mkdir()
+        subprocess.run(
+            ["tar", "xzf", str(tar_file), "-C", str(extract_dir),
+             "--strip-components=1"],
+            capture_output=True,
+        )
+        tar_file.unlink()
 
         # Check new version
-        new_ver = _version_from_changelog(tmp_path / "CHANGELOG.md")
+        new_ver = _version_from_changelog(extract_dir / "CHANGELOG.md")
         if new_ver == "unknown":
             new_ver = "?"
 
@@ -905,12 +916,12 @@ def _update_user() -> None:
         p(f"  {col(C.G, '✓ Updated to')} {col(C.W, new_ver)}  {col(C.DIM, f'(from {old_ver})')}")
         p()
 
-        # Encrypt plugins in the temp clone
-        encrypt_script = tmp_path / "scripts" / "encrypt-plugins.sh"
+        # Encrypt plugins in the downloaded source
+        encrypt_script = extract_dir / "scripts" / "encrypt-plugins.sh"
         if encrypt_script.exists():
             enc_result = subprocess.run(
                 ["bash", str(encrypt_script),
-                 "--plugins-dir", str(tmp_path / "plugins"),
+                 "--plugins-dir", str(extract_dir / "plugins"),
                  "--remove-plaintext"],
                 capture_output=True, text=True,
             )
@@ -922,27 +933,23 @@ def _update_user() -> None:
                 sys.exit(1)
 
         # Sync: replace CLI, scripts, plugins, metadata
-        # Update CLI script
-        new_cli = tmp_path / "claude-kit"
+        new_cli = extract_dir / "claude-kit"
         if new_cli.exists():
             shutil.copy2(new_cli, INSTALL_DIR / "claude-kit")
             (INSTALL_DIR / "claude-kit").chmod(0o755)
 
-        # Update scripts/
-        new_scripts = tmp_path / "scripts"
+        new_scripts = extract_dir / "scripts"
         if new_scripts.exists():
             if (INSTALL_DIR / "scripts").exists():
                 shutil.rmtree(INSTALL_DIR / "scripts")
             shutil.copytree(new_scripts, INSTALL_DIR / "scripts")
 
-        # Update CHANGELOG.md, ROADMAP.md
         for fname in ("CHANGELOG.md", "ROADMAP.md"):
-            src = tmp_path / fname
+            src = extract_dir / fname
             if src.exists():
                 shutil.copy2(src, INSTALL_DIR / fname)
 
-        # Update plugins/ (encrypted)
-        new_plugins = tmp_path / "plugins"
+        new_plugins = extract_dir / "plugins"
         if new_plugins.exists():
             if PLUGINS_DIR.exists():
                 shutil.rmtree(PLUGINS_DIR)

@@ -19,11 +19,6 @@ err()  { echo -e "${_R}[claude-kit]${_N} $*" >&2; }
 
 # ── Dependency checks ─────────────────────────────────────────────────────────
 
-if ! command -v git &>/dev/null; then
-  err "git is required but not found. Install git and try again."
-  exit 1
-fi
-
 if ! command -v python3 &>/dev/null; then
   err "python3 is required but not found (claude-kit CLI is Python)."
   err "Install Python 3: https://www.python.org/downloads/"
@@ -141,42 +136,61 @@ _kit_version() {
   echo "unknown"
 }
 
+_download_repo() {
+  # Download repo as tarball via gh api (no git involved — avoids credential
+  # helper conflicts with Bitbucket, GitLab, stale gh paths, etc.)
+  local dest="$1"
+  local tmp_tar
+  tmp_tar=$(mktemp)
+
+  gh api "repos/$REPO_SLUG/tarball/main" > "$tmp_tar" 2>/dev/null
+  if [ $? -ne 0 ] || [ ! -s "$tmp_tar" ]; then
+    rm -f "$tmp_tar"
+    return 1
+  fi
+
+  mkdir -p "$dest"
+  tar xzf "$tmp_tar" -C "$dest" --strip-components=1
+  rm -f "$tmp_tar"
+}
+
 _encrypt_and_seal() {
-  # Encrypt plugin content, remove plaintext, remove .git, write .version
+  # Encrypt plugin content and remove plaintext source dirs
   local kit_dir="$1"
 
   info "Securing plugin content ..."
 
-  # Encrypt all plugins in-place and remove plaintext
   if [ -f "$kit_dir/scripts/encrypt-plugins.sh" ]; then
     bash "$kit_dir/scripts/encrypt-plugins.sh" \
       --plugins-dir "$kit_dir/plugins" \
       --remove-plaintext
   fi
 
-  # Write version file (before removing .git)
+  # Remove git history if present (tarball won't have it, but just in case)
+  rm -rf "$kit_dir/.git" 2>/dev/null
+
+  # Write version file
   local ver
   ver=$(_kit_version)
   echo "$ver" > "$kit_dir/.version"
 
-  # Remove git history — users don't need it and it contains plaintext
-  rm -r "$kit_dir/.git"
-
   ok "Plugins encrypted"
 }
 
-if [ -d "$KIT_HOME/.version" ] || [ -f "$KIT_HOME/.installed" ]; then
+if [ -f "$KIT_HOME/.installed" ]; then
   # Existing user install — use claude-kit update instead
   info "Updating ..."
   if command -v claude-kit &>/dev/null; then
     claude-kit update
   else
-    # CLI not in PATH yet — call directly
     python3 "$KIT_HOME/claude-kit" update
   fi
 else
   info "Installing ..."
-  gh repo clone "$REPO_SLUG" "$KIT_HOME" -- --depth 1 -q
+  if ! _download_repo "$KIT_HOME"; then
+    err "Failed to download repo. Check gh auth status."
+    exit 1
+  fi
   _encrypt_and_seal "$KIT_HOME"
   ok "Installed → $(_kit_version)"
 fi
