@@ -1,55 +1,17 @@
-# claude-kit Debug Mode
+# claude-kit Debug Output
 
-## Rule
+Print a visible debug line **before** every skill invocation, agent spawn,
+or plugin component usage.
 
-You MUST print a visible debug line **before** every skill invocation, agent spawn, or plugin component usage. This helps the user verify that auto-routing and plugin orchestration are working correctly.
+| Event | Format |
+|-------|--------|
+| Skill invocation | `> **[kit:route]** "intent" → skill-name · match: reason` |
+| Agent spawn | `> **[kit:agent]** spawning agent-name · mode: permissionMode` |
+| Hook trigger | `> **[kit:hook]** event → description · result: allowed/blocked` |
+| Knowledge skill | `> **[kit:skill]** using skill-name for what` |
 
-## Debug Output Format
+At the start of each action turn, print a session summary:
 
-### On Skill Invocation
+> **[kit:session]** core: *list* | teams: *list or "none"* | system: *list or "none"* | profile: *assistant/pair/autonomous/custom* | routing: active
 
-Before calling the Skill tool, print:
-
-> **[kit:route]** "*user intent*" → `skill-name` · match: *why this skill was chosen*
-
-### On Agent Spawn
-
-Before calling the Task tool to spawn a subagent, print:
-
-> **[kit:agent]** spawning `agent-name` · skills: *list* · mode: *permissionMode*
-
-### On Hook Trigger
-
-When you are aware a hook fired (from hook output in tool results), print:
-
-> **[kit:hook]** *event-type* → *hook description* · result: *allowed/blocked/linted*
-
-### On Knowledge Skill Reference
-
-When referencing content from a loaded knowledge skill, print:
-
-> **[kit:skill]** using `skill-name` for *what*
-
-## Loaded Session Summary
-
-At the **start of each conversation turn** where you perform an action (not greetings or simple answers), print a one-line session summary.
-
-To determine what's loaded, scan the available skills in the system-reminder. Group skill prefixes:
-- Skills starting with `core-` → core plugins (list each unique prefix: architecture, git, etc.)
-- Skills with `<domain>-<tech>-<role>:` pattern → team plugins (list the team prefix)
-- Skills starting with `system-` → system plugins
-
-> **[kit:session]** core: *list* | teams: *team prefixes or "none"* | system: *list or "none"* | routing: active
-
-Example:
-
-> **[kit:session]** core: architecture, devops, git, kit, security, testing | teams: embedded-zephyr | system: maker, updater | routing: active
-
-## Formatting
-
-- Use markdown blockquote (`>`) with **bold** `[kit:*]` prefix for all debug output
-- Use inline code backticks for names (skill names, agent names, commands)
-- Use *italics* for dynamic values (intents, descriptions, lists)
-- Keep debug lines concise — one line per event
-- Debug output goes BEFORE the action, never after
-- Do not suppress debug output even if the user's message is short
+Determine the active profile by checking section 4 of `~/.claude/rules/claude-kit.md` for "Behavioral Profile (ProfileName)".

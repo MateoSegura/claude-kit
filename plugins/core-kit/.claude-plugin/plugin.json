@@ -1,5 +1,5 @@
 {
   "name": "core-kit",
-  "description": "Auto-routing intelligence for claude-kit — maps natural language intents to loaded skills and commands transparently",
-  "version": "0.0.1"
+  "description": "Dispatch intelligence for claude-kit — maps natural language intents to loaded skills and commands transparently",
+  "version": "0.1.0"
 }
