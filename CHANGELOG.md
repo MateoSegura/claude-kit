@@ -14,6 +14,9 @@ All notable changes to claude-kit will be documented in this file.
 - **Verbose encryption output during install** — suppressed per-plugin
   encryption log (28 lines of enc/clean output) by redirecting to `/dev/null`;
   errors still surface via stderr
+- **`claude-kit update` fails with "unknown shorthand flag: -o"** — CLI used
+  `gh api -o` which doesn't exist; now redirects stdout to file via Python's
+  subprocess, matching the shell approach used in `install.sh`
 
 ## [0.10.2] - 2026-02-27
 
