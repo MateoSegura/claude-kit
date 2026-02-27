@@ -725,6 +725,26 @@ def cmd_update() -> None:
         for label in synced:
             p(f"    {col(C.Y, '↑')} {col(C.W, label)}  {col(C.Y, 'updated')}")
 
+    # Clean up stale files from previous versions (pre-1.0 layout changes)
+    RULES_DIR = pathlib.Path.home() / ".claude" / "rules"
+    stale_files = [
+        RULES_DIR / "claude-kit-autoroute.md",   # replaced by claude-kit.md
+        RULES_DIR / "claude-kit-behavior.md",     # merged into claude-kit.md section 4
+        RULES_DIR / "plan-protocol.md",           # merged into claude-kit.md section 2
+    ]
+    removed = []
+    for stale in stale_files:
+        if stale.exists():
+            stale.unlink()
+            removed.append(stale.name)
+
+    if removed:
+        p()
+        p(f"  {col(C.W, 'Cleanup:')}")
+        p()
+        for name in removed:
+            p(f"    {col(C.R, '-')} {col(C.DIM, name)}  {col(C.DIM, '(stale, replaced by claude-kit.md)')}")
+
     p()
     p(f"  {col(C.G, 'Done.')}")
     p()
@@ -1323,9 +1343,10 @@ def cmd_setup(args: list) -> None:
     KITRULES_DEST   = RULES_DIR / "claude-kit.md"
     KITRULES_SRC    = INSTALL_DIR / "scripts" / "rules" / "claude-kit.md"
     # Legacy files that the consolidated claude-kit.md replaces
+    # Stale files from previous versions that claude-kit.md replaces.
+    # NOTE: claude-kit-debug.md is NOT stale — it's the active debug mechanism.
     LEGACY_RULES    = [
         RULES_DIR / "claude-kit-autoroute.md",
-        RULES_DIR / "claude-kit-debug.md",
         RULES_DIR / "claude-kit-behavior.md",
         RULES_DIR / "plan-protocol.md",
     ]
