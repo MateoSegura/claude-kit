@@ -4,6 +4,15 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Install shows "unknown" version** — `_kit_version()` used `grep -m1` which
+  matched `[Unreleased]` first, then piped to `grep -v` which discarded it,
+  leaving no result; now uses `grep -m1 '^## \[[0-9]'` to skip directly to the
+  first versioned entry
+- **Verbose encryption output during install** — suppressed per-plugin
+  encryption log (28 lines of enc/clean output) by redirecting to `/dev/null`;
+  errors still surface via stderr
+
 ## [0.10.2] - 2026-02-27
 
 ### Fixed
