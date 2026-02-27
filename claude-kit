@@ -880,15 +880,16 @@ def _update_user() -> None:
     tmp_dir = tempfile.mkdtemp(prefix="ck-update-")
     try:
         tar_file = pathlib.Path(tmp_dir) / "repo.tar.gz"
-        dl_result = subprocess.run(
-            ["gh", "api", f"repos/{REPO_SLUG}/tarball/main",
-             "-o", str(tar_file)],
-            capture_output=True, text=True,
-        )
-        if dl_result.returncode != 0 or not tar_file.exists():
+        with open(tar_file, "wb") as tf:
+            dl_result = subprocess.run(
+                ["gh", "api", f"repos/{REPO_SLUG}/tarball/main"],
+                stdout=tf, stderr=subprocess.PIPE, text=False,
+            )
+        if dl_result.returncode != 0 or tar_file.stat().st_size == 0:
             p(f"  {col(C.R, '✗ Download failed')}")
             p()
-            for line in dl_result.stderr.splitlines():
+            stderr_text = dl_result.stderr.decode("utf-8", errors="replace") if isinstance(dl_result.stderr, bytes) else (dl_result.stderr or "")
+            for line in stderr_text.splitlines():
                 p(f"    {line}")
             p()
             sys.exit(1)
