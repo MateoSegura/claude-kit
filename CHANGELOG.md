@@ -4,6 +4,8 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-02-27
+
 ### Added
 - **core-ai** 0.0.1 — repository instrumentation engine that analyzes repos and
   generates tailored `.claude/` rules, commands, and hooks encoding project
