@@ -9,6 +9,8 @@
 
 ## Shipped
 
+- **v0.10.2** — Git-Free Install (Feb 27, 2026)
+  Tarball download via gh api — no git involvement, works with any credential setup
 - **v0.10.1** — Private Repo Install Fix (Feb 27, 2026)
   gh repo clone replaces git clone — works with any existing credential setup
 - **v0.10.0** — Instrumentation & Encryption (Feb 27, 2026)
