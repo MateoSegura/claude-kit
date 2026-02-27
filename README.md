@@ -12,7 +12,7 @@ Specialized Claude Code plugins for your team. One command launches a domain exp
 gh api repos/MateoSegura/claude-kit/contents/install.sh -H "Accept: application/vnd.github.raw" | bash
 ```
 
-Requires: `gh` (authenticated), `git`, `python3`, `openssl`. Claude Code CLI and `jq` are installed automatically if missing.
+Requires: `gh` (authenticated), `python3`, `openssl`. Claude Code CLI and `jq` are installed automatically if missing.
 
 ## Usage
 
