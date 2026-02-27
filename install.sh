@@ -2,7 +2,7 @@
 set -euo pipefail
 
 KIT_HOME="${KIT_HOME:-$HOME/.claude-kit}"
-REPO_URL="https://github.com/MateoSegura/claude-kit.git"
+REPO_SLUG="MateoSegura/claude-kit"
 BIN_DIR="$HOME/.local/bin"
 
 # Colors
@@ -113,9 +113,15 @@ if ! command -v gh &>/dev/null; then
   if _install_gh; then
     ok "gh installed"
   else
-    warn "Could not auto-install gh (GitHub CLI). The feedback command will not work."
-    warn "Install manually: https://cli.github.com"
+    err "gh (GitHub CLI) is required but could not be installed."
+    err "Install manually: https://cli.github.com"
+    exit 1
   fi
+fi
+
+if ! gh auth status &>/dev/null; then
+  err "gh is not authenticated. Run:  gh auth login"
+  exit 1
 fi
 
 # ── Clone or update ───────────────────────────────────────────────────────────
@@ -170,7 +176,7 @@ if [ -d "$KIT_HOME/.version" ] || [ -f "$KIT_HOME/.installed" ]; then
   fi
 else
   info "Installing ..."
-  git clone "$REPO_URL" "$KIT_HOME" -q
+  gh repo clone "$REPO_SLUG" "$KIT_HOME" -- --depth 1 -q
   _encrypt_and_seal "$KIT_HOME"
   ok "Installed → $(_kit_version)"
 fi
