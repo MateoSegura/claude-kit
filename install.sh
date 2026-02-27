@@ -2,7 +2,7 @@
 set -euo pipefail
 
 KIT_HOME="${KIT_HOME:-$HOME/.claude-kit}"
-REPO_URL="https://github.com/MateoSegura/claude-kit.git"
+REPO_SLUG="MateoSegura/claude-kit"
 BIN_DIR="$HOME/.local/bin"
 
 # Colors
@@ -19,14 +19,14 @@ err()  { echo -e "${_R}[claude-kit]${_N} $*" >&2; }
 
 # ── Dependency checks ─────────────────────────────────────────────────────────
 
-if ! command -v git &>/dev/null; then
-  err "git is required but not found. Install git and try again."
-  exit 1
-fi
-
 if ! command -v python3 &>/dev/null; then
   err "python3 is required but not found (claude-kit CLI is Python)."
   err "Install Python 3: https://www.python.org/downloads/"
+  exit 1
+fi
+
+if ! command -v openssl &>/dev/null; then
+  err "openssl is required but not found. Install openssl and try again."
   exit 1
 fi
 
@@ -108,30 +108,90 @@ if ! command -v gh &>/dev/null; then
   if _install_gh; then
     ok "gh installed"
   else
-    warn "Could not auto-install gh (GitHub CLI). The feedback command will not work."
-    warn "Install manually: https://cli.github.com"
+    err "gh (GitHub CLI) is required but could not be installed."
+    err "Install manually: https://cli.github.com"
+    exit 1
   fi
+fi
+
+if ! gh auth status &>/dev/null; then
+  err "gh is not authenticated. Run:  gh auth login"
+  exit 1
 fi
 
 # ── Clone or update ───────────────────────────────────────────────────────────
 
 _kit_version() {
-  local tag
-  tag=$(git -C "$KIT_HOME" tag --points-at HEAD --sort=-version:refname 2>/dev/null | head -1)
-  if [ -n "$tag" ]; then echo "$tag"; return; fi
-  tag=$(git -C "$KIT_HOME" describe --tags --abbrev=0 2>/dev/null)
-  if [ -n "$tag" ]; then echo "$tag"; return; fi
-  git -C "$KIT_HOME" rev-parse --short HEAD
+  # Read from .version file (user installs)
+  if [ -f "$KIT_HOME/.version" ]; then
+    cat "$KIT_HOME/.version"
+    return
+  fi
+  # Fallback: parse CHANGELOG.md
+  if [ -f "$KIT_HOME/CHANGELOG.md" ]; then
+    local ver
+    ver=$(grep -m1 '^## \[[0-9]' "$KIT_HOME/CHANGELOG.md" | sed 's/## \[\(.*\)\].*/v\1/')
+    if [ -n "$ver" ]; then echo "$ver"; return; fi
+  fi
+  echo "unknown"
 }
 
-if [ -d "$KIT_HOME/.git" ]; then
+_download_repo() {
+  # Download repo as tarball via gh api (no git involved — avoids credential
+  # helper conflicts with Bitbucket, GitLab, stale gh paths, etc.)
+  local dest="$1"
+  local tmp_tar
+  tmp_tar=$(mktemp)
+
+  gh api "repos/$REPO_SLUG/tarball/main" > "$tmp_tar" 2>/dev/null
+  if [ $? -ne 0 ] || [ ! -s "$tmp_tar" ]; then
+    rm -f "$tmp_tar"
+    return 1
+  fi
+
+  mkdir -p "$dest"
+  tar xzf "$tmp_tar" -C "$dest" --strip-components=1
+  rm -f "$tmp_tar"
+}
+
+_encrypt_and_seal() {
+  # Encrypt plugin content and remove plaintext source dirs
+  local kit_dir="$1"
+
+  info "Securing plugin content ..."
+
+  if [ -f "$kit_dir/scripts/encrypt-plugins.sh" ]; then
+    bash "$kit_dir/scripts/encrypt-plugins.sh" \
+      --plugins-dir "$kit_dir/plugins" \
+      --remove-plaintext >/dev/null
+  fi
+
+  # Remove git history if present (tarball won't have it, but just in case)
+  rm -rf "$kit_dir/.git" 2>/dev/null
+
+  # Write version file
+  local ver
+  ver=$(_kit_version)
+  echo "$ver" > "$kit_dir/.version"
+
+  ok "Plugins encrypted"
+}
+
+if [ -f "$KIT_HOME/.installed" ]; then
+  # Existing user install — use claude-kit update instead
   info "Updating ..."
-  git -C "$KIT_HOME" fetch --tags --force -q origin
-  git -C "$KIT_HOME" pull --ff-only -q
-  ok "Updated → $(_kit_version)"
+  if command -v claude-kit &>/dev/null; then
+    claude-kit update
+  else
+    python3 "$KIT_HOME/claude-kit" update
+  fi
 else
   info "Installing ..."
-  git clone "$REPO_URL" "$KIT_HOME" -q
+  if ! _download_repo "$KIT_HOME"; then
+    err "Failed to download repo. Check gh auth status."
+    exit 1
+  fi
+  _encrypt_and_seal "$KIT_HOME"
   ok "Installed → $(_kit_version)"
 fi
 
