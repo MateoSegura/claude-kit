@@ -55,5 +55,8 @@ jobs:
       - name: Plugin consistency checks
         run: bash scripts/test-plugin-consistency.sh
 
+      - name: Docs structure validation
+        run: bash scripts/validate-docs.sh
+
       - name: Tier 1 — changed plugins
         run: python3 scripts/validate-plugins.py --changed --json
