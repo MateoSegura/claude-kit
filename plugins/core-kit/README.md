@@ -1,6 +1,6 @@
 # core-kit
 
-> **Role:** Knowledge companion · **Version:** 0.0.1
+> **Role:** Knowledge companion · **Version:** 0.0.2
 
 Auto-routing intelligence for claude-kit — maps natural language intents to loaded skills and commands transparently.
 

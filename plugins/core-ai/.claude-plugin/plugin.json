@@ -1,0 +1,5 @@
+{
+  "name": "core-ai",
+  "description": "Repository instrumentation for AI-assisted development — analyzes repos, generates .claude/ rules, commands, and hooks that encode conventions into enforceable context",
+  "version": "0.0.1"
+}
