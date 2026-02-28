@@ -1,0 +1,20 @@
+{
+  "coreVersion": "1.0.0",
+  "userRevision": 0,
+  "installedAt": "2026-02-28T21:23:15Z",
+  "updatedAt": "2026-02-28T21:23:15Z",
+  "source": "/workspaces/claude-kit/qms",
+  "gov": false,
+  "files": [
+    "/workspaces/claude-kit/.claude/rules/qms-artifact-management.md",
+    "/workspaces/claude-kit/.claude/rules/qms-process-governance.md",
+    "/workspaces/claude-kit/.claude/hooks.json:merged",
+    "/workspaces/claude-kit/.claude/commands/qms-extract-qms.md",
+    "/workspaces/claude-kit/.claude/commands/qms-new-artifact.md",
+    "/workspaces/claude-kit/.claude/commands/qms-process-status.md",
+    "/workspaces/claude-kit/.claude/commands/qms-revision.md",
+    "/workspaces/claude-kit/.claude/commands/qms-update.md",
+    "/workspaces/claude-kit/.claude/skills/qms-process-knowledge/SKILL.md"
+  ],
+  "customized": []
+}

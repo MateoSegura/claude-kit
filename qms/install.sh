@@ -106,13 +106,31 @@ if [ "$UNINSTALL" = true ]; then
 
   _log "Uninstalling QMS instrumentation..."
   while IFS= read -r file; do
-    # Skip merged hooks — they need special handling
-    [[ "$file" == *":merged" ]] && continue
+    if [[ "$file" == *":merged" ]]; then
+      # Remove QMS hooks from merged hooks.json
+      hooks_file="${file%:merged}"
+      if [ -f "$hooks_file" ]; then
+        tmp=$(mktemp)
+        # Remove any hook entries with "source": "qms"
+        jq '
+          .hooks |= (to_entries | map(
+            .value |= [.[] | select(
+              (.hooks | all(.source != "qms"))
+            )]
+          ) | from_entries)
+        ' "$hooks_file" > "$tmp" && mv "$tmp" "$hooks_file"
+        _log "removed QMS hooks from $hooks_file"
+      fi
+      continue
+    fi
     if [ -f "$file" ]; then
       rm "$file"
       _log "removed $file"
     fi
   done < <(jq -r '.files[]' "$MANIFEST" 2>/dev/null)
+
+  # Clean up empty skill directories left behind
+  find "$CLAUDE_DIR/skills/" -maxdepth 1 -name "qms-*" -type d -empty -delete 2>/dev/null || true
 
   rm "$MANIFEST"
   _log "removed manifest"
@@ -186,28 +204,52 @@ elif [ -f "$HOOKS_SRC" ]; then
     _log "created $HOOKS_DST"
     installed_files+=("$HOOKS_DST")
   else
-    existing_descriptions=$(jq -r '.hooks[]?.description // empty' "$HOOKS_DST" 2>/dev/null)
-    new_hooks=$(jq -c '.hooks[]' "$HOOKS_SRC" 2>/dev/null)
+    # Merge QMS hooks into existing hooks.json using the nested event-key format:
+    #   .hooks.PreToolUse[] and .hooks.PostToolUse[] are arrays of matcher groups
+    #   Each matcher group has: { "matcher": "...", "hooks": [...] }
+    #   Each inner hook has: { "type": "...", "description": "...", ... }
+    #
+    # Strategy: for each event type, for each QMS matcher group, check if a hook
+    # with the same description already exists anywhere in that event type. If not,
+    # append the matcher group. If yes, skip (or replace on --update/--force).
 
-    while IFS= read -r hook; do
-      desc=$(echo "$hook" | jq -r '.description')
-      if echo "$existing_descriptions" | grep -qF "$desc"; then
-        if [ "$UPDATE" = true ] || [ "$FORCE" = true ]; then
-          # Replace existing hook with updated version
-          tmp=$(mktemp)
-          jq --arg desc "$desc" --argjson hook "$hook" \
-            '.hooks = [.hooks[] | if .description == $desc then $hook else . end]' \
-            "$HOOKS_DST" > "$tmp" && mv "$tmp" "$HOOKS_DST"
-          _log "updated hook: $desc"
+    # Collect all existing hook descriptions across all event types
+    # Format: .hooks.<EventType>[].hooks[].description
+    existing_descriptions=$(jq -r '
+      [.hooks | to_entries[]? | .value[]? | .hooks[]? | .description? // empty]
+      | unique[]' "$HOOKS_DST" 2>/dev/null || true)
+
+    for event_type in PreToolUse PostToolUse; do
+      # Get QMS matcher groups for this event type
+      qms_groups=$(jq -c ".hooks.${event_type}[]?" "$HOOKS_SRC" 2>/dev/null)
+      [ -z "$qms_groups" ] && continue
+
+      while IFS= read -r group; do
+        [ -z "$group" ] && continue
+        desc=$(echo "$group" | jq -r '.hooks[0].description // empty')
+        [ -z "$desc" ] && continue
+
+        if echo "$existing_descriptions" | grep -qF "$desc"; then
+          if [ "$UPDATE" = true ] || [ "$FORCE" = true ]; then
+            # Remove old entry with same description, then append new one
+            tmp=$(mktemp)
+            jq --arg et "$event_type" --arg desc "$desc" --argjson group "$group" '
+              .hooks[$et] = [.hooks[$et][]? | select(.hooks | all(.description != $desc))] + [$group]
+            ' "$HOOKS_DST" > "$tmp" && mv "$tmp" "$HOOKS_DST"
+            _log "updated hook: $desc"
+          else
+            _skip "hook: $desc"
+          fi
         else
-          _skip "hook: $desc"
+          # Append new matcher group to the event type array
+          tmp=$(mktemp)
+          jq --arg et "$event_type" --argjson group "$group" '
+            .hooks[$et] = (.hooks[$et] // []) + [$group]
+          ' "$HOOKS_DST" > "$tmp" && mv "$tmp" "$HOOKS_DST"
+          _log "merged hook: $desc"
         fi
-      else
-        tmp=$(mktemp)
-        jq ".hooks += [$hook]" "$HOOKS_DST" > "$tmp" && mv "$tmp" "$HOOKS_DST"
-        _log "merged hook: $desc"
-      fi
-    done <<< "$new_hooks"
+      done <<< "$qms_groups"
+    done
     installed_files+=("$HOOKS_DST:merged")
   fi
 fi

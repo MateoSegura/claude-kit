@@ -1,28 +1,44 @@
 {
-  "hooks": [
-    {
-      "type": "preToolUse",
-      "matcher": "Write|Edit",
-      "description": "QMS: Check governing process before writing to docs/",
-      "source": "qms",
-      "prompt": "IMPORTANT — Before writing to any file under docs/, identify the governing process:\n\n1. Check the target directory's INDEX.md for its **Governing Process:** field\n2. Read the governing process document in qms/processes/ to verify:\n   - Entry criteria (Section 3) are satisfied\n   - The correct template (Section 6) is being used\n   - Quality gates (Section 8) will be met\n3. Ensure the artifact has all required sections per its template\n4. Ensure the Traces section links upstream and downstream documents\n\nIf the file is NOT under docs/, this reminder does not apply — proceed normally.",
-      "filePattern": "docs/**"
-    },
-    {
-      "type": "postToolUse",
-      "matcher": "Write|Edit",
-      "description": "QMS: Remind to bump version after editing process documents",
-      "source": "qms",
-      "prompt": "You just edited a process document in qms/processes/. Remember to:\n\n1. Bump the **Version:** field per qms/VERSION-POLICY.md\n2. Update the **Last Reviewed:** date to today\n3. Add a new row to Section 15 (Change History)\n4. Run: bash qms/scripts/validate-processes.sh",
-      "filePattern": "qms/processes/**"
-    },
-    {
-      "type": "preToolUse",
-      "matcher": "Write|Edit",
-      "description": "QMS: Verify artifact template compliance",
-      "source": "qms",
-      "prompt": "Before writing this docs/ artifact, verify template compliance:\n\n- Does it have a valid Status field for its document type?\n- Does it have a ## Traces section with upstream and downstream links?\n- Does the ID in the filename match the ID in the document title?\n- Is the Governing Process referenced in the document or its INDEX.md?\n\nProceed with the write, but flag any compliance issues.",
-      "filePattern": "docs/**/*.md"
-    }
-  ]
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "IMPORTANT — Before writing to any file under docs/, identify the governing process:\n\n1. Check the target directory's INDEX.md for its **Governing Process:** field\n2. Read the governing process document in qms/processes/ to verify:\n   - Entry criteria (Section 3) are satisfied\n   - The correct template (Section 6) is being used\n   - Quality gates (Section 8) will be met\n3. Ensure the artifact has all required sections per its template\n4. Ensure the Traces section links upstream and downstream documents\n\nIf the file is NOT under docs/, this reminder does not apply — proceed normally.",
+            "description": "QMS: Check governing process before writing to docs/",
+            "source": "qms",
+            "filePattern": "docs/**"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Before writing this docs/ artifact, verify template compliance:\n\n- Does it have a valid Status field for its document type?\n- Does it have a ## Traces section with upstream and downstream links?\n- Does the ID in the filename match the ID in the document title?\n- Is the Governing Process referenced in the document or its INDEX.md?\n\nProceed with the write, but flag any compliance issues.",
+            "description": "QMS: Verify artifact template compliance",
+            "source": "qms",
+            "filePattern": "docs/**/*.md"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You just edited a process document in qms/processes/. Remember to:\n\n1. Bump the **Version:** field per qms/VERSION-POLICY.md\n2. Update the **Last Reviewed:** date to today\n3. Add a new row to Section 15 (Change History)\n4. Run: bash qms/scripts/validate-processes.sh",
+            "description": "QMS: Remind to bump version after editing process documents",
+            "source": "qms",
+            "filePattern": "qms/processes/**"
+          }
+        ]
+      }
+    ]
+  }
 }

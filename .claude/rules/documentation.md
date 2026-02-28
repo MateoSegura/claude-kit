@@ -43,18 +43,8 @@ Run Tier 1 validation after any plugin change — it does not validate README co
 claude-kit validate --changed
 ```
 
-## docs/ System Awareness
+## docs/ and QMS Awareness
 
-Plugin READMEs are part of a broader documentation system in `docs/`. When
-making significant changes to plugins or the CLI, check whether related
-documentation exists in the structured docs layers:
-
-- **Architecture changes** — check `docs/architecture/decisions/` for ADRs that
-  may need superseding, and `docs/architecture/components/` for component docs
-  that may need updating
-- **New features** — check `docs/requirements/` for the driving REQ and
-  `docs/specs/` for the implementing SPEC; update their status fields
-- **Breaking changes** — check `docs/operations/migration/` for migration guides
-  that may need creating
-
-See `.claude/rules/docs-system.md` for the full documentation system reference.
+For docs/ artifacts governed by QMS processes, follow
+`qms-artifact-management.md` for creation workflow and template compliance.
+See `docs-system.md` for the layer reference and cross-reference format.
