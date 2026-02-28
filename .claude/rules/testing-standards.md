@@ -2,10 +2,10 @@
 # Testing Standards — claude-kit
 
 There is no pytest, no Jest, and no coverage tool. The test suite is entirely
-bash-based and Python syntax validation. Four layers run in sequence; all must
+bash-based and Python syntax validation. Five layers run in sequence; all must
 exit 0 for CI to pass.
 
-## The Four Test Layers
+## The Five Test Layers
 
 ### Layer 1 — Python Syntax Check
 
@@ -69,6 +69,26 @@ file change inside `docs/`.
 - Status field contains a valid value for the document type
 - Documents contain a required `## Traces` section
 
+### Layer 5 — Process Validation
+
+```bash
+bash qms/scripts/validate-processes.sh
+```
+
+Validates the Process Asset Library framework in `qms/`. Run this after **any**
+file change inside `qms/processes/`.
+
+`validate-processes.sh` checks:
+- CATALOG.md exists and is accessible
+- Every PROC-*.md has all 15 required sections
+- Version fields are valid semver
+- Status fields are valid (draft/active/deprecated/superseded-by)
+- Artifact mappings (Section 6) reference real docs/ paths
+- Cross-references between processes (Section 13) resolve
+- Every docs/ subdirectory with an INDEX.md is governed by at least one process
+- Gov overlay processes reference their base prerequisites
+- Maturity levels are consistent with section completeness
+
 ## When to Run Each Layer
 
 | Changed what? | Run which layers? |
@@ -79,7 +99,9 @@ file change inside `docs/`.
 | `scripts/validate-plugins.py` or `scripts/test-plugin-consistency.sh` | Layer 3 |
 | Any file inside `docs/` | Layer 4 |
 | `scripts/validate-docs.sh` | Layer 4 |
-| Multiple categories in one commit | All four layers |
+| Any file inside `qms/processes/` | Layer 5 |
+| `qms/scripts/validate-processes.sh` | Layer 5 |
+| Multiple categories in one commit | All five layers |
 
 ## Passing Criteria
 
@@ -87,17 +109,18 @@ A test run passes when every command exits with code 0. Any non-zero exit is a
 failure — fix it before committing.
 
 ```bash
-# Run all four layers in sequence (mirrors CI)
+# Run all five layers in sequence (mirrors CI)
 python3 -m py_compile claude-kit && \
 bash scripts/test-cli.sh && \
 python3 scripts/validate-plugins.py --all --strict && \
 bash scripts/test-plugin-consistency.sh && \
-bash scripts/validate-docs.sh
+bash scripts/validate-docs.sh && \
+bash qms/scripts/validate-processes.sh
 ```
 
 ## CI Integration
 
-The `fast-validate` job in `.github/workflows/push.yml` runs all four layers
+The `fast-validate` job in `.github/workflows/push.yml` runs all five layers
 on every push. It is a **required** status check — PRs cannot merge until it is
 green. The job takes approximately 10 seconds.
 

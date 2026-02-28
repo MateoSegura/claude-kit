@@ -66,9 +66,71 @@ behavior is documented in the Change History. Unlike ADRs (which are never
 edited once accepted), process documents ARE edited in place — the Change
 History table provides the audit trail.
 
-## Relationship to Project Versions
+## Three Version Dimensions
 
-Process versions have no relationship to repository tags, release versions,
-or product versions. A project at `v2.5.0` might use processes ranging from
-`1.0.0` to `3.1.2`. This independence is by design — processes evolve at
-their own pace based on organizational learning, not product release cadence.
+The QMS tracks three independent version dimensions:
+
+### 1. Core QMS Version
+
+The version of the Process Asset Library framework itself — templates,
+instrumentation files, validation scripts, and the process document structure.
+Tracked in `.claude/qms-manifest.json` as `coreVersion`. Bumped by the QMS
+maintainers when the framework evolves.
+
+```
+coreVersion: "1.2.0"   ← set by install.sh / QMS_CORE_VERSION
+```
+
+### 2. Process Versions
+
+Each `PROC-*.md` carries its own semantic version in its header. These evolve
+independently of both the core version and the project version. Bumped when
+process content changes (see "When to Bump" above).
+
+### 3. User Revision
+
+When a user installs the QMS and customizes it for their organization, they
+track their revision number. This lets them say "We're on QMS core 1.2.0,
+user revision 5" — distinguishing upstream framework changes from local
+tailoring.
+
+```
+userRevision: 5         ← bumped via qms-revision command
+```
+
+### Version Independence
+
+These three dimensions are fully independent:
+
+```
+Core QMS:       1.2.0   (upstream framework)
+User Revision:  r5      (local customizations)
+PROC-LC-004:    2.1.0   (individual process)
+Project:        v3.0.0  (product version)
+```
+
+A project at `v3.0.0` might use QMS core `1.2.0` with user revision `r5`
+and individual processes ranging from `1.0.0` to `2.1.0`.
+
+### Update Flow
+
+When the upstream QMS releases a new core version:
+
+1. User runs `bash qms/install.sh --update`
+2. The installer detects files the user has customized (marked with
+   `<!-- qms-user-modified -->`)
+3. Customized files are preserved (backed up, not overwritten)
+4. Non-customized files are updated to the new version
+5. `userRevision` is preserved across updates
+6. Process document versions may be updated by the upstream release
+
+### Customization Marker
+
+Files customized by the user should include this HTML comment:
+
+```markdown
+<!-- qms-user-modified -->
+```
+
+This marker tells `install.sh --update` to skip the file during upgrades.
+The `qms-revision` command can add this marker automatically.

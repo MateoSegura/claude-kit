@@ -121,13 +121,15 @@ echo "  Checking artifact directory references..."
 for f in "${proc_files[@]}"; do
   basename_f="$(basename "$f")"
   # Extract docs/ paths from Section 6 tables
-  doc_refs=$(grep -oP '`docs/[^`]+/`' "$f" 2>/dev/null | sed 's/`//g' | sed 's|/$||')
-  for ref in $doc_refs; do
+  while IFS= read -r ref; do
+    [ -z "$ref" ] && continue
+    # Skip glob patterns (e.g., docs/*/)
+    [[ "$ref" == *'*'* ]] && continue
     full_path="$ROOT/$ref"
     if [ ! -d "$full_path" ]; then
       _warn "artifact path: $basename_f" "references $ref/ but directory does not exist"
     fi
-  done
+  done < <(grep -oP '`docs/[^`]+/`' "$f" 2>/dev/null | sed 's/`//g' | sed 's|/$||')
 done
 _ok "artifact directory check complete"
 
