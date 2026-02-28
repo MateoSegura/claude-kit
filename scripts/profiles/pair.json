@@ -1,0 +1,49 @@
+{
+  "name": "pair",
+  "label": "Pair",
+  "icon": "\ud83e\udd1d",
+  "tagline": "You collaborate. Claude decides small things, asks on big ones.",
+  "description": "Trusted collaboration. Claude makes tactical decisions independently (variable names, error handling, test structure) but asks for strategic decisions (new dependencies, architecture, API contracts). Auto-debugs test failures.",
+  "settings": {
+    "env": {
+      "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    },
+    "permissions": {
+      "defaultMode": "acceptEdits",
+      "allow": [
+        "Read",
+        "Glob",
+        "Grep",
+        "Edit",
+        "Write",
+        "Bash(git status)",
+        "Bash(git diff *)",
+        "Bash(git log *)",
+        "Bash(git add *)",
+        "Bash(git commit *)",
+        "Bash(npm run *)",
+        "Bash(npm test *)",
+        "Bash(npx *)",
+        "Bash(make *)",
+        "Bash(python *)",
+        "Bash(pip install *)",
+        "Bash(cargo *)",
+        "Bash(go *)",
+        "Task",
+        "TaskCreate",
+        "TaskUpdate",
+        "TaskList",
+        "TaskGet",
+        "TeamCreate",
+        "TeamDelete",
+        "SendMessage"
+      ],
+      "deny": [
+        "Bash(rm -rf *)",
+        "Bash(git push --force *)",
+        "Bash(git reset --hard *)"
+      ]
+    }
+  },
+  "behavior_file": "behavior-pair.md"
+}

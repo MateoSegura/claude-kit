@@ -5,11 +5,9 @@
         "matcher": "compact",
         "hooks": [
           {
-            "type": "agent",
-            "prompt": "You are the context-recovery agent for the spec plugin. Your job is to restore working context after conversation history was compacted. Be precise and concise.\n\nRECOVERY PROCEDURE:\n\n0. RESOLVE SPEC ROOT: Read ~/.claude-kit/spec-registry.json. Look up the current project root in .registrations. If found, use that as SPEC_ROOT. Otherwise, default to docs/specs.\n\n1. Read <SPEC_ROOT>/.active to find the active spec directory. If missing, output \"No active spec found. Use /spec:new to create one.\" and stop.\n\n2. FAST PATH \u2014 Read <SPEC_ROOT>/<active>/state.json. If it exists and contains valid JSON, extract:\n   - current_phase (integer)\n   - last_completed_task_id\n   - last_completed_phase\n   - timestamp\n   Use these values directly. Skip to step 4.\n\n3. FALLBACK \u2014 If state.json is missing or malformed:\n   a. Read <SPEC_ROOT>/<active>/.current-phase for the current phase number (single integer).\n   b. Read <SPEC_ROOT>/<active>/status.log (last 40 lines). Find the most recent COMPACTION_SNAPSHOT marker. Parse COMPLETED entries after it for progress context.\n   c. If .current-phase is also missing, infer current phase from the highest phase number in COMPLETED entries + 1.\n\n4. Read <SPEC_ROOT>/<active>/overview.md \u2014 extract the Context section (original request and conversation state), Goal, Architecture Decisions, Constraints, and Key Files.\n\n5. Read the current phase file: <SPEC_ROOT>/<active>/phases/phase-NN.md (zero-pad the phase number, e.g., phase-03.md).\n\n6. VERIFY: Read the phase file from step 5. Check for uncompleted steps (lines containing \"- [ ]\"). If ALL steps show \"- [x]\" (completed), increment the phase number and read the next phase file. If that file does not exist, check TaskList for in-progress or pending tasks. Report whichever phase has remaining work.\n\n7. Check TaskList for in-progress and pending tasks.\n\nOUTPUT FORMAT (keep under 500 words):\n**Project**: [one-line goal from overview.md]\n**Context**: [original request summary from Context section]\n**Current Phase**: [N \u2014 phase title]\n**Last Completed**: [most recent COMPLETED entry]\n**Next Steps**: [remaining uncompleted steps from current phase file]\n**Key Decisions**: [architecture decisions from overview.md that affect current work]\n**Active Tasks**: [in-progress TaskList items with IDs]",
-            "model": "sonnet",
-            "timeout": 45,
-            "description": "Restore context after compaction by reading state.json snapshot and plan files (sonnet model for higher accuracy)"
+            "type": "command",
+            "command": "PLAN_DIR=$(grep -oP 'path: \\K[^|]+' ~/.claude-kit/plans/.active 2>/dev/null | tr -d ' '); if [ -n \"$PLAN_DIR\" ] && [ -f \"$PLAN_DIR/status.md\" ]; then MODE=$(grep -oP 'mode: \\K\\S+' \"$PLAN_DIR/status.md\" 2>/dev/null || echo 'unknown'); echo '[spec] Active plan detected (mode: '\"$MODE\"'). BOOT SEQUENCE: Read '\"$PLAN_DIR\"'/status.md to resume.'; head -10 \"$PLAN_DIR/status.md\"; elif [ -n \"$PLAN_DIR\" ] && [ -f \"$PLAN_DIR/plan.md\" ]; then echo '[spec] Active plan detected. Read '\"$PLAN_DIR\"'/plan.md to resume.'; head -5 \"$PLAN_DIR/plan.md\"; else echo '[spec] Check TaskList for PLAN-ACTIVE item to find your plan.'; fi",
+            "description": "Nudge Claude to read plan files after context compaction"
           }
         ]
       },
@@ -18,75 +16,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "_pr=$(git rev-parse --show-toplevel 2>/dev/null || pwd); SR=$(jq -r --arg p \"$_pr\" '.registrations[$p] // \"docs/specs\"' ~/.claude-kit/spec-registry.json 2>/dev/null || echo \"docs/specs\"); ACTIVE_DIR=\"\"; if [ -f \"$SR/.active\" ]; then ACTIVE_DIR=\"$SR/$(cat $SR/.active)\"; fi; if [ -n \"$ACTIVE_DIR\" ] && [ -f \"$ACTIVE_DIR/status.log\" ]; then echo \"[spec] Active spec: $(cat $SR/.active) (root: $SR)\"; echo \"Recent activity:\"; tail -5 \"$ACTIVE_DIR/status.log\"; else echo \"[spec] No active spec. Use /spec:new to create one.\"; fi",
+            "command": "if [ -d ~/.claude-kit/plans/ ]; then LATEST=$(ls -t ~/.claude-kit/plans/ 2>/dev/null | head -1); if [ -n \"$LATEST\" ]; then if [ -f ~/.claude-kit/plans/$LATEST/status.md ]; then echo \"[spec] Recent plan: $LATEST\"; head -6 ~/.claude-kit/plans/$LATEST/status.md; elif [ -f ~/.claude-kit/plans/$LATEST/plan.md ]; then echo \"[spec] Recent plan: $LATEST\"; head -4 ~/.claude-kit/plans/$LATEST/plan.md; fi; else echo '[spec] No plans found. Use /spec:new to create one.'; fi; else echo '[spec] No plans found. Use /spec:new to create one.'; fi",
             "description": "Show recent plan activity on session start/resume"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/verify-spec.sh",
-            "description": "Block new file creation without an active spec"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-plan-integrity.sh",
-            "description": "Validate plan file structure after writes (overview.md sections, phase file sections, status.log guard)"
-          },
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-phase-drift.sh",
-            "description": "Advisory drift detection: warn when edit falls outside current phase scope"
-          }
-        ]
-      }
-    ],
-    "TaskCompleted": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/update-status.sh",
-            "description": "Append task completion to active spec's status.log"
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "matcher": "auto|manual",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/pre-compact-snapshot.sh",
-            "description": "Write compaction boundary marker to status.log"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "agent",
-            "prompt": "Before allowing the session to end, verify plan consistency.\n\n0. RESOLVE SPEC ROOT: Read ~/.claude-kit/spec-registry.json. Look up the current project root in .registrations. If found, use that as SPEC_ROOT. Otherwise, default to docs/specs.\n\n1. Read <SPEC_ROOT>/.active to find the active spec directory. If missing, respond: {\"ok\": true} \u2014 no spec means nothing to verify.\n2. Read <SPEC_ROOT>/<active>/status.log \u2014 check for recent activity\n3. Check TaskList \u2014 are there in-progress tasks that weren't completed?\n4. Read the current phase file (identify from status.log) \u2014 are there steps marked as started but not finished?\n\nIf ALL of these are true, respond: {\"ok\": true}\n- No in-progress tasks left hanging (all either completed or still pending)\n- No obvious inconsistencies between status.log and TaskList\n\nIf ANY issue is found, respond:\n{\"ok\": false, \"reason\": \"[describe the inconsistency \u2014 e.g., 'Task #3 is marked in_progress but has no completion entry in status.log']\"}\n\nBe strict about in-progress tasks. It's better to warn about an abandoned task than to let the session end silently.",
-            "model": "haiku",
-            "timeout": 30,
-            "description": "Check plan consistency before session end"
           }
         ]
       }

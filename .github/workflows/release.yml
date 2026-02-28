@@ -17,6 +17,17 @@ jobs:
       - name: Tier 1 — all plugins (strict)
         run: python3 scripts/validate-plugins.py --all --strict --json
 
+      - name: Upgrade safety (informational)
+        continue-on-error: true
+        run: |
+          git fetch --tags --force
+          PREV_TAG=$(git tag --sort=-v:refname | grep -v "^${GITHUB_REF_NAME#refs/tags/}$" | head -1)
+          if [ -n "$PREV_TAG" ]; then
+            bash scripts/test-upgrade-safety.sh --from "$PREV_TAG" --to HEAD
+          else
+            echo "No previous tag found — skipping upgrade safety check"
+          fi
+
       - name: Verify CHANGELOG entry for this tag
         run: |
           TAG="${GITHUB_REF_NAME}"

@@ -1,0 +1,28 @@
+{
+  "name": "assistant",
+  "label": "Assistant",
+  "icon": "\ud83e\uddd1\u200d\ud83d\udcbb",
+  "tagline": "You lead, Claude helps. Asks before acting.",
+  "description": "Interactive pair programming. Claude presents options, explains reasoning, and asks before making changes. Best for engineers who want to stay involved in every decision.",
+  "settings": {
+    "env": {
+      "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    },
+    "permissions": {
+      "defaultMode": "default",
+      "allow": [
+        "Read",
+        "Glob",
+        "Grep",
+        "Bash(git status)",
+        "Bash(git diff *)",
+        "Bash(git log *)"
+      ],
+      "deny": [
+        "Bash(rm -rf *)",
+        "Bash(git push --force *)"
+      ]
+    }
+  },
+  "behavior_file": "behavior-assistant.md"
+}
