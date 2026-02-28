@@ -53,7 +53,7 @@ Initial measurement establishing the reference point.
 
 ## Traces
 
-- **From:** REQ-XXX or PLAN-XXX (what motivated this benchmark)
+- **From:** REQ-XXX or SPEC-XXX (what motivated this benchmark)
 - **To:** ADR-XXX (decisions informed by benchmark results)
 ```
 

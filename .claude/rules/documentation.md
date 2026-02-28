@@ -53,7 +53,7 @@ documentation exists in the structured docs layers:
   may need superseding, and `docs/architecture/components/` for component docs
   that may need updating
 - **New features** — check `docs/requirements/` for the driving REQ and
-  `docs/plans/` for the implementing PLAN; update their status fields
+  `docs/specs/` for the implementing SPEC; update their status fields
 - **Breaking changes** — check `docs/operations/migration/` for migration guides
   that may need creating
 

@@ -1,7 +1,7 @@
 # testing/ — Test Documentation
 
 Test documentation captures evidence of verification and regression analysis.
-Test evidence validates that plans were implemented correctly. Regression
+Test evidence validates that specs were implemented correctly. Regression
 documents capture root causes and fixes for issues discovered in production.
 
 ## Subdirectories
@@ -40,7 +40,7 @@ Relevant logs, screenshots, or command output demonstrating results.
 
 ## Traces
 
-- **From:** PLAN-XXX (the plan this testing validates)
+- **From:** SPEC-XXX (the spec this testing validates)
 - **To:** REG-XXX (any regressions discovered during this test cycle)
 ```
 
@@ -78,7 +78,7 @@ How to prevent recurrence.
 ## Traces
 
 - **From:** TEST-XXX (test cycle that discovered this)
-- **To:** REQ-XXX or PLAN-XXX (if a new requirement or plan was created)
+- **To:** REQ-XXX or SPEC-XXX (if a new requirement or spec was created)
 ```
 
 ## Valid Status Values

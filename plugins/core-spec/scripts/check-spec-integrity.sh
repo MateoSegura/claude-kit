@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# check-plan-integrity.sh — PostToolUse hook for Write|Edit
+# check-spec-integrity.sh — PostToolUse hook for Write|Edit
 # Validates spec file structure when spec directory files are written.
 # Warns about status.log direct writes.
 

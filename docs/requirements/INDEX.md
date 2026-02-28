@@ -2,7 +2,7 @@
 
 Requirements define **what** the system must do and **why**. Each requirement
 traces upstream to research or stakeholder needs and downstream to architecture
-decisions and implementation plans.
+decisions and implementation specs.
 
 ## ID Convention
 
@@ -35,7 +35,7 @@ Clear, testable statement of what the system must do.
 ## Traces
 
 - **From:** <research paper or stakeholder need>
-- **To:** ADR-XXX, PLAN-XXX (downstream documents that implement this)
+- **To:** ADR-XXX, SPEC-XXX (downstream documents that implement this)
 ```
 
 ## Valid Status Values

@@ -40,7 +40,7 @@ What follows from this decision — both positive and negative.
 ## Traces
 
 - **From:** REQ-XXX (the requirement this decision addresses)
-- **To:** PLAN-XXX, component docs (downstream implementations)
+- **To:** SPEC-XXX, component docs (downstream implementations)
 ```
 
 ### Immutability Rule

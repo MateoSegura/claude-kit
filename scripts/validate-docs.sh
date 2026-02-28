@@ -42,26 +42,28 @@ fi
 declare -A prefix_to_dir=(
   ["REQ"]="requirements"
   ["ADR"]="architecture/decisions"
-  ["PLAN"]="plans"
+  ["SPEC"]="specs"
   ["TEST"]="testing/evidence"
   ["REG"]="testing/regression"
   ["BM"]="benchmarks"
   ["INC"]="operations/incidents"
   ["RB"]="operations/runbooks"
   ["MIG"]="operations/migration"
+  ["QA"]="constraints"
 )
 
 # Reverse map: directory to expected prefix
 declare -A dir_to_prefix=(
   ["requirements"]="REQ"
   ["architecture/decisions"]="ADR"
-  ["plans"]="PLAN"
+  ["specs"]="SPEC"
   ["testing/evidence"]="TEST"
   ["testing/regression"]="REG"
   ["benchmarks"]="BM"
   ["operations/incidents"]="INC"
   ["operations/runbooks"]="RB"
   ["operations/migration"]="MIG"
+  ["constraints"]="QA"
 )
 
 # Collect all ID-prefixed files
@@ -88,7 +90,7 @@ for dir in "${!dir_to_prefix[@]}"; do
     # Skip INDEX.md and non-ID files
     [[ "$basename_f" == "INDEX.md" ]] && continue
     # Check if it matches ANY known prefix pattern
-    if echo "$basename_f" | grep -qP '^(REQ|ADR|PLAN|TEST|REG|BM|INC|RB|MIG)-\d{3}'; then
+    if echo "$basename_f" | grep -qP '^(REQ|ADR|SPEC|TEST|REG|BM|INC|RB|MIG|QA)-\d{3}'; then
       # Already in id_files if prefix matches dir, otherwise it'll be caught by check 3
       :
     fi
@@ -157,7 +159,7 @@ for f in "${id_files[@]}"; do
 done
 
 # Scan all doc files for references to ID patterns
-ref_pattern='(REQ|ADR|PLAN|TEST|REG|BM|INC|RB|MIG)-[0-9]{3}'
+ref_pattern='(REQ|ADR|SPEC|TEST|REG|BM|INC|RB|MIG|QA)-[0-9]{3}'
 for f in "${id_files[@]}"; do
   basename_f="$(basename "$f")"
   own_id=$(echo "$basename_f" | grep -oP '^[A-Z]+-\d{3}')
@@ -180,13 +182,14 @@ echo "  Checking status field validity..."
 declare -A valid_statuses=(
   ["REQ"]="draft|active|deprecated|superseded-by"
   ["ADR"]="proposed|accepted|superseded-by|rejected"
-  ["PLAN"]="draft|active|completed|abandoned"
+  ["SPEC"]="draft|active|completed|abandoned"
   ["TEST"]="pass|fail|partial"
   ["REG"]="open|fixed|wont-fix"
   ["BM"]="active|superseded-by|retired"
   ["INC"]="investigating|resolved|post-mortem-complete"
   ["RB"]="active|deprecated|superseded-by"
   ["MIG"]="draft|active|completed"
+  ["QA"]="draft|active|deferred|deprecated"
 )
 
 for f in "${id_files[@]}"; do
