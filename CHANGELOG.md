@@ -4,6 +4,8 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-02-28
+
 ### Added
 - **Pre-release upgrade safety system** — deterministic bash script
   (`scripts/test-upgrade-safety.sh`) compares plugin API surface between git
