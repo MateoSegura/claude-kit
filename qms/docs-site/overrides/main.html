@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+  <meta name="generator" content="mkdocs-material">
+{% endblock %}
+
+{% block announce %}
+{% endblock %}
+
+{% block content %}
+  {{ super() }}
+{% endblock %}
+
+{% block footer %}
+  {{ super() }}
+  <div class="docs-version" style="text-align: center; padding: 0.5em 0;">
+    claude-kit docs v{{ config.extra.site_version }} (build {{ config.extra.build_number }})
+  </div>
+{% endblock %}

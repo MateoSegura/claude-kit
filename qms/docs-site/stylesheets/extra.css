@@ -1,0 +1,225 @@
+/* claude-kit Documentation — Custom Styles */
+
+/* ── Status badges ──────────────────────────────────────────────────────────── */
+/* Usage: <span class="status status-draft">draft</span> */
+
+.status {
+  display: inline-block;
+  padding: 0.15em 0.6em;
+  border-radius: 1em;
+  font-size: 0.75em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+  line-height: 1.6;
+}
+
+.status-draft {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-active {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-deprecated {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.status-superseded {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.status-proposed {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.status-accepted {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+/* Dark mode status badges */
+[data-md-color-scheme="slate"] .status-draft {
+  background-color: #664d03;
+  color: #fff3cd;
+}
+
+[data-md-color-scheme="slate"] .status-active {
+  background-color: #0f5132;
+  color: #d1e7dd;
+}
+
+[data-md-color-scheme="slate"] .status-deprecated {
+  background-color: #842029;
+  color: #f8d7da;
+}
+
+[data-md-color-scheme="slate"] .status-superseded {
+  background-color: #41464b;
+  color: #e2e3e5;
+}
+
+[data-md-color-scheme="slate"] .status-proposed {
+  background-color: #084298;
+  color: #cfe2ff;
+}
+
+[data-md-color-scheme="slate"] .status-accepted {
+  background-color: #0f5132;
+  color: #d1e7dd;
+}
+
+/* ── Version chip ───────────────────────────────────────────────────────────── */
+/* Usage: <span class="version-chip">v1.0.0</span> */
+
+.version-chip {
+  display: inline-block;
+  padding: 0.1em 0.5em;
+  border-radius: 0.8em;
+  font-size: 0.7em;
+  font-weight: 500;
+  font-family: var(--md-code-font-family);
+  background-color: var(--md-primary-fg-color);
+  color: var(--md-primary-bg-color);
+  vertical-align: middle;
+}
+
+/* ── Process category cards ─────────────────────────────────────────────────── */
+
+.process-category {
+  padding: 1em 1.2em;
+  margin: 1em 0;
+  border-left: 4px solid var(--md-primary-fg-color);
+  border-radius: 0 4px 4px 0;
+  background-color: var(--md-code-bg-color);
+}
+
+.process-category h3 {
+  margin-top: 0;
+  color: var(--md-primary-fg-color);
+}
+
+.process-category-lifecycle { border-left-color: #4caf50; }
+.process-category-lifecycle h3 { color: #4caf50; }
+
+.process-category-support { border-left-color: #2196f3; }
+.process-category-support h3 { color: #2196f3; }
+
+.process-category-organizational { border-left-color: #ff9800; }
+.process-category-organizational h3 { color: #ff9800; }
+
+.process-category-security { border-left-color: #f44336; }
+.process-category-security h3 { color: #f44336; }
+
+.process-category-government { border-left-color: #9c27b0; }
+.process-category-government h3 { color: #9c27b0; }
+
+/* ── Custom admonitions ─────────────────────────────────────────────────────── */
+
+/* Quality Gate */
+.md-typeset .admonition.quality-gate,
+.md-typeset details.quality-gate {
+  border-color: #4caf50;
+}
+
+.md-typeset .quality-gate > .admonition-title,
+.md-typeset .quality-gate > summary {
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.md-typeset .quality-gate > .admonition-title::before,
+.md-typeset .quality-gate > summary::before {
+  background-color: #4caf50;
+  -webkit-mask-image: var(--md-admonition-icon--success);
+  mask-image: var(--md-admonition-icon--success);
+}
+
+/* Entry Criteria */
+.md-typeset .admonition.entry-criteria,
+.md-typeset details.entry-criteria {
+  border-color: #2196f3;
+}
+
+.md-typeset .entry-criteria > .admonition-title,
+.md-typeset .entry-criteria > summary {
+  background-color: rgba(33, 150, 243, 0.1);
+}
+
+.md-typeset .entry-criteria > .admonition-title::before,
+.md-typeset .entry-criteria > summary::before {
+  background-color: #2196f3;
+  -webkit-mask-image: var(--md-admonition-icon--info);
+  mask-image: var(--md-admonition-icon--info);
+}
+
+/* Exit Criteria */
+.md-typeset .admonition.exit-criteria,
+.md-typeset details.exit-criteria {
+  border-color: #ff9800;
+}
+
+.md-typeset .exit-criteria > .admonition-title,
+.md-typeset .exit-criteria > summary {
+  background-color: rgba(255, 152, 0, 0.1);
+}
+
+.md-typeset .exit-criteria > .admonition-title::before,
+.md-typeset .exit-criteria > summary::before {
+  background-color: #ff9800;
+  -webkit-mask-image: var(--md-admonition-icon--warning);
+  mask-image: var(--md-admonition-icon--warning);
+}
+
+/* ── Mermaid theming ────────────────────────────────────────────────────────── */
+
+.mermaid {
+  text-align: center;
+}
+
+/* ── Tables ─────────────────────────────────────────────────────────────────── */
+
+.md-typeset table:not([class]) th {
+  white-space: nowrap;
+}
+
+/* ── Print styles ───────────────────────────────────────────────────────────── */
+
+@media print {
+  .md-header,
+  .md-tabs,
+  .md-sidebar,
+  .md-footer,
+  .md-top {
+    display: none !important;
+  }
+
+  .md-content {
+    margin: 0 !important;
+    padding: 1cm !important;
+  }
+
+  .status {
+    border: 1px solid currentColor;
+  }
+
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+}
+
+/* ── Footer version display ─────────────────────────────────────────────────── */
+
+.docs-version {
+  font-size: 0.75em;
+  opacity: 0.7;
+  font-family: var(--md-code-font-family);
+}

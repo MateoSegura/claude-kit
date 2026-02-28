@@ -10,6 +10,7 @@
 #   bash qms/install.sh --dry-run    # Show what would be installed
 #   bash qms/install.sh --force      # Overwrite existing QMS files (upgrade)
 #   bash qms/install.sh --update     # Smart update: preserve customizations
+#   bash qms/install.sh --docs       # Install docs site commands and hooks
 #   bash qms/install.sh --uninstall  # Remove all QMS-installed files
 #
 # Versioning:
@@ -36,6 +37,7 @@ DRY_RUN=false
 FORCE=false
 UPDATE=false
 UNINSTALL=false
+DOCS=false
 
 for arg in "$@"; do
   case "$arg" in
@@ -45,6 +47,7 @@ for arg in "$@"; do
     --force)     FORCE=true ;;
     --update)    UPDATE=true ;;
     --uninstall) UNINSTALL=true ;;
+    --docs)      DOCS=true ;;
     *)           echo "Unknown flag: $arg"; exit 1 ;;
   esac
 done
@@ -111,11 +114,11 @@ if [ "$UNINSTALL" = true ]; then
       hooks_file="${file%:merged}"
       if [ -f "$hooks_file" ]; then
         tmp=$(mktemp)
-        # Remove any hook entries with "source": "qms"
+        # Remove any hook entries with "source": "qms" or "qms-docs"
         jq '
           .hooks |= (to_entries | map(
             .value |= [.[] | select(
-              (.hooks | all(.source != "qms"))
+              (.hooks | all(.source != "qms" and .source != "qms-docs"))
             )]
           ) | from_entries)
         ' "$hooks_file" > "$tmp" && mv "$tmp" "$hooks_file"
@@ -281,7 +284,74 @@ for skill_dir in "$QMS_DIR"/instrumentation/skills/*/; do
   fi
 done
 
-# ── Step 6: Scaffold docs/ (optional) ───────────────────────────────────────
+# ── Step 6: Docs site instrumentation (optional) ────────────────────────────
+if [ "$DOCS" = true ]; then
+  _log "Installing docs site instrumentation..."
+
+  # Install docs-specific commands
+  for cmd_name in docs-serve docs-build docs-deploy docs-add-page docs-health; do
+    src="$QMS_DIR/instrumentation/commands/${cmd_name}.md"
+    if [ -f "$src" ]; then
+      dst="$CLAUDE_DIR/commands/qms-${cmd_name}.md"
+      _install_file "$src" "$dst"
+    fi
+  done
+
+  # Install docs-site rule
+  src="$QMS_DIR/instrumentation/rules/docs-site.md"
+  if [ -f "$src" ]; then
+    dst="$CLAUDE_DIR/rules/qms-docs-site.md"
+    _install_file "$src" "$dst"
+  fi
+
+  # Initialize site.json if it doesn't exist
+  site_json="$QMS_DIR/docs-site/site.json"
+  if [ "$DRY_RUN" = true ]; then
+    _dry "check site.json at $site_json"
+  elif [ ! -f "$site_json" ]; then
+    mkdir -p "$(dirname "$site_json")"
+    cat > "$site_json" << 'SJEOF'
+{
+  "version": "0.1.0",
+  "buildNumber": 0,
+  "lastBuild": null,
+  "contentHash": null,
+  "pageCount": 0,
+  "siteSize": null,
+  "mkdocsVersion": null,
+  "changelog": [
+    {
+      "version": "0.1.0",
+      "date": "2026-02-28",
+      "summary": "Initial docs site with MkDocs Material"
+    }
+  ]
+}
+SJEOF
+    _log "initialized $site_json"
+  fi
+
+  # Add .docs-build/ and site/ to .gitignore if not present
+  gitignore="$REPO_ROOT/.gitignore"
+  if [ "$DRY_RUN" = true ]; then
+    _dry "update .gitignore with docs build paths"
+  elif [ -f "$gitignore" ]; then
+    for pattern in ".docs-build/" "qms/docs-site/site/"; do
+      if ! grep -qF "$pattern" "$gitignore"; then
+        echo "$pattern" >> "$gitignore"
+        _log "added $pattern to .gitignore"
+      fi
+    done
+  fi
+
+  _log "Docs site instrumentation installed."
+  _log "  Commands: qms-docs-serve, qms-docs-build, qms-docs-deploy,"
+  _log "            qms-docs-add-page, qms-docs-health"
+  _log "  Rule: qms-docs-site.md"
+  echo ""
+fi
+
+# ── Step 7: Scaffold docs/ (optional) ───────────────────────────────────────
 if [ "$SCAFFOLD" = true ]; then
   _log "Scaffolding docs/ directory structure..."
   docs_dirs=(
@@ -318,7 +388,7 @@ if [ "$SCAFFOLD" = true ]; then
   done
 fi
 
-# ── Step 7: Write manifest ──────────────────────────────────────────────────
+# ── Step 8: Write manifest ──────────────────────────────────────────────────
 if [ "$DRY_RUN" = false ]; then
   _log "Writing manifest..."
   timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -351,6 +421,7 @@ if [ "$DRY_RUN" = false ]; then
     --argjson files "$files_json" \
     --argjson customized "$customized_files" \
     --argjson gov "$GOV" \
+    --argjson docs "$DOCS" \
     '{
       coreVersion: $coreVersion,
       userRevision: $userRevision,
@@ -358,6 +429,7 @@ if [ "$DRY_RUN" = false ]; then
       updatedAt: $updatedAt,
       source: $source,
       gov: $gov,
+      docs: $docs,
       files: $files,
       customized: $customized
     }' \
@@ -365,7 +437,7 @@ if [ "$DRY_RUN" = false ]; then
   _log "wrote $MANIFEST"
 fi
 
-# ── Step 8: Validate ────────────────────────────────────────────────────────
+# ── Step 9: Validate ────────────────────────────────────────────────────────
 if [ "$DRY_RUN" = false ]; then
   echo ""
   _log "Running validation..."

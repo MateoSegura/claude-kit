@@ -19,3 +19,8 @@ __pycache__/
 # Specs (per-project, not shipped)
 docs/specs/
 .devcontainer/.env
+
+# Documentation site build artifacts
+.docs-build/
+qms/docs-site/site/
+qms/docs-site/.build-mkdocs.yml

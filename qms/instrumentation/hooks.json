@@ -24,6 +24,18 @@
             "filePattern": "docs/**/*.md"
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "CAUTION: You are editing the MkDocs configuration. Before saving:\n- Verify YAML syntax is valid (indentation matters)\n- Ensure all nav entries point to files that exist in the content merge (docs/ or qms/ sources, NOT .docs-build/)\n- Do not edit docs_dir or site_dir — these are set by build.sh\n- After saving, run: bash qms/docs-site/validate-site.sh --nav",
+            "description": "QMS: Validate MkDocs config before editing",
+            "source": "qms-docs",
+            "filePattern": "qms/docs-site/mkdocs.yml"
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -36,6 +48,30 @@
             "description": "QMS: Remind to bump version after editing process documents",
             "source": "qms",
             "filePattern": "qms/processes/**"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You just edited a documentation file. The docs site needs to reflect this change:\n- If the docs site is running locally (qms-docs-serve), changes hot-reload automatically\n- If you added a NEW file, you MUST update the nav section in qms/docs-site/mkdocs.yml to include it\n- Run qms/docs-site/validate-site.sh to verify nav consistency",
+            "description": "QMS: Docs site nav reminder after editing documentation",
+            "source": "qms-docs",
+            "filePattern": "docs/**/*.md"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "You just edited a QMS content file. The docs site needs to reflect this change:\n- If the docs site is running locally (qms-docs-serve), changes hot-reload automatically\n- If you added a NEW file, you MUST update the nav section in qms/docs-site/mkdocs.yml to include it\n- Run qms/docs-site/validate-site.sh to verify nav consistency",
+            "description": "QMS: Docs site nav reminder after editing QMS content",
+            "source": "qms-docs",
+            "filePattern": "qms/**/*.md"
           }
         ]
       }

@@ -1,0 +1,16 @@
+{
+  "version": "0.1.0",
+  "buildNumber": 0,
+  "lastBuild": null,
+  "contentHash": "sha256:209a2e6dfeecc1a217f79ef81ceef1ab435e8b908a689974e128ad9855fc8099",
+  "pageCount": 115,
+  "siteSize": "17M",
+  "mkdocsVersion": "1.6.1",
+  "changelog": [
+    {
+      "version": "0.1.0",
+      "date": "2026-02-28",
+      "summary": "Initial docs site with MkDocs Material"
+    }
+  ]
+}
