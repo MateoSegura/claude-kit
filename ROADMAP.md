@@ -16,6 +16,9 @@
 
 ## Shipped
 
+- **v0.11.0** — Core Rewrite & Upgrade Safety (Feb 28, 2026)
+  core-spec rewrite (single SKILL.md), core-kit dispatch overhaul,
+  pre-release upgrade safety system, behavioral profiles
 - **v0.10.3** — Install Polish (Feb 27, 2026)
   Fix version display ("unknown" → correct version), suppress encryption noise
 - **v0.10.2** — Git-Free Install (Feb 27, 2026)
