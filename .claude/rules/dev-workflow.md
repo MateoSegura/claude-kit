@@ -68,8 +68,6 @@ asked. Print:
 | `scripts/validate-plugins.py` or `scripts/test-plugin-consistency.sh` | 3 | `python3 scripts/validate-plugins.py --all --strict && bash scripts/test-plugin-consistency.sh` |
 | `docs/**` | 4 | `bash scripts/validate-docs.sh` |
 | `scripts/validate-docs.sh` | 4 | `bash scripts/validate-docs.sh` |
-| `qms/processes/**` | 5 | `bash qms/scripts/validate-processes.sh` |
-| `qms/scripts/validate-processes.sh` | 5 | `bash qms/scripts/validate-processes.sh` |
 | Multiple zones | union of layers | Run each affected layer in order |
 
 If validation fails, **fix the issue before proceeding**. Do not commit broken

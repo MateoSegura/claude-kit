@@ -1,0 +1,3 @@
+[submodule "qms"]
+	path = qms
+	url = https://github.com/MateoSegura/process-asset-library.git

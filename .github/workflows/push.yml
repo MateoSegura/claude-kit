@@ -58,8 +58,5 @@ jobs:
       - name: Docs structure validation
         run: bash scripts/validate-docs.sh
 
-      - name: Process framework validation
-        run: bash qms/scripts/validate-processes.sh
-
       - name: Tier 1 — changed plugins
         run: python3 scripts/validate-plugins.py --changed --json

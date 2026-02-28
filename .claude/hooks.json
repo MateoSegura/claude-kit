@@ -29,30 +29,6 @@
             "timeout": 5000
           }
         ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "IMPORTANT — Before writing to any file under docs/, identify the governing process:\n\n1. Check the target directory's INDEX.md for its **Governing Process:** field\n2. Read the governing process document in qms/processes/ to verify:\n   - Entry criteria (Section 3) are satisfied\n   - The correct template (Section 6) is being used\n   - Quality gates (Section 8) will be met\n3. Ensure the artifact has all required sections per its template\n4. Ensure the Traces section links upstream and downstream documents\n\nIf the file is NOT under docs/, this reminder does not apply — proceed normally.",
-            "description": "QMS: Check governing process before writing to docs/",
-            "source": "qms",
-            "filePattern": "docs/**"
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Before writing this docs/ artifact, verify template compliance:\n\n- Does it have a valid Status field for its document type?\n- Does it have a ## Traces section with upstream and downstream links?\n- Does the ID in the filename match the ID in the document title?\n- Is the Governing Process referenced in the document or its INDEX.md?\n\nProceed with the write, but flag any compliance issues.",
-            "description": "QMS: Verify artifact template compliance",
-            "source": "qms",
-            "filePattern": "docs/**/*.md"
-          }
-        ]
       }
     ],
     "PostToolUse": [
@@ -93,18 +69,6 @@
             "type": "command",
             "command": "bash -c '\ninput=$(cat)\nfile_path=$(echo \"$input\" | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get(\\\"tool_input\\\",{}).get(\\\"file_path\\\",\\\"\\\") or d.get(\\\"tool_input\\\",{}).get(\\\"path\\\",\\\"\\\"))\" 2>/dev/null || echo \"\")\n\nif [ -z \"$file_path\" ]; then\n  exit 0\nfi\n\n# Skip docs/ and plugins/ paths — they have their own hooks\nif echo \"$file_path\" | grep -qE \"/docs/|/plugins/\"; then\n  exit 0\nfi\n\n# Only trigger for core code paths\nif ! echo \"$file_path\" | grep -qE \"/claude-kit$|/scripts/|/\\.github/workflows/|/templates/\"; then\n  exit 0\nfi\n\necho \"REMINDER: You modified a core code file.\"\necho \"\"\necho \"  File: $file_path\"\necho \"\"\necho \"  Check if docs/ needs updating:\"\necho \"    - Component docs: docs/architecture/components/\"\necho \"    - Active specs: docs/specs/ (update status if completing a spec step)\"\necho \"    - Migration guides: docs/operations/migration/ (if this is a breaking change)\"\n\nexit 0\n'",
             "timeout": 5000
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "You just edited a process document in qms/processes/. Remember to:\n\n1. Bump the **Version:** field per qms/VERSION-POLICY.md\n2. Update the **Last Reviewed:** date to today\n3. Add a new row to Section 15 (Change History)\n4. Run: bash qms/scripts/validate-processes.sh",
-            "description": "QMS: Remind to bump version after editing process documents",
-            "source": "qms",
-            "filePattern": "qms/processes/**"
           }
         ]
       }

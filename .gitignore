@@ -20,7 +20,5 @@ __pycache__/
 docs/specs/
 .devcontainer/.env
 
-# Documentation site build artifacts
+# Documentation site build artifacts (from PAL submodule)
 .docs-build/
-qms/docs-site/site/
-qms/docs-site/.build-mkdocs.yml
