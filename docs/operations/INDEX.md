@@ -1,5 +1,7 @@
 # operations/ — Operational Documentation
 
+**Governing Process:** PROC-LC-007 (Deployment & Operations)
+
 Operations documentation covers incidents, runbooks, and migration guides.
 These are cross-cutting — they can reference any other documentation layer.
 

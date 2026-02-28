@@ -1,5 +1,7 @@
 # research/ — Theoretical Research
 
+**Governing Process:** PROC-LC-001 (Market Analysis)
+
 This directory contains theoretical research papers exploring the foundations of
 AI-assisted software development. These papers inform requirements and
 architecture decisions but are not operational documents.

@@ -1,0 +1,12 @@
+--- COMPACTION_SNAPSHOT [2026-02-28T00:06:49Z] ---
+Context compaction triggered. State above this line was in context before compaction.
+The context-recovery agent will read this file to restore orientation.
+---
+--- COMPACTION_SNAPSHOT [2026-02-28T20:02:17Z] ---
+Context compaction triggered. State above this line was in context before compaction.
+The context-recovery agent will read this file to restore orientation.
+---
+--- COMPACTION_SNAPSHOT [2026-02-28T20:40:09Z] ---
+Context compaction triggered. State above this line was in context before compaction.
+The context-recovery agent will read this file to restore orientation.
+---

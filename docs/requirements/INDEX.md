@@ -1,5 +1,7 @@
 # requirements/ — System Requirements
 
+**Governing Process:** PROC-LC-002 (Requirements Engineering)
+
 Requirements define **what** the system must do and **why**. Each requirement
 traces upstream to research or stakeholder needs and downstream to architecture
 decisions and implementation specs.

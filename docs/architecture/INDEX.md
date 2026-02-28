@@ -1,5 +1,7 @@
 # architecture/ — Architecture Documentation
 
+**Governing Process:** PROC-LC-003 (Architecture Design)
+
 Architecture documentation captures **decisions** (ADRs) and **component
 descriptions**. Decisions are immutable once accepted — if circumstances change,
 supersede with a new ADR rather than editing the original.

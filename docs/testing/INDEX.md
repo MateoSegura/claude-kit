@@ -1,5 +1,7 @@
 # testing/ — Test Documentation
 
+**Governing Process:** PROC-LC-005 (Integration & Testing)
+
 Test documentation captures evidence of verification and regression analysis.
 Test evidence validates that specs were implemented correctly. Regression
 documents capture root causes and fixes for issues discovered in production.

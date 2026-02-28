@@ -1,5 +1,7 @@
 # benchmarks/ — Performance Benchmarks
 
+**Governing Process:** PROC-ORG-002 (Measurement & Analysis)
+
 Benchmarks measure system performance with reproducible methodology. Each
 benchmark documents its methodology, baseline measurements, and results over
 time.

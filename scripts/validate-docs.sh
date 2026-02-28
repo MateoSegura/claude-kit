@@ -49,7 +49,7 @@ declare -A prefix_to_dir=(
   ["INC"]="operations/incidents"
   ["RB"]="operations/runbooks"
   ["MIG"]="operations/migration"
-  ["QA"]="constraints"
+  ["QA"]="quality"
 )
 
 # Reverse map: directory to expected prefix
@@ -63,7 +63,7 @@ declare -A dir_to_prefix=(
   ["operations/incidents"]="INC"
   ["operations/runbooks"]="RB"
   ["operations/migration"]="MIG"
-  ["constraints"]="QA"
+  ["quality"]="QA"
 )
 
 # Collect all ID-prefixed files
