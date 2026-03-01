@@ -19,3 +19,6 @@ __pycache__/
 # Specs (per-project, not shipped)
 docs/specs/
 .devcontainer/.env
+
+# Documentation site build artifacts (from PAL submodule)
+.docs-build/

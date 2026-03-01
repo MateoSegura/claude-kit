@@ -24,9 +24,18 @@
   "files": {
     ".claude/rules/testing-standards.md": {
       "generated": "2026-02-27",
-      "action": "created",
-      "sources": ["scripts/test-cli.sh", "scripts/validate-plugins.py", "scripts/test-plugin-consistency.sh", ".github/workflows/push.yml"],
-      "hash": "822c063f46350a5d55e4b48228808d4e47f89c9819fd2fbcc59de3d126a0b909"
+      "updated": "2026-02-27",
+      "action": "enriched",
+      "sources": ["scripts/test-cli.sh", "scripts/validate-plugins.py", "scripts/test-plugin-consistency.sh", "scripts/validate-docs.sh", ".github/workflows/push.yml"],
+      "hash": "822c063f46350a5d55e4b48228808d4e47f89c9819fd2fbcc59de3d126a0b909",
+      "enrichment_summary": "Added Layer 4 (Docs Validation) with validate-docs.sh, updated run table and combined command"
+    },
+    ".claude/rules/documentation.md": {
+      "updated": "2026-02-27",
+      "action": "enriched",
+      "sources": ["docs/ directory structure", "docs-system.md"],
+      "hash": "",
+      "enrichment_summary": "Added docs/ System Awareness section connecting plugin README rules to structured docs layers"
     },
     ".claude/rules/architecture.md": {
       "generated": "2026-02-27",
@@ -56,9 +65,17 @@
     },
     ".claude/hooks.json": {
       "generated": "2026-02-27",
+      "updated": "2026-02-27",
+      "action": "enriched",
+      "sources": ["git-workflow.md conventions", "plugin-conventions.md", "security detection", "docs-system.md"],
+      "hash": "bbc0f10fd076c07ac78a5a18878a63b376e8beb772c00eed1a392aaa50232dce",
+      "enrichment_summary": "Added docs traceability reminder and code impact reminder PostToolUse hooks"
+    },
+    ".claude/rules/docs-system.md": {
+      "generated": "2026-02-27",
       "action": "created",
-      "sources": ["git-workflow.md conventions", "plugin-conventions.md", "security detection"],
-      "hash": "bbc0f10fd076c07ac78a5a18878a63b376e8beb772c00eed1a392aaa50232dce"
+      "sources": ["docs/ directory structure", "docs/INDEX.md", "scripts/validate-docs.sh"],
+      "hash": ""
     },
     ".claude/rules/git-workflow.md": {
       "updated": "2026-02-27",
@@ -85,7 +102,6 @@
     "ci_docs_strategy": "enrich git-workflow.md (keep CI info in one file)"
   },
   "preserved_user_files": [
-    ".claude/rules/documentation.md",
     ".claude/rules/plugin-versions.md",
     ".claude/rules/cross-team-consistency.md",
     ".claude/rules/plugin-conventions.md",

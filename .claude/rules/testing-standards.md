@@ -2,10 +2,10 @@
 # Testing Standards — claude-kit
 
 There is no pytest, no Jest, and no coverage tool. The test suite is entirely
-bash-based and Python syntax validation. Three layers run in sequence; all must
+bash-based and Python syntax validation. Four layers run in sequence; all must
 exit 0 for CI to pass.
 
-## The Three Test Layers
+## The Four Test Layers
 
 ### Layer 1 — Python Syntax Check
 
@@ -52,6 +52,23 @@ Always prefer `--changed` locally for speed; CI always runs `--all --strict`.
 - Frontmatter field names (`tools:` in agents, `allowed-tools:` in commands)
 - CHANGELOG version entries align with plugin.json versions
 
+### Layer 4 — Docs Validation
+
+```bash
+bash scripts/validate-docs.sh
+```
+
+Validates the structured documentation system in `docs/`. Run this after **any**
+file change inside `docs/`.
+
+`validate-docs.sh` checks:
+- INDEX.md exists in each top-level docs subdirectory
+- Document IDs (REQ-XXX, ADR-XXX, etc.) are globally unique
+- Filenames match their directory's ID pattern
+- Cross-references in document bodies resolve to real files
+- Status field contains a valid value for the document type
+- Documents contain a required `## Traces` section
+
 ## When to Run Each Layer
 
 | Changed what? | Run which layers? |
@@ -60,7 +77,9 @@ Always prefer `--changed` locally for speed; CI always runs `--all --strict`.
 | `scripts/test-cli.sh` or CLI output format | Layer 1 + Layer 2 |
 | Any file inside `plugins/<name>/` | Layer 3 |
 | `scripts/validate-plugins.py` or `scripts/test-plugin-consistency.sh` | Layer 3 |
-| Multiple categories in one commit | All three layers |
+| Any file inside `docs/` | Layer 4 |
+| `scripts/validate-docs.sh` | Layer 4 |
+| Multiple categories in one commit | All four layers |
 
 ## Passing Criteria
 
@@ -68,18 +87,25 @@ A test run passes when every command exits with code 0. Any non-zero exit is a
 failure — fix it before committing.
 
 ```bash
-# Run all three layers in sequence (mirrors CI)
+# Run all four layers in sequence (mirrors CI)
 python3 -m py_compile claude-kit && \
 bash scripts/test-cli.sh && \
 python3 scripts/validate-plugins.py --all --strict && \
-bash scripts/test-plugin-consistency.sh
+bash scripts/test-plugin-consistency.sh && \
+bash scripts/validate-docs.sh
 ```
 
 ## CI Integration
 
-The `fast-validate` job in `.github/workflows/push.yml` runs all three layers
+The `fast-validate` job in `.github/workflows/push.yml` runs all four layers
 on every push. It is a **required** status check — PRs cannot merge until it is
 green. The job takes approximately 10 seconds.
 
 The `claude-validate` job in `pr.yml` runs a deeper semantic review on plugin
 changes but is **not** a required merge gate.
+
+## Process Validation (External)
+
+Process validation is maintained in the standalone Process Asset Library
+repository (`MateoSegura/process-asset-library`). It is not part of
+claude-kit's CI pipeline.

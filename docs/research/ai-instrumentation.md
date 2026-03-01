@@ -5,6 +5,8 @@
 > and hooks — that encode the repo's conventions, workflows, and enforcement
 > needs into machine-readable context.
 
+**Date:** 2026-02-28
+
 ---
 
 ## Table of Contents
@@ -747,6 +749,8 @@ Add to the intent map:
     that simulates using the generated rules on a real task and surfaces
     gaps. This is essentially what the grader plugins do — grade the
     instrumentation output.
+
+---
 
 ---
 

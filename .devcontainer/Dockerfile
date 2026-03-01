@@ -108,6 +108,7 @@ RUN curl -fsSL \
 # ── Python global packages ────────────────────────────────────────────────────
 RUN pip3 install --break-system-packages \
     httpx \
+    mkdocs-material \
     pandas \
     pytest \
     pytest-asyncio \

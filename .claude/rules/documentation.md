@@ -42,3 +42,7 @@ Run Tier 1 validation after any plugin change — it does not validate README co
 ```bash
 claude-kit validate --changed
 ```
+
+## docs/ Awareness
+
+See `docs-system.md` for the directory structure and ADR conventions.
