@@ -88,5 +88,6 @@ jobs:
       - name: API tests
         run: |
           cd api
-          pip install -q -e ".[dev]"
-          python3 -m pytest -v --tb=short
+          python3 -m venv .venv
+          .venv/bin/pip install -q -e ".[dev]"
+          .venv/bin/python -m pytest -v --tb=short
