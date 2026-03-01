@@ -107,9 +107,9 @@ changes but is **not** a required merge gate.
 ## Process Validation (External)
 
 Process validation is maintained in the standalone Process Asset Library
-repository (`MateoSegura/process-asset-library`). When working with QMS
-processes, run validation from that repo:
+repository (`MateoSegura/process-asset-library`). When working with PAL
+processes, run validation from the submodule:
 
 ```bash
-bash process-asset-library/scripts/validate-processes.sh
+bash pal/scripts/validate-processes.sh
 ```

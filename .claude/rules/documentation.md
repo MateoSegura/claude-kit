@@ -43,8 +43,8 @@ Run Tier 1 validation after any plugin change — it does not validate README co
 claude-kit validate --changed
 ```
 
-## docs/ and QMS Awareness
+## docs/ and PAL Awareness
 
-For docs/ artifacts governed by QMS processes, follow
-`qms-artifact-management.md` for creation workflow and template compliance.
+For docs/ artifacts governed by PAL processes, follow
+`pal-artifact-management.md` for creation workflow and template compliance.
 See `docs-system.md` for the layer reference and cross-reference format.

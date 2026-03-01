@@ -1,14 +1,14 @@
 # docs/ — Project Documentation
 
 claude-kit maintains a process-governed documentation system. Each layer is
-governed by one or more processes defined in `qms/processes/`. Processes define
+governed by one or more processes defined in `pal/processes/`. Processes define
 what artifacts exist, where they live, and how they flow.
 
 ## Governing Framework
 
-This documentation system is governed by the Process Asset Library (`qms/`).
+This documentation system is governed by the Process Asset Library (`pal/`).
 Every subdirectory has a governing process that defines its artifact types,
-templates, and quality gates. See `qms/CATALOG.md` for the full process index.
+templates, and quality gates. See `pal/CATALOG.md` for the full process index.
 
 ## Traceability Chain
 
@@ -67,7 +67,7 @@ checks that referenced IDs resolve to real files.
 
 ## Creating New Documents
 
-1. Identify the governing process in `qms/CATALOG.md`
+1. Identify the governing process in `pal/CATALOG.md`
 2. Check the process's Section 6 (Outputs/Artifacts) for the required template
 3. Determine the next sequential ID in the target directory
 4. Name the file `<ID>-<short-description>.md` (lowercase, hyphens)

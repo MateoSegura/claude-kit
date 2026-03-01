@@ -23,7 +23,7 @@ regulatory controls. Each mapping file covers one control family or framework.
 
 ## Customer Packages
 
-Customer-deliverable documents packaged by `qms/scripts/extract-qms.sh`.
+Customer-deliverable documents packaged by `pal/scripts/extract-qms.sh`.
 These are designed for defense procurement officers, SOC 2 auditors, and
 CMMC C3PAOs.
 
