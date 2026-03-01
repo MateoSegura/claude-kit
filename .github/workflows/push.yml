@@ -55,6 +55,9 @@ jobs:
       - name: Plugin consistency checks
         run: bash scripts/test-plugin-consistency.sh
 
+      - name: Docs structure validation
+        run: bash scripts/validate-docs.sh
+
       - name: Upgrade safety check
         if: github.ref != 'refs/heads/main'
         run: |

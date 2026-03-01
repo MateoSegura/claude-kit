@@ -3,6 +3,8 @@
 > A theoretical framework for understanding how hierarchical skill injection
 > narrows LLM output distributions toward domain-specific, reliable responses.
 
+**Date:** 2026-02-28
+
 ---
 
 ## Table of Contents
@@ -430,6 +432,8 @@ expensive, inflexible) but through **structured context architecture**
 **In one sentence:** claude-kit turns Claude from a generalist who might know
 your domain into a domain specialist who definitely does — and proves it at
 every step.
+
+---
 
 ---
 
