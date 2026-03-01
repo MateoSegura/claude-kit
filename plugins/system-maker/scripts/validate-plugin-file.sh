@@ -7,8 +7,8 @@ set -euo pipefail
 
 INPUT=$(cat)
 
-# Extract file_path without jq
-FILE_PATH=$(echo "$INPUT" | grep -o '"file_path"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"file_path"[[:space:]]*:[[:space:]]*"//;s/"$//')
+# Extract file_path from tool input JSON
+FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .file_path // empty')
 [ -z "$FILE_PATH" ] && exit 0
 
 # Only validate plugin component files

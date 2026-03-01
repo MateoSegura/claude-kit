@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 # validate-debug-output.sh — Background check for common failure patterns in bash output
 # Called by hooks.json as an async PostToolUse hook on Bash tool

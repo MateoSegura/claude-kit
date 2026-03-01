@@ -1,5 +1,5 @@
 {
   "role": "debugger",
   "domain": "backend",
-  "companions": ["cloud-python-knowledge"]
+  "companions": ["cloud-python-knowledge", "core-architecture", "core-backend", "core-devops"]
 }

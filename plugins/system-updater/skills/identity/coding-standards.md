@@ -79,9 +79,7 @@ Located at `.claude-plugin/plugin.json`. Required fields:
 }
 ```
 
-**Required fields**: `name`, `description`, `version`
-
-Optional fields include `author`, `keywords`, `homepage`, `repository`, `license`.
+**Only three fields are allowed**: `name`, `description`, `version`. Any extra field causes the plugin to silently fail to load.
 
 ### hooks.json
 

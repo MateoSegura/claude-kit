@@ -5,7 +5,7 @@ description: "Analyzes flash and RAM usage of compiled Zephyr submissions using 
 tools: Read, Glob, Grep, Bash
 skills: identity, grading-rubrics, tool-pipeline
 color: "#E8A838"
-permissionMode: default
+permissionMode: plan
 ---
 
 <role>

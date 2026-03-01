@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 # check-protected-files.sh — Blocks writes to protected files in cloud Python projects
 # Called by hooks.json as a PreToolUse hook on Write|Edit tools

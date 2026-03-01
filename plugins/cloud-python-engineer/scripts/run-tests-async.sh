@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 # run-tests-async.sh — Runs pytest in the background after file changes
 # Called by hooks.json as an async PostToolUse hook on Write|Edit tools

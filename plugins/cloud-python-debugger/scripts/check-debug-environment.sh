@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 # check-debug-environment.sh — Verifies debugging tools are available at session start
 # Called by hooks.json as a SessionStart hook
