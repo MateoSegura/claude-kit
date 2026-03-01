@@ -17,7 +17,8 @@ import time
 import atexit
 import io
 import tarfile
-from datetime import datetime
+import uuid
+from datetime import datetime, timezone
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
@@ -34,6 +35,178 @@ VERBOSE       = False
 
 # Content directories that get encrypted (everything else stays plaintext)
 _CONTENT_DIRS = ("agents", "commands", "skills", "hooks", "scripts")
+
+# ── Telemetry ───────────────────────────────────────────────────────────────
+
+# Telemetry levels (controlled by CLAUDE_KIT_TELEMETRY env var):
+#   off    — no telemetry (default)
+#   debug  — stderr only (human-readable traces)
+#   local  — stderr + JSONL file
+#   full   — stderr + JSONL + buffer for API upload
+
+_TELEMETRY_DIR = pathlib.Path.home() / ".claude-kit" / "telemetry"
+_SCHEMA_VERSION = 1
+
+
+class TelemetryEmitter:
+    """Structured telemetry emitter with configurable sinks.
+
+    Sinks are selected by the CLAUDE_KIT_TELEMETRY environment variable.
+    Events follow the claude-kit telemetry schema (v1).
+    """
+
+    def __init__(self, level: str = "off"):
+        self.level = level if level in ("debug", "local", "full") else "off"
+        self.session_id = str(uuid.uuid4())
+        self._start_time = time.monotonic()
+        self._jsonl_path: pathlib.Path | None = None
+        self._jsonl_file = None
+        self._buffer: list = []
+
+        # Session-level counters for session.end summary
+        self._plugins_loaded: list = []
+        self._skills: dict = {}      # skill_name → count
+        self._hooks: dict = {}       # hook_event_type → count
+        self._autorouter_matches = 0
+        self._autorouter_misses = 0
+
+        if self.level in ("local", "full"):
+            _TELEMETRY_DIR.mkdir(parents=True, exist_ok=True)
+            self._jsonl_path = _TELEMETRY_DIR / f"{self.session_id}.jsonl"
+
+    @property
+    def active(self) -> bool:
+        return self.level != "off"
+
+    def _now(self) -> str:
+        return datetime.now(timezone.utc).isoformat()
+
+    def _build_event(self, event_type: str, payload: dict) -> dict:
+        return {
+            "schema_version": _SCHEMA_VERSION,
+            "event_type": event_type,
+            "timestamp": self._now(),
+            "session_id": self.session_id,
+            "payload": payload,
+        }
+
+    def _write_stderr(self, event: dict) -> None:
+        etype = event["event_type"]
+        payload = event["payload"]
+        # Build a concise one-line summary
+        parts = []
+        for k, v in payload.items():
+            if isinstance(v, list):
+                parts.append(f"{k}=[{', '.join(str(i) for i in v)}]")
+            elif isinstance(v, dict):
+                parts.append(f"{k}={{{len(v)} items}}")
+            else:
+                parts.append(f"{k}={v}")
+        summary = " ".join(parts) if parts else ""
+        line = f"[claude-kit:{etype}] {summary}"
+        if sys.stderr.isatty():
+            print(f"\033[2m{line}\033[0m", file=sys.stderr)
+        else:
+            print(line, file=sys.stderr)
+
+    def _write_jsonl(self, event: dict) -> None:
+        if self._jsonl_path is None:
+            return
+        try:
+            if self._jsonl_file is None:
+                self._jsonl_file = open(self._jsonl_path, "a")
+            self._jsonl_file.write(json.dumps(event, sort_keys=True) + "\n")
+            self._jsonl_file.flush()
+        except OSError:
+            pass  # non-fatal — telemetry must never crash the CLI
+
+    def _write_buffer(self, event: dict) -> None:
+        self._buffer.append(event)
+
+    def emit(self, event_type: str, payload: dict | None = None) -> None:
+        """Emit a telemetry event to all active sinks."""
+        if self.level == "off":
+            return
+        event = self._build_event(event_type, payload or {})
+
+        # Update counters for session summary
+        if event_type == "plugin.loaded":
+            self._plugins_loaded.append(payload.get("plugin", "?"))
+        elif event_type == "skill.invoked":
+            skill = payload.get("skill", "?")
+            self._skills[skill] = self._skills.get(skill, 0) + 1
+        elif event_type == "hook.fired":
+            hook_event = payload.get("hook_event", "?")
+            self._hooks[hook_event] = self._hooks.get(hook_event, 0) + 1
+        elif event_type == "autorouter.match":
+            self._autorouter_matches += 1
+        elif event_type == "autorouter.miss":
+            self._autorouter_misses += 1
+
+        # Route to sinks
+        if self.level in ("debug", "local", "full"):
+            self._write_stderr(event)
+        if self.level in ("local", "full"):
+            self._write_jsonl(event)
+        if self.level == "full":
+            self._write_buffer(event)
+
+    def emit_session_start(self, plugins: list, cli_version: str = "?") -> None:
+        """Emit a session.start event."""
+        self.emit("session.start", {
+            "plugins": plugins,
+            "mode": CK_MODE,
+            "telemetry_level": self.level,
+            "cli_version": cli_version,
+        })
+
+    def emit_session_end(self) -> None:
+        """Emit a session.end event with aggregated counters."""
+        duration = time.monotonic() - self._start_time
+        self.emit("session.end", {
+            "duration_s": round(duration, 2),
+            "plugins_loaded": len(self._plugins_loaded),
+            "skills_invoked": dict(self._skills),
+            "hooks_fired": dict(self._hooks),
+            "autorouter_matches": self._autorouter_matches,
+            "autorouter_misses": self._autorouter_misses,
+        })
+
+    def flush_buffer(self) -> list:
+        """Return buffered events and clear. For future API upload."""
+        events = list(self._buffer)
+        self._buffer.clear()
+        return events
+
+    def close(self) -> None:
+        """Close open file handles."""
+        if self._jsonl_file is not None:
+            try:
+                self._jsonl_file.close()
+            except OSError:
+                pass
+            self._jsonl_file = None
+
+
+# Global emitter — initialized in main() or cmd_run()
+_telemetry: TelemetryEmitter | None = None
+
+
+def _init_telemetry() -> TelemetryEmitter:
+    """Initialize the global telemetry emitter from env config."""
+    global _telemetry
+    level = os.environ.get("CLAUDE_KIT_TELEMETRY", "off").lower()
+    _telemetry = TelemetryEmitter(level)
+    return _telemetry
+
+
+def _get_telemetry() -> TelemetryEmitter:
+    """Return the global emitter, initializing if needed."""
+    global _telemetry
+    if _telemetry is None:
+        _init_telemetry()
+    return _telemetry
+
 
 # ── Encryption ──────────────────────────────────────────────────────────────
 
@@ -310,7 +483,13 @@ def _print_launch_header(plugin_names: list) -> None:
     # Debug mode indicator
     debug_rule = pathlib.Path.home() / ".claude" / "rules" / "claude-kit-debug.md"
     if debug_rule.exists():
-        p(f"  {col(C.Y, 'debug')}  {col(C.DIM, '·  [kit:*] routing visible')}")
+        p(f"  {col(C.Y, 'debug')}  {col(C.DIM, '·  [claude-kit:*] routing visible')}")
+        p()
+
+    # Telemetry indicator
+    tel = _get_telemetry()
+    if tel.active:
+        p(f"  {col(C.Y, 'telemetry')}  {col(C.DIM, f'·  level={tel.level}  ·  session={tel.session_id[:8]}')}")
         p()
 
     p(f"  {col(C.DIM, '─' * 40)}")
@@ -403,6 +582,23 @@ def cmd_run(args: list) -> None:
         print("Install it first: https://claude.ai/code")
         sys.exit(1)
 
+    # ── Telemetry: emit plugin.loaded and session.start ──────────────
+    tel = _get_telemetry()
+    cli_ver = _current_version()
+    for pname in all_plugins:
+        pdir = find_plugin_dir(pname)
+        ctl = _read_ctl(pdir) if pdir else {}
+        tel.emit("plugin.loaded", {
+            "plugin": pname,
+            "role": ctl.get("role", "unknown"),
+            "domain": ctl.get("domain", "unknown"),
+        })
+    tel.emit_session_start(all_plugins, cli_version=cli_ver)
+
+    # Export session ID so downstream processes (test harness) can
+    # locate the JSONL file for this session.
+    os.environ["CLAUDE_KIT_SESSION_ID"] = tel.session_id
+
     # Determine which plugins need decryption (encrypted at rest).
     # In dev mode, plugins are plaintext — no decryption needed.
     needs_decrypt = False
@@ -449,10 +645,14 @@ def cmd_run(args: list) -> None:
 
         # Use subprocess.run so we can clean up the temp dir afterward.
         result = subprocess.run(claude_args)
+        tel.emit_session_end()
+        tel.close()
         _cleanup_temp()
         sys.exit(result.returncode)
     else:
         # Dev mode or no encrypted plugins — launch directly (faster).
+        # execvp replaces the process, so emit session.end before launch
+        # and register atexit as a safety net.
         claude_args = ["claude"]
         for pname in all_plugins:
             pdir = find_plugin_dir(pname)
@@ -469,6 +669,14 @@ def cmd_run(args: list) -> None:
             p(f"  {col(C.Y, 'Warning:')} running with --dangerously-skip-permissions")
             p()
 
+        # In dev mode we use execvp which replaces this process.
+        # Emit session.end and close before exec — the JSONL will have
+        # start + loaded events but no session.end with live counters
+        # since execvp replaces us. This is acceptable: session.end from
+        # the CLI only captures the launch phase. Full session telemetry
+        # (skills, hooks, autorouter) comes from the AI agent rules.
+        tel.emit_session_end()
+        tel.close()
         os.execvp("claude", claude_args)
 
 # ── cmd_list ──────────────────────────────────────────────────────────────────
@@ -1745,6 +1953,79 @@ def cmd_help() -> None:
     {CY}claude-kit uninstall{C.N}          remove claude-kit and the CLI symlink
 """)
 
+# ── cmd_telemetry_test ───────────────────────────────────────────────────────
+
+def cmd_telemetry_test() -> None:
+    """Hidden smoke test for the telemetry emitter.
+
+    Forces telemetry to 'local' mode, emits 3 events, reads back and
+    validates the JSONL file, then cleans up.
+    """
+    os.environ["CLAUDE_KIT_TELEMETRY"] = "local"
+    tel = _init_telemetry()
+
+    p()
+    p(f"  {col(C.W, 'claude-kit telemetry-test')}")
+    p(f"  {col(C.DIM, '─' * 40)}")
+    p()
+
+    # Emit test events
+    tel.emit_session_start(["test-plugin-a", "test-plugin-b"], cli_version=_current_version())
+    tel.emit("skill.invoked", {"skill": "test-plugin-a:example-skill", "trigger": "explicit"})
+    tel.emit_session_end()
+    tel.close()
+
+    # Read back and validate
+    jsonl_path = tel._jsonl_path
+    if jsonl_path is None or not jsonl_path.exists():
+        p(f"  {col(C.R, '✗')} JSONL file not created")
+        p()
+        sys.exit(1)
+
+    lines = jsonl_path.read_text().strip().splitlines()
+    if len(lines) != 3:
+        p(f"  {col(C.R, '✗')} Expected 3 events, got {len(lines)}")
+        p()
+        jsonl_path.unlink(missing_ok=True)
+        sys.exit(1)
+
+    errors = []
+    required_keys = {"schema_version", "event_type", "timestamp", "session_id", "payload"}
+    expected_types = ["session.start", "skill.invoked", "session.end"]
+
+    for i, line in enumerate(lines):
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError as e:
+            errors.append(f"  Line {i+1}: invalid JSON — {e}")
+            continue
+
+        missing = required_keys - set(event.keys())
+        if missing:
+            errors.append(f"  Line {i+1}: missing keys: {missing}")
+
+        if event.get("event_type") != expected_types[i]:
+            errors.append(f"  Line {i+1}: expected type '{expected_types[i]}', got '{event.get('event_type')}'")
+
+        if event.get("session_id") != tel.session_id:
+            errors.append(f"  Line {i+1}: session_id mismatch")
+
+    # Clean up test file
+    jsonl_path.unlink(missing_ok=True)
+
+    if errors:
+        p(f"  {col(C.R, '✗')} Validation failed:")
+        for err in errors:
+            p(f"    {err}")
+        p()
+        sys.exit(1)
+
+    p(f"  {col(C.G, '✓')} 3 events emitted and validated")
+    p(f"  {col(C.DIM, f'  session_id: {tel.session_id}')}")
+    p(f"  {col(C.DIM, f'  event types: {", ".join(expected_types)}')}")
+    p(f"  {col(C.DIM, f'  all events have: schema_version, event_type, timestamp, session_id, payload')}")
+    p()
+
 # ── dispatch ──────────────────────────────────────────────────────────────────
 
 def _maybe_show_setup_banner() -> None:
@@ -1780,7 +2061,8 @@ def main() -> None:
 
     # Extract -v/--verbose for subcommands (not for launch mode via cmd_run)
     subcommands = {"list", "update", "version", "setup", "restore", "debug",
-                   "validate", "uninstall", "feedback", "roadmap"}
+                   "validate", "uninstall", "feedback", "roadmap",
+                   "telemetry-test"}
     if cmd in subcommands:
         if "-v" in rest or "--verbose" in rest:
             VERBOSE = True
@@ -1797,16 +2079,17 @@ def main() -> None:
         _maybe_show_setup_banner()
 
     dispatch = {
-        "list":      lambda: cmd_list(),
-        "update":    lambda: cmd_update(),
-        "version":   lambda: cmd_version(),
-        "setup":     lambda: cmd_setup(rest),
-        "restore":   lambda: cmd_restore(rest),
-        "debug":     lambda: cmd_debug(rest),
-        "validate":  lambda: cmd_validate(rest),
-        "uninstall": lambda: cmd_uninstall(),
-        "feedback":  lambda: cmd_feedback(),
-        "roadmap":   lambda: cmd_roadmap(),
+        "list":            lambda: cmd_list(),
+        "update":          lambda: cmd_update(),
+        "version":         lambda: cmd_version(),
+        "setup":           lambda: cmd_setup(rest),
+        "restore":         lambda: cmd_restore(rest),
+        "debug":           lambda: cmd_debug(rest),
+        "validate":        lambda: cmd_validate(rest),
+        "uninstall":       lambda: cmd_uninstall(),
+        "feedback":        lambda: cmd_feedback(),
+        "roadmap":         lambda: cmd_roadmap(),
+        "telemetry-test":  lambda: cmd_telemetry_test(),
     }
 
     if cmd in dispatch:
