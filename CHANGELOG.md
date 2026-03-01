@@ -4,6 +4,29 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-03-01
+
+### Changed
+- **Remove PAL submodule** — Process Asset Library removed from repo; process
+  governance lives in its own repository (`MateoSegura/process-asset-library`)
+- **Requirements moved to GitHub Issues** — REQ-001 through REQ-010 migrated
+  to Issues #101–#110 with `requirement` label; `docs/requirements/` deleted
+- **Strip PAL metadata from all docs** — removed Governing Process lines and
+  Traces sections from 54 files; content preserved, ceremony removed
+- **Simplify docs validation** — `validate-docs.sh` trimmed to match actual
+  directory structure (ADR, SPEC, QA only)
+
+### Removed
+- 10 PAL commands, 3 PAL rules, 1 PAL skill, 7 PAL hooks, PAL manifest
+- PAL validation steps from all CI workflows
+- Dead `docs.yml` workflow (referenced old `qms/` paths)
+- Empty scaffolded directories: `docs/testing/`, `docs/benchmarks/`,
+  `docs/operations/`, `docs/compliance/`
+
+### Added
+- `docs/research/pal-platform-theory.md` — vision document for PAL as a
+  platform service (future reference)
+
 ## [0.10.3] - 2026-02-27
 
 ### Fixed
