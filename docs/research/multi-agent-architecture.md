@@ -5,7 +5,6 @@
 > architecture of claude-kit.
 
 **Date:** 2026-02-28
-**Governing Process:** PROC-LC-001 (Market Analysis)
 
 ---
 
@@ -1103,12 +1102,6 @@ structured trace for debugger consumption). These are solvable within the
 existing plugin architecture without fundamental redesign.
 
 ---
-
-## Traces
-
-- **Upstream:** Market signals, competitive analysis, user research
-- **Downstream:** REQ-003 (Role Specialization)
-- **Quality Attributes:** None identified
 
 ---
 

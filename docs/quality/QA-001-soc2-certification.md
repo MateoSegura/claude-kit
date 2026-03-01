@@ -3,7 +3,6 @@
 **Status:** draft
 **Priority:** must
 **Category:** compliance
-**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -96,10 +95,3 @@ Proves controls are *operating effectively* over a 6–12 month observation peri
 | CPA firm (Schellman, Coalfire, A-LIGN) | Audit execution | $10K–$100K per audit |
 | Vulnerability scanner (Nessus, Qualys) | Continuous vuln management | $3K–$10K/year |
 | SIEM (Datadog, Panther, Wiz) | Log aggregation and alerting | Varies |
-
-## Traces
-
-- **Upstream:** REQ-005 (Transparent Execution — audit trail requirements),
-  REQ-009 (Cloud Platform — infrastructure that must be certified)
-- **Downstream:** Future SPEC for cloud platform security architecture
-- **Standards:** None identified

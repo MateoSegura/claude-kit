@@ -3,7 +3,6 @@
 **Status:** draft
 **Priority:** must
 **Category:** deployment
-**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -158,14 +157,3 @@ across all phases.**
 | Tenant isolation architecture | Database, AI context, and logging isolation design |
 | Key management integration guide | PKCS#11/KMIP setup for on-prem customers |
 | Air-gap test results | CI evidence of zero external dependencies |
-
-## Traces
-
-- **Upstream:** REQ-006 (Autonomous Operation — deployment model determines
-  autonomy mode), REQ-008 (Secure Distribution — encryption must work in both
-  models), REQ-009 (Cloud Platform — SaaS deployment), QA-003 (Defense
-  Contractor Compliance — on-prem required for CUI), QA-004 (Export Control —
-  on-prem required for ITAR)
-- **Downstream:** ADR-007 (IP Protection Model — key management architecture),
-  future SPEC for dual deployment implementation
-- **Standards:** NIST SP 800-53 (SC-7), FIPS 140-2/140-3, NIST SP 800-88

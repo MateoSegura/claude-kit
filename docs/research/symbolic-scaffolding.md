@@ -7,7 +7,6 @@
 > architectural implications.
 
 **Date:** 2026-02-28
-**Governing Process:** PROC-LC-001 (Market Analysis)
 
 ---
 
@@ -1026,12 +1025,6 @@ grader agent executes, using the grader's existing read-only tool access and
 evaluation rubric infrastructure.
 
 ---
-
-## Traces
-
-- **Upstream:** Market signals, competitive analysis, user research
-- **Downstream:** REQ-002 (Scope-Aware Planning), REQ-004 (Runtime Enforcement)
-- **Quality Attributes:** None identified
 
 ---
 

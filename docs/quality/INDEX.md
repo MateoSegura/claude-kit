@@ -1,7 +1,5 @@
 # quality/ — Quality Attributes and Architectural Constraints
 
-**Governing Process:** PROC-SP-002 (Quality Assurance)
-
 Quality attribute documents (QA-XXX) describe HOW the product must behave to be
 sellable in its target markets. Unlike requirements (REQ-XXX) which define what
 the product delivers, constraints define the external rules, certifications, and
@@ -44,11 +42,6 @@ Ordered steps to satisfy the constraint, with cost and timeline estimates.
 ## Artifacts Required
 
 Documents, certifications, and evidence the organization must produce.
-
-## Traces
-
-- From: REQ-XXX, research papers, or external standards
-- To: ADR-XXX, SPEC-XXX, or future implementation work
 ```
 
 ## Document Inventory

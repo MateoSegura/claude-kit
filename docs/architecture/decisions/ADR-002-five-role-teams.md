@@ -2,7 +2,6 @@
 
 **Status:** accepted
 **Date:** 2026-02-28
-**Governing Process:** PROC-LC-003 (Architecture Design)
 
 ## Context
 
@@ -81,9 +80,3 @@ has no agents, no commands, and no independent behavior.
 ## Alternatives Considered
 
 See Context section above for the alternatives evaluated during this decision.
-
-## Traces
-
-- **Upstream:** REQ-003 (Role Specialization)
-- **Downstream:** (future SPEC documents implementing team plugin structure)
-- **Quality Attributes:** modularity, predictability, separation of concerns

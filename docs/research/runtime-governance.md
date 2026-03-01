@@ -6,7 +6,6 @@
 > implications for claude-kit's hook architecture.
 
 **Date:** 2026-02-28
-**Governing Process:** PROC-LC-001 (Market Analysis)
 
 ---
 
@@ -1221,12 +1220,6 @@ These require no architectural changes to the hook system — only additional
 hook scripts and skill content.
 
 ---
-
-## Traces
-
-- **Upstream:** Market signals, competitive analysis, user research
-- **Downstream:** REQ-004 (Runtime Enforcement)
-- **Quality Attributes:** None identified
 
 ---
 

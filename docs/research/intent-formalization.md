@@ -5,7 +5,6 @@
 > intent routing in AI plugin systems like claude-kit.
 
 **Date:** 2026-02-28
-**Governing Process:** PROC-LC-001 (Market Analysis)
 
 ---
 
@@ -1361,12 +1360,6 @@ routing layer, closing the remaining gap between what users say and what
 agents reliably do.
 
 ---
-
-## Traces
-
-- **Upstream:** Market signals, competitive analysis, user research
-- **Downstream:** Informs requirements derivation
-- **Quality Attributes:** None identified
 
 ---
 

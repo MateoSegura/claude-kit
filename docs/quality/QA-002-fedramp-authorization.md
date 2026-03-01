@@ -3,7 +3,6 @@
 **Status:** draft
 **Priority:** should
 **Category:** compliance
-**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -129,11 +128,3 @@ System and Information Integrity (SI), Supply Chain Risk Management (SR).
 
 **Supply Chain Risk Management (SR)** is a Rev 5 addition directly relevant to
 claude-kit as an AI tool in the customer's software supply chain.
-
-## Traces
-
-- **Upstream:** REQ-009 (Cloud Platform — the SaaS offering that requires
-  authorization), QA-001 (SOC 2 — prerequisite baseline)
-- **Downstream:** QA-005 (DoD Impact Levels — built on top of FedRAMP), future SPEC
-  for cloud platform infrastructure
-- **Standards:** NIST SP 800-53 Rev 5, FIPS 140-2/140-3

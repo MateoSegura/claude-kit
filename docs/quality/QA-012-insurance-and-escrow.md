@@ -3,7 +3,6 @@
 **Status:** draft
 **Priority:** should
 **Category:** insurance
-**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -135,12 +134,3 @@ approach depends on the customer segment:
 | Escrow agreement template | Customer legal teams | Maintained continuously |
 | Escrow deposit receipt | Customer legal teams | Per deposit |
 | Escrow verification report | Customer legal teams | Annual |
-
-## Traces
-
-- **Upstream:** ADR-007 (IP Protection Model — escrow is part of IP protection
-  strategy), REQ-008 (Secure Distribution — escrow deposits include encrypted
-  plugin content and build tooling)
-- **Downstream:** QA-001 (SOC 2 — insurance providers want to see SOC 2 controls),
-  QA-009 (Vendor Risk — insurance certificates are vendor assessment artifacts)
-- **Standards:** None identified

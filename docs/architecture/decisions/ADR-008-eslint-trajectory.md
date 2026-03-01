@@ -2,7 +2,6 @@
 
 **Status:** accepted
 **Date:** 2026-02-28
-**Governing Process:** PROC-LC-003 (Architecture Design)
 
 ## Context
 
@@ -95,10 +94,3 @@ becomes the moat.
 ## Alternatives Considered
 
 See Context section above for the alternatives evaluated during this decision.
-
-## Traces
-
-- **Upstream:** REQ-009 (Cloud Platform), REQ-010 (Plugin Ecosystem)
-- **Downstream:** (future SPEC documents implementing registry, governance, and
-  community contribution infrastructure)
-- **Quality Attributes:** extensibility, ecosystem growth, competitive defensibility

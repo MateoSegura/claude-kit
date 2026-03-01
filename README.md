@@ -454,43 +454,6 @@ plugins/<name>/
 
 ---
 
-## Process Asset Library (PAL)
-
-claude-kit includes a **Process Asset Library** as a git submodule at `pal/` ([MateoSegura/process-asset-library](https://github.com/MateoSegura/process-asset-library)). PAL provides 37 process documents, 13 templates, 7 workflow guides, and 5 standards mappings — a complete product documentation framework for engineering teams building governed software.
-
-### What PAL Provides
-
-| Component | Count |
-|-----------|-------|
-| Process documents | 37 (lifecycle, support, organizational, security, government overlay) |
-| Artifact templates | 13 (REQ, ADR, SPEC, TEST, REG, INC, RB, MIG, BM, QA, component, research, process) |
-| Workflow guides | 7 (idea to release + traceability + incident response) |
-| Standards mappings | 5 (ISO 12207, CMMI-DEV, NIST 800-218, NIST 800-171, NIST AI RMF) |
-| RBAC roles | 5 (admin, principal-engineer, eng-manager, engineer, executive) |
-
-### Installing PAL into a Project
-
-```bash
-# Install AI instrumentation (rules, hooks, commands) into a target project
-bash pal/install.sh --target /path/to/project --scaffold
-
-# Include government overlay processes
-bash pal/install.sh --target /path/to/project --scaffold --gov
-```
-
-### PAL Validation
-
-PAL validation runs as part of CI (`fast-validate`). To run locally:
-
-```bash
-bash pal/scripts/validate-processes.sh    # 37 processes, 8 structural checks
-bash pal/docs-site/validate-site.sh       # nav, orphans, cross-refs, metadata
-```
-
-See [pal/README.md](pal/README.md) for full documentation.
-
----
-
 ## For Plugin Developers
 
 ```bash

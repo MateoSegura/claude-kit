@@ -3,7 +3,6 @@
 **Status:** draft
 **Priority:** must
 **Category:** compliance
-**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -112,14 +111,3 @@ claude-kit must support (not break) each of these control families:
 | SSP contribution document | Customer's SSP authors | Pre-written sections customers paste into their SSP |
 | Deployment guide for CUI environments | Customer IT/DevSecOps | Step-by-step secure deployment instructions |
 | POA&M support documentation | Customer compliance teams | Helps customers track and remediate gaps |
-
-## Traces
-
-- **Upstream:** REQ-004 (Runtime Enforcement — enforcement mechanisms map to access
-  control and audit requirements), REQ-005 (Transparent Execution — session
-  logging maps to audit and accountability), REQ-008 (Secure Distribution —
-  encryption maps to system and communications protection)
-- **Downstream:** QA-004 (Export Control — many CMMC-bound programs are also
-  ITAR-controlled), QA-008 (Dual Deployment — on-prem is the primary path for
-  CUI environments), ADR-003 (Dual Enforcement)
-- **Standards:** CMMC 2.0, NIST SP 800-171

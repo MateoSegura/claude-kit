@@ -39,7 +39,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          submodules: true
 
       - name: Refresh tag cache
         run: git fetch --tags --force
@@ -58,22 +57,6 @@ jobs:
 
       - name: Docs structure validation
         run: bash scripts/validate-docs.sh
-
-      - name: PAL process validation
-        run: |
-          if [ -f pal/scripts/validate-processes.sh ]; then
-            bash pal/scripts/validate-processes.sh
-          else
-            echo "PAL submodule not initialized — skipping"
-          fi
-
-      - name: PAL site validation
-        run: |
-          if [ -f pal/docs-site/validate-site.sh ]; then
-            bash pal/docs-site/validate-site.sh
-          else
-            echo "PAL submodule not initialized — skipping"
-          fi
 
       - name: Tier 1 — changed plugins
         run: python3 scripts/validate-plugins.py --changed --json

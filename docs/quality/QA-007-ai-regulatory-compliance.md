@@ -3,7 +3,6 @@
 **Status:** draft
 **Priority:** must
 **Category:** ai-regulation
-**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -143,13 +142,3 @@ provenance system.**
 | Model provenance documentation | Auditors, customers | Per model version change |
 | Provenance log schema documentation | Customer IT integration teams | Per major version |
 | EU AI Act risk classification analysis | European customers | Annual update |
-
-## Traces
-
-- **Upstream:** REQ-003 (Role Specialization — grader role maps to AI RMF validity),
-  REQ-004 (Runtime Enforcement — maps to AI RMF safety and security),
-  REQ-005 (Transparent Execution — maps to AI RMF explainability and
-  accountability), ADR-005 (Glass-Box Transparency)
-- **Downstream:** QA-003 (Defense Contractor Compliance — NDAA framework integrates with
-  CMMC), QA-009 (Vendor Risk — transparency docs feed into vendor assessments)
-- **Standards:** NIST AI RMF 1.0, NIST AI 600-1, EU AI Act

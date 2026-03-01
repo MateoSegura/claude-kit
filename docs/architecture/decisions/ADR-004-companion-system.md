@@ -2,7 +2,6 @@
 
 **Status:** accepted
 **Date:** 2026-02-28
-**Governing Process:** PROC-LC-003 (Architecture Design)
 
 ## Context
 
@@ -86,10 +85,3 @@ declaration system:
 ## Alternatives Considered
 
 See Context section above for the alternatives evaluated during this decision.
-
-## Traces
-
-- **Upstream:** REQ-001 (Domain Knowledge Injection), REQ-003 (Role Specialization
-  — shared knowledge substrate requirement)
-- **Downstream:** (future SPEC documents implementing companion resolution and loading)
-- **Quality Attributes:** consistency, composability, auditability

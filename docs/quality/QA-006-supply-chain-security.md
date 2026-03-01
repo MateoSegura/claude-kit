@@ -3,7 +3,6 @@
 **Status:** draft
 **Priority:** must
 **Category:** compliance
-**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -121,13 +120,3 @@ NIST Secure Software Development Framework (SSDF, SP 800-218):
 | Sigstore / cosign | Build signing and provenance | Free/open source |
 | SLSA framework | Supply chain integrity levels | Standard/free |
 | Semgrep | SAST for secure coding practices | Free tier available |
-
-## Traces
-
-- **Upstream:** REQ-008 (Secure Distribution — encryption and distribution
-  mechanisms are part of the supply chain), REQ-005 (Transparent Execution —
-  session logging supports Zero Trust audit requirements)
-- **Downstream:** QA-003 (Defense Contractor Compliance — CMMC requires supply chain
-  documentation), QA-008 (Dual Deployment — air-gapped distribution requires
-  offline integrity verification)
-- **Standards:** NIST SP 800-218 (SSDF), NIST SP 800-207 (Zero Trust)

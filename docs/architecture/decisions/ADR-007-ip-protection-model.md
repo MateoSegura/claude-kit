@@ -2,7 +2,6 @@
 
 **Status:** accepted
 **Date:** 2026-02-28
-**Governing Process:** PROC-LC-003 (Architecture Design)
 
 ## Context
 
@@ -106,10 +105,3 @@ The defensible value is not in any single plugin file. It is in:
 ## Alternatives Considered
 
 See Context section above for the alternatives evaluated during this decision.
-
-## Traces
-
-- **Upstream:** REQ-008 (Secure Distribution)
-- **Downstream:** (future SPEC documents implementing encryption, key management, and
-  distribution pipelines)
-- **Quality Attributes:** security, transparency, strategic defensibility

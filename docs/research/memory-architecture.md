@@ -8,7 +8,6 @@
 > forgetting.
 
 **Date:** 2026-02-28
-**Governing Process:** PROC-LC-001 (Market Analysis)
 
 ---
 
@@ -1268,12 +1267,6 @@ that point, context dilution from loading all skills likely outweighs the
 retrieval noise from RAG-based skill selection.
 
 ---
-
-## Traces
-
-- **Upstream:** Market signals, competitive analysis, user research
-- **Downstream:** REQ-001 (Domain Knowledge Injection)
-- **Quality Attributes:** None identified
 
 ---
 

@@ -2,7 +2,6 @@
 
 **Status:** accepted
 **Date:** 2026-02-28
-**Governing Process:** PROC-LC-003 (Architecture Design)
 
 ## Context
 
@@ -88,11 +87,3 @@ architectural properties:
 ## Alternatives Considered
 
 See Context section above for the alternatives evaluated during this decision.
-
-## Traces
-
-- **Upstream:** REQ-003 (Role Specialization — independent evaluation role),
-  REQ-007 (Measurable Impact — grader as scoring mechanism)
-- **Downstream:** (future SPEC documents implementing grader agents, rubrics, and
-  auto-spawn hooks)
-- **Quality Attributes:** verifiability, reproducibility, independence

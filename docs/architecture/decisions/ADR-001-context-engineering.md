@@ -2,7 +2,6 @@
 
 **Status:** accepted
 **Date:** 2026-02-28
-**Governing Process:** PROC-LC-003 (Architecture Design)
 
 ## Context
 
@@ -84,9 +83,3 @@ This means:
 ## Alternatives Considered
 
 See Context section above for the alternatives evaluated during this decision.
-
-## Traces
-
-- **Upstream:** REQ-001 (Domain Knowledge Injection)
-- **Downstream:** (future SPEC documents implementing the skill system)
-- **Quality Attributes:** modifiability, transparency, composability

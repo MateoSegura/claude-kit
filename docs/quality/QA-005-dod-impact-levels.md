@@ -3,7 +3,6 @@
 **Status:** draft
 **Priority:** could
 **Category:** compliance
-**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -90,10 +89,3 @@ All FedRAMP artifacts (see QA-002) plus:
 | Interconnection Security Agreement (ISA) | For NIPRNet connectivity |
 | U.S. person/citizen verification records | Proves access restrictions |
 | Dedicated infrastructure documentation | Architecture diagrams for isolated deployment |
-
-## Traces
-
-- **Upstream:** QA-002 (FedRAMP — prerequisite authorization), REQ-009 (Cloud
-  Platform — the SaaS offering)
-- **Downstream:** Future SPEC for DoD-dedicated infrastructure deployment
-- **Standards:** DoD CC SRG, NIST SP 800-53 Rev 5

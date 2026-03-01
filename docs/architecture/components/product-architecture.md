@@ -2,7 +2,6 @@
 
 **Status:** active
 **Date:** 2026-02-28
-**Governing Process:** PROC-LC-003 (Architecture Design)
 
 ## Overview
 
@@ -146,9 +145,3 @@ and incrementally valuable.
   All functionality is implemented with Python stdlib.
 - **Composable loading:** Any combination of plugins can be loaded in a single
   session. No plugin assumes exclusive control of the session.
-
-## Traces
-
-- **Upstream:** REQ-001 through REQ-010 (product requirements)
-- **Downstream:** ADR-001 through ADR-008 (architecture decisions)
-- **Quality Attributes:** modularity, transparency, composability, offline-first

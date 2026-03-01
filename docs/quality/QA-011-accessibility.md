@@ -3,7 +3,6 @@
 **Status:** draft
 **Priority:** should
 **Category:** compliance
-**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -103,11 +102,3 @@ A VPAT (Voluntary Product Accessibility Template) must document:
 | VPAT (Voluntary Product Accessibility Template) | Federal procurement officers | Per major version |
 | Accessibility conformance report | Auditors | Per major version |
 | Accessibility testing results | Internal QA | Per release |
-
-## Traces
-
-- **Upstream:** REQ-005 (Transparent Execution — debug output must be accessible),
-  REQ-009 (Cloud Platform — web components must be 508-compliant)
-- **Downstream:** QA-002 (FedRAMP — 508 compliance is a FedRAMP prerequisite for
-  federal procurement)
-- **Standards:** Section 508 (Rehabilitation Act), WCAG 2.0 Level AA

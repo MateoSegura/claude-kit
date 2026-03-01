@@ -4,7 +4,6 @@
 > narrows LLM output distributions toward domain-specific, reliable responses.
 
 **Date:** 2026-02-28
-**Governing Process:** PROC-LC-001 (Market Analysis)
 
 ---
 
@@ -435,12 +434,6 @@ your domain into a domain specialist who definitely does — and proves it at
 every step.
 
 ---
-
-## Traces
-
-- **Upstream:** Market signals, competitive analysis, user research
-- **Downstream:** REQ-001 (Domain Knowledge Injection), REQ-003 (Role Specialization), REQ-007 (Measurable Impact)
-- **Quality Attributes:** None identified
 
 ---
 

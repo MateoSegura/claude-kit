@@ -6,7 +6,6 @@
 > needs into machine-readable context.
 
 **Date:** 2026-02-28
-**Governing Process:** PROC-LC-001 (Market Analysis)
 
 ---
 
@@ -752,12 +751,6 @@ Add to the intent map:
     instrumentation output.
 
 ---
-
-## Traces
-
-- **Upstream:** Market signals, competitive analysis, user research
-- **Downstream:** Informs requirements derivation
-- **Quality Attributes:** None identified
 
 ---
 

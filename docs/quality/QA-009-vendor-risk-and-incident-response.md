@@ -3,7 +3,6 @@
 **Status:** draft
 **Priority:** should
 **Category:** business
-**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -141,14 +140,3 @@ For defense contractor customers:
 | PagerDuty / Opsgenie | Incident management | $1K–$10K/year |
 | SIEM (Datadog, Panther, Wiz) | Detection and monitoring | Varies |
 | Eraser (NIST 800-88 tool) | Secure data deletion | Free/included in OS |
-
-## Traces
-
-- **Upstream:** REQ-005 (Transparent Execution — session logs are the foundation
-  for incident detection and evidence preservation), REQ-004 (Runtime
-  Enforcement — enforcement mechanisms support incident prevention)
-- **Downstream:** QA-001 (SOC 2 — IR plan is a SOC 2 requirement), QA-003 (Defense
-  Contractor Compliance — DFARS reporting applies to defense customers),
-  QA-007 (AI Regulatory — transparency documentation feeds into vendor
-  assessments)
-- **Standards:** DFARS 252.204-7012, NIST SP 800-88

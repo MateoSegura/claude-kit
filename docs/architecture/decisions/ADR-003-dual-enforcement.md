@@ -2,7 +2,6 @@
 
 **Status:** accepted
 **Date:** 2026-02-28
-**Governing Process:** PROC-LC-003 (Architecture Design)
 
 ## Context
 
@@ -87,9 +86,3 @@ The layers are complementary:
 ## Alternatives Considered
 
 See Context section above for the alternatives evaluated during this decision.
-
-## Traces
-
-- **Upstream:** REQ-004 (Runtime Enforcement)
-- **Downstream:** (future SPEC documents implementing hook and skill enforcement)
-- **Quality Attributes:** safety, reliability, auditability

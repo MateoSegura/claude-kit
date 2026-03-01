@@ -3,7 +3,6 @@
 **Status:** draft
 **Priority:** must
 **Category:** compliance
-**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -104,13 +103,3 @@ classification has simplified export procedures.
 | Employee citizenship verification procedure | Internal | Ensures only U.S. persons access ITAR data |
 | ITAR-safe deployment guide | Customer IT | Step-by-step for deploying in ITAR environments |
 | Denied party screening records | Internal compliance | Evidence of screening for international sales |
-
-## Traces
-
-- **Upstream:** REQ-006 (Autonomous Operation — ITAR environments demand controlled
-  mode with mandatory human review), REQ-008 (Secure Distribution — encryption
-  must use ITAR-compliant methods), ADR-007 (IP Protection Model)
-- **Downstream:** QA-003 (Defense Contractor Compliance — many ITAR programs also
-  require CMMC), QA-008 (Dual Deployment Architecture — on-prem is mandatory
-  for ITAR)
-- **Standards:** ITAR, EAR

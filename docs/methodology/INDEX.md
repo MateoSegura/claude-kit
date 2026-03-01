@@ -1,7 +1,5 @@
 # methodology/ — Requirements Derivation and Research Methodology
 
-**Governing Process:** PROC-ORG-001 (Process Governance)
-
 This layer is **meta-documentation** — it describes HOW the other documentation
 layers were created, what evidence supports them, and where the gaps are. It
 exists so that a reader encountering claude-kit's requirements and architecture

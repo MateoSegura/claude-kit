@@ -3,7 +3,6 @@
 **Status:** draft
 **Priority:** should
 **Category:** business
-**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -106,14 +105,3 @@ effort.**
 | Standard contractual language (no-training clause, data usage) | Customer contracts | Per contract template version |
 | Product framing guidelines | Marketing, documentation, sales | Maintained continuously |
 | Code provenance audit report template | Customer compliance teams | Per major version |
-
-## Traces
-
-- **Upstream:** REQ-005 (Transparent Execution — session logging captures human
-  approval status), REQ-006 (Autonomous Operation — controlled mode ensures
-  human review), ADR-007 (IP Protection Model — honest assessment of what's
-  protectable)
-- **Downstream:** QA-007 (AI Regulatory Compliance — OMB procurement rules reference
-  IP ownership), QA-009 (Vendor Risk — IP questions appear in vendor
-  assessments)
-- **Standards:** None identified

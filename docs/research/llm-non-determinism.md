@@ -5,7 +5,6 @@
 > specific implications for claude-kit as a context engineering framework.
 
 **Date:** 2026-02-28
-**Governing Process:** PROC-LC-001 (Market Analysis)
 
 ---
 
@@ -904,12 +903,6 @@ The complete non-determinism control stack for claude-kit, ordered from most to 
 **The ceiling**: Even with all recommendations implemented, some irreducible non-determinism remains — the hardware and infrastructure sources described in sections 2.2 through 2.6 are outside user control when using API-based inference. The goal is not zero variance but **managed variance** — variance that is concentrated in low-stakes decisions and minimized for high-stakes ones. Claude-kit's layered control stack achieves exactly this, addressing non-determinism at every layer the user can control.
 
 ---
-
-## Traces
-
-- **Upstream:** Market signals, competitive analysis, user research
-- **Downstream:** Informs requirements derivation
-- **Quality Attributes:** None identified
 
 ---
 

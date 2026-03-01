@@ -1,7 +1,6 @@
 # Evidence Quality Assessment
 
 **Date:** 2026-02-28
-**Governing Process:** PROC-ORG-001 (Process Governance)
 
 > Grading the evidence behind claude-kit's requirements — what is peer-reviewed,
 > what is industry-quantified, and what is anecdotal.

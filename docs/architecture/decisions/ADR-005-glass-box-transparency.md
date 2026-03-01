@@ -2,7 +2,6 @@
 
 **Status:** accepted
 **Date:** 2026-02-28
-**Governing Process:** PROC-LC-003 (Architecture Design)
 
 ## Context
 
@@ -86,10 +85,3 @@ The two layers serve different audiences:
 ## Alternatives Considered
 
 See Context section above for the alternatives evaluated during this decision.
-
-## Traces
-
-- **Upstream:** REQ-005 (Transparent Execution), REQ-006 (Autonomous Operation
-  — transparency as prerequisite for autonomous trust)
-- **Downstream:** (future SPEC documents implementing session logging and debug mode)
-- **Quality Attributes:** observability, trustworthiness, debuggability

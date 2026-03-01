@@ -5,7 +5,6 @@
 > drifts into spaghetti over multi-session development.
 
 **Date:** 2026-02-28
-**Governing Process:** PROC-LC-001 (Market Analysis)
 
 ---
 
@@ -1104,12 +1103,6 @@ additions to claude-kit in priority order:
 | 6 | Knowledge plugin hostile-pattern skills | §9.6 | Domain-specific pattern guidance for each team |
 
 ---
-
-## Traces
-
-- **Upstream:** Market signals, competitive analysis, user research
-- **Downstream:** REQ-007 (Measurable Impact)
-- **Quality Attributes:** None identified
 
 ---
 
