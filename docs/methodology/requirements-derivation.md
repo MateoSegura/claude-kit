@@ -10,7 +10,7 @@
 ## 1. The Question This Document Answers
 
 A sophisticated reader encountering claude-kit's requirements layer
-(`docs/requirements/REQ-001` through `REQ-010`) will ask three questions:
+(GitHub Issues [#101–#110](https://github.com/MateoSegura/claude-kit/issues?q=label%3Arequirement) with the `requirement` label) will ask three questions:
 
 1. **Origin:** Where did these requirements come from? What process identified
    them?
@@ -298,5 +298,5 @@ production incidents):
 3. Determine whether it maps to an existing requirement or requires a new one
 4. Cross-check against MAST, AgentSpec, and ASDLC frameworks
 5. Update the traceability matrix in Section 5
-6. If a new requirement is created, add it to `docs/requirements/` following
-   the existing template and ID convention
+6. If a new requirement is created, file it as a GitHub Issue with the
+   `requirement` label following the existing ID convention (REQ-XXX)

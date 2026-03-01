@@ -29,5 +29,5 @@ For a guided tour of all papers and their relationships, see
 ## Relationship to Other Layers
 
 Research papers sit at the beginning of the traceability chain. When a research
-insight becomes actionable, it should be formalized as a requirement in
-`docs/requirements/` with a trace back to the originating paper.
+insight becomes actionable, it should be formalized as a GitHub Issue with the
+`requirement` label, with a reference back to the originating paper.
