@@ -1,8 +1,9 @@
 # REQ-002: Scope-Aware Planning
 
 **Status:** active
-**Priority:** must
+**Priority:** must-have
 **Created:** 2026-02-28
+**Governing Process:** PROC-LC-002 (Requirements Engineering)
 
 ## Context
 
@@ -50,7 +51,8 @@ The system shall provide:
 
 ## Traces
 
-- **From:** human-agent-orchestration.md (context switching costs, structured
+- **Upstream:** human-agent-orchestration.md (context switching costs, structured
   state persistence), symbolic-scaffolding.md (explicit constraints as Bayesian
   priors)
-- **To:** ADR-005 (glass-box transparency for plan observability)
+- **Downstream:** ADR-005 (glass-box transparency for plan observability)
+- **Quality Attributes:** None identified

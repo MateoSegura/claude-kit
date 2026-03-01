@@ -2,6 +2,7 @@
 
 **Status:** accepted
 **Date:** 2026-02-28
+**Governing Process:** PROC-LC-003 (Architecture Design)
 
 ## Context
 
@@ -64,7 +65,8 @@ becomes the moat.
 
 ## Consequences
 
-**Positive:**
+### Positive
+
 - Clear strategic roadmap — each phase builds on the previous and is
   independently valuable
 - The plugin architecture already supports composability via companions
@@ -73,7 +75,8 @@ becomes the moat.
 - The five-role team structure provides a consistent template for community
   plugin creation
 
-**Negative:**
+### Negative
+
 - Ecosystem building is slow — community adoption requires critical mass
   before network effects activate
 - Registry infrastructure requires significant investment (hosting, auth,
@@ -85,8 +88,17 @@ becomes the moat.
 - The strategy requires the product to be successful enough in Phase 1 to
   fund Phases 2-5
 
+### Neutral
+
+- No neutral consequences identified.
+
+## Alternatives Considered
+
+See Context section above for the alternatives evaluated during this decision.
+
 ## Traces
 
-- **From:** REQ-009 (Cloud Platform), REQ-010 (Plugin Ecosystem)
-- **To:** (future SPEC documents implementing registry, governance, and
+- **Upstream:** REQ-009 (Cloud Platform), REQ-010 (Plugin Ecosystem)
+- **Downstream:** (future SPEC documents implementing registry, governance, and
   community contribution infrastructure)
+- **Quality Attributes:** extensibility, ecosystem growth, competitive defensibility

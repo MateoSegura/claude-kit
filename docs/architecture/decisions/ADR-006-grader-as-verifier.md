@@ -2,6 +2,7 @@
 
 **Status:** accepted
 **Date:** 2026-02-28
+**Governing Process:** PROC-LC-003 (Architecture Design)
 
 ## Context
 
@@ -59,7 +60,8 @@ architectural properties:
 
 ## Consequences
 
-**Positive:**
+### Positive
+
 - Independent verification catches errors that self-evaluation misses
 - Rubric-driven evaluation is reproducible — the same code scores the same
   across grader runs (modulo LLM variance)
@@ -68,7 +70,8 @@ architectural properties:
   autonomous mode
 - The grader's evaluation is the primary signal for "is this tool helping?"
 
-**Negative:**
+### Negative
+
 - Grader quality is a bottleneck — a poorly designed rubric produces
   misleading scores that erode trust
 - Read-only restriction means the grader cannot fix trivial issues it finds,
@@ -78,9 +81,18 @@ architectural properties:
 - LLM variance affects the grader too — the same code may receive different
   scores across runs, requiring aggregation strategies
 
+### Neutral
+
+- No neutral consequences identified.
+
+## Alternatives Considered
+
+See Context section above for the alternatives evaluated during this decision.
+
 ## Traces
 
-- **From:** REQ-003 (Role Specialization — independent evaluation role),
+- **Upstream:** REQ-003 (Role Specialization — independent evaluation role),
   REQ-007 (Measurable Impact — grader as scoring mechanism)
-- **To:** (future SPEC documents implementing grader agents, rubrics, and
+- **Downstream:** (future SPEC documents implementing grader agents, rubrics, and
   auto-spawn hooks)
+- **Quality Attributes:** verifiability, reproducibility, independence

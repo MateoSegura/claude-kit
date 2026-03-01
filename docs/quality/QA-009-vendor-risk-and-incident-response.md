@@ -3,8 +3,7 @@
 **Status:** draft
 **Priority:** should
 **Category:** business
-
----
+**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -19,8 +18,6 @@ claude-kit is a link in the customer's supply chain. If the tool has a
 vulnerability, the customer is non-compliant. This creates both a legal
 obligation (incident reporting) and a business reality (vendor assessments
 gate every sale).
-
----
 
 ## Constraint
 
@@ -79,8 +76,6 @@ For defense contractor customers:
 4. **Customer self-service** — SaaS customers need data export and deletion
    capabilities; on-prem customers need decommissioning documentation
 
----
-
 ## Architectural Impact
 
 | Constraint | Impact |
@@ -92,8 +87,6 @@ For defense contractor customers:
 | Data retention configurability | Retention policies must be configurable per customer contract |
 | Secure deletion | NIST 800-88 compliant deletion for temporary files, session data, and decrypted plugin content |
 | SIEM integration | On-prem customers need integration points for their Security Operations Center |
-
----
 
 ## Phased Approach
 
@@ -127,8 +120,6 @@ For defense contractor customers:
 
 **Estimated total: 156–216 hours documentation + engineering effort.**
 
----
-
 ## Artifacts Required
 
 | Artifact | Audience | Frequency |
@@ -142,8 +133,6 @@ For defense contractor customers:
 | Decommissioning guide | On-prem customers | Per major version |
 | DFARS compliance documentation | Defense contractor customers | Annual update |
 
----
-
 ## Recommended Tools
 
 | Tool | Purpose | Cost Range |
@@ -153,14 +142,13 @@ For defense contractor customers:
 | SIEM (Datadog, Panther, Wiz) | Detection and monitoring | Varies |
 | Eraser (NIST 800-88 tool) | Secure data deletion | Free/included in OS |
 
----
-
 ## Traces
 
-- **From:** REQ-005 (Transparent Execution — session logs are the foundation
+- **Upstream:** REQ-005 (Transparent Execution — session logs are the foundation
   for incident detection and evidence preservation), REQ-004 (Runtime
   Enforcement — enforcement mechanisms support incident prevention)
-- **To:** QA-001 (SOC 2 — IR plan is a SOC 2 requirement), QA-003 (Defense
+- **Downstream:** QA-001 (SOC 2 — IR plan is a SOC 2 requirement), QA-003 (Defense
   Contractor Compliance — DFARS reporting applies to defense customers),
   QA-007 (AI Regulatory — transparency documentation feeds into vendor
   assessments)
+- **Standards:** DFARS 252.204-7012, NIST SP 800-88

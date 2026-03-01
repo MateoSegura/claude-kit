@@ -3,8 +3,7 @@
 **Status:** draft
 **Priority:** must
 **Category:** ai-regulation
-
----
+**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -26,8 +25,6 @@ remain:
 The EU AI Act is also relevant for customers who serve European defense partners
 (NATO allies), though it explicitly exempts AI used exclusively for military
 purposes.
-
----
 
 ## Constraint
 
@@ -96,8 +93,6 @@ The defense exemption applies to AI used exclusively for military purposes.
 Dual-use (tools used for both military and civilian development) may fall within
 scope, creating ambiguity for claude-kit customers who serve both markets.
 
----
-
 ## Architectural Impact
 
 | Regulation | Architectural Requirement |
@@ -107,8 +102,6 @@ scope, creating ambiguity for claude-kit customers who serve both markets.
 | NIST AI RMF | Map every trustworthiness characteristic to a claude-kit feature; fill gaps identified in the mapping |
 | NIST AI 600-1 | Implement structured provenance logging: session ID, user identity, model version, prompt hash (not CUI content), action taken, files modified, human approval status |
 | EU AI Act | Support customers in demonstrating compliance for dual-use scenarios; provide risk classification documentation |
-
----
 
 ## Phased Approach
 
@@ -140,8 +133,6 @@ scope, creating ambiguity for claude-kit customers who serve both markets.
 **Estimated total: 110–130 hours documentation + engineering effort for
 provenance system.**
 
----
-
 ## Artifacts Required
 
 | Artifact | Audience | Frequency |
@@ -153,13 +144,12 @@ provenance system.**
 | Provenance log schema documentation | Customer IT integration teams | Per major version |
 | EU AI Act risk classification analysis | European customers | Annual update |
 
----
-
 ## Traces
 
-- **From:** REQ-003 (Role Specialization — grader role maps to AI RMF validity),
+- **Upstream:** REQ-003 (Role Specialization — grader role maps to AI RMF validity),
   REQ-004 (Runtime Enforcement — maps to AI RMF safety and security),
   REQ-005 (Transparent Execution — maps to AI RMF explainability and
   accountability), ADR-005 (Glass-Box Transparency)
-- **To:** QA-003 (Defense Contractor Compliance — NDAA framework integrates with
+- **Downstream:** QA-003 (Defense Contractor Compliance — NDAA framework integrates with
   CMMC), QA-009 (Vendor Risk — transparency docs feed into vendor assessments)
+- **Standards:** NIST AI RMF 1.0, NIST AI 600-1, EU AI Act

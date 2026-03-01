@@ -3,8 +3,7 @@
 **Status:** draft
 **Priority:** must
 **Category:** compliance
-
----
+**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -22,8 +21,6 @@ customer's CUI boundary and must not break their CMMC posture.
 
 The on-prem deployment model is a significant advantage here: it keeps
 everything within the customer's existing CMMC boundary.
-
----
 
 ## Constraint
 
@@ -62,8 +59,6 @@ All 14 families apply when claude-kit handles CUI:
 13. **System and Communications Protection** (16 requirements)
 14. **System and Information Integrity** (7 requirements)
 
----
-
 ## Architectural Impact
 
 claude-kit must support (not break) each of these control families:
@@ -77,8 +72,6 @@ claude-kit must support (not break) each of these control families:
 | **Configuration Management** | Baseline configuration documentation, change tracking for plugin updates |
 | **Incident Response** | Anomaly detection in agent behavior, integration points for customer SIEM/SOC |
 | **Media Protection** | Secure deletion of temporary decrypted plugin content, CUI-aware cleanup |
-
----
 
 ## Phased Approach
 
@@ -110,8 +103,6 @@ claude-kit must support (not break) each of these control families:
 
 **Estimated total: $10K–$25K external + 260–340 hours internal.**
 
----
-
 ## Artifacts Required
 
 | Artifact | Audience | Purpose |
@@ -122,14 +113,13 @@ claude-kit must support (not break) each of these control families:
 | Deployment guide for CUI environments | Customer IT/DevSecOps | Step-by-step secure deployment instructions |
 | POA&M support documentation | Customer compliance teams | Helps customers track and remediate gaps |
 
----
-
 ## Traces
 
-- **From:** REQ-004 (Runtime Enforcement — enforcement mechanisms map to access
+- **Upstream:** REQ-004 (Runtime Enforcement — enforcement mechanisms map to access
   control and audit requirements), REQ-005 (Transparent Execution — session
   logging maps to audit and accountability), REQ-008 (Secure Distribution —
   encryption maps to system and communications protection)
-- **To:** QA-004 (Export Control — many CMMC-bound programs are also
+- **Downstream:** QA-004 (Export Control — many CMMC-bound programs are also
   ITAR-controlled), QA-008 (Dual Deployment — on-prem is the primary path for
   CUI environments), ADR-003 (Dual Enforcement)
+- **Standards:** CMMC 2.0, NIST SP 800-171

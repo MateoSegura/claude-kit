@@ -13,16 +13,16 @@ templates, and quality gates. See `pal/CATALOG.md` for the full process index.
 ## Traceability Chain
 
 ```
-research/ → requirements/ → architecture/ → specs/ → code → testing/ → benchmarks/
-                ↑    ↓                                          ↑
-        methodology/ quality/                            operations/ (cross-cutting)
-           (meta)   (quality attributes)
-                                                      compliance/ (gov overlay)
+research/ → requirements/ → architecture/ → specs/ → code
+                     ↓
+                   quality/
+              (quality attributes)
 ```
 
 Documents trace forward (research motivates requirements, requirements drive
-architecture decisions) and backward (test evidence validates specs, specs
-reference the requirements they fulfill).
+architecture decisions) and backward (specs reference the requirements they
+fulfill). Testing, benchmarks, and operations directories will be created as
+the project matures and those artifacts are needed.
 
 ## Layer Summary
 
@@ -32,12 +32,11 @@ reference the requirements they fulfill).
 | Requirements | `requirements/` | REQ-XXX | PROC-LC-002 | What the system must do and why |
 | Architecture | `architecture/` | ADR-XXX | PROC-LC-003 | Decisions and component documentation |
 | Specs | `specs/` | SPEC-XXX | PROC-LC-004 | Version-scoped implementation specs |
-| Testing | `testing/` | TEST-XXX, REG-XXX | PROC-LC-005 | Evidence and regression documentation |
-| Benchmarks | `benchmarks/` | BM-XXX | PROC-ORG-002 | Methodology, baselines, and results |
-| Operations | `operations/` | INC-XXX, RB-XXX, MIG-XXX | PROC-LC-007 | Incidents, runbooks, migrations |
 | Quality | `quality/` | QA-XXX | PROC-SP-002 | Quality attributes and architectural constraints |
-| Methodology | `methodology/` | — | PROC-ORG-001 | Requirements derivation, evidence quality, coverage |
-| Compliance | `compliance/` | — | PROC-GOV-* | Control mappings and customer deliverables (gov overlay) |
+
+> **Note:** Methodology docs (`methodology/`) contain project-specific
+> engineering guides — requirements derivation, evidence quality standards,
+> and coverage analysis. They are not PAL-governed artifacts.
 
 ## ID Namespace Reference
 
@@ -46,12 +45,6 @@ reference the requirements they fulfill).
 | REQ-XXX | requirements/ | `REQ-001-domain-knowledge-injection.md` |
 | ADR-XXX | architecture/decisions/ | `ADR-001-context-engineering.md` |
 | SPEC-XXX | specs/ | `SPEC-001-session-logging.md` |
-| TEST-XXX | testing/evidence/ | `TEST-001-v0.11-release.md` |
-| REG-XXX | testing/regression/ | `REG-001-install-credential-fix.md` |
-| BM-XXX | benchmarks/ | `BM-001-baseline-raw-claude.md` |
-| INC-XXX | operations/incidents/ | `INC-001-encryption-key-rotation.md` |
-| RB-XXX | operations/runbooks/ | `RB-001-release-process.md` |
-| MIG-XXX | operations/migration/ | `MIG-001-v010-to-v011.md` |
 | QA-XXX | quality/ | `QA-001-soc2-certification.md` |
 
 ## Cross-Reference Format

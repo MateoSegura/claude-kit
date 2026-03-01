@@ -4,6 +4,9 @@
 > to formal specification languages, and what this means for building reliable
 > intent routing in AI plugin systems like claude-kit.
 
+**Date:** 2026-02-28
+**Governing Process:** PROC-LC-001 (Market Analysis)
+
 ---
 
 ## Table of Contents
@@ -1356,6 +1359,14 @@ Hooks are claude-kit's mechanism for exactly this. Adding typed command
 schemas and structured slot filling would extend the same principle to the
 routing layer, closing the remaining gap between what users say and what
 agents reliably do.
+
+---
+
+## Traces
+
+- **Upstream:** Market signals, competitive analysis, user research
+- **Downstream:** Informs requirements derivation
+- **Quality Attributes:** None identified
 
 ---
 

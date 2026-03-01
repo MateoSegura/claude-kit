@@ -18,8 +18,9 @@ decisions and implementation specs.
 # REQ-XXX: <Title>
 
 **Status:** draft | active | deprecated | superseded-by REQ-YYY
-**Priority:** must | should | could
+**Priority:** must-have | should-have | nice-to-have
 **Created:** YYYY-MM-DD
+**Governing Process:** PROC-LC-002 (Requirements Engineering)
 
 ## Context
 
@@ -36,8 +37,9 @@ Clear, testable statement of what the system must do.
 
 ## Traces
 
-- **From:** <research paper or stakeholder need>
-- **To:** ADR-XXX, SPEC-XXX (downstream documents that implement this)
+- **Upstream:** <research paper or stakeholder need>
+- **Downstream:** ADR-XXX, SPEC-XXX (downstream documents that implement this)
+- **Quality Attributes:** <QA-XXX references or "None identified">
 ```
 
 ## Valid Status Values

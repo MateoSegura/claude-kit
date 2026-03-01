@@ -1,8 +1,9 @@
 # REQ-010: Plugin Ecosystem
 
 **Status:** active
-**Priority:** should
+**Priority:** should-have
 **Created:** 2026-02-28
+**Governing Process:** PROC-LC-002 (Requirements Engineering)
 
 ## Context
 
@@ -56,6 +57,7 @@ The system shall support an extensible plugin ecosystem where:
 
 ## Traces
 
-- **From:** developer-tools-landscape.md (ESLint ecosystem analysis, plugin
+- **Upstream:** developer-tools-landscape.md (ESLint ecosystem analysis, plugin
   stickiness factors, community contribution patterns)
-- **To:** ADR-008 (ESLint trajectory — composable configs, registry, governance)
+- **Downstream:** ADR-008 (ESLint trajectory — composable configs, registry, governance)
+- **Quality Attributes:** None identified

@@ -1,5 +1,8 @@
 # Coverage Analysis — Competitive Validation and Known Gaps
 
+**Date:** 2026-02-28
+**Governing Process:** PROC-ORG-001 (Process Governance)
+
 > Do real users of competing tools actually experience the failure modes that
 > drive claude-kit's requirements? What problems exist that our requirements
 > don't address?

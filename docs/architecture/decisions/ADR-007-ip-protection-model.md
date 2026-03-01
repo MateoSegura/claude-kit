@@ -2,6 +2,7 @@
 
 **Status:** accepted
 **Date:** 2026-02-28
+**Governing Process:** PROC-LC-003 (Architecture Design)
 
 ## Context
 
@@ -80,14 +81,16 @@ The defensible value is not in any single plugin file. It is in:
 
 ## Consequences
 
-**Positive:**
+### Positive
+
 - Honest threat model — no false promises about what encryption prevents
 - Layered defense — each layer addresses a different threat vector
 - Strategic clarity — investment prioritizes the real moat (platform,
   ecosystem, velocity) over the illusion of content secrecy
 - User trust — not making false security claims builds credibility
 
-**Negative:**
+### Negative
+
 - Encryption is not a hard barrier — determined users can extract content
   at runtime, and the system must be designed with this assumption
 - Legal enforcement is expensive and geographically limited
@@ -96,8 +99,17 @@ The defensible value is not in any single plugin file. It is in:
 - Some customers may expect stronger content protection than is technically
   possible in a local-execution model
 
+### Neutral
+
+- No neutral consequences identified.
+
+## Alternatives Considered
+
+See Context section above for the alternatives evaluated during this decision.
+
 ## Traces
 
-- **From:** REQ-008 (Secure Distribution)
-- **To:** (future SPEC documents implementing encryption, key management, and
+- **Upstream:** REQ-008 (Secure Distribution)
+- **Downstream:** (future SPEC documents implementing encryption, key management, and
   distribution pipelines)
+- **Quality Attributes:** security, transparency, strategic defensibility

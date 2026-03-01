@@ -4,6 +4,9 @@
 > in large language models, techniques for measuring and controlling it, and the
 > specific implications for claude-kit as a context engineering framework.
 
+**Date:** 2026-02-28
+**Governing Process:** PROC-LC-001 (Market Analysis)
+
 ---
 
 ## Table of Contents
@@ -899,6 +902,14 @@ The complete non-determinism control stack for claude-kit, ordered from most to 
 **Where to start**: Of the recommendations above, §7.3 (PostToolUse output validation) provides the highest variance-reduction-to-implementation-effort ratio. Syntax validation scripts are simple to write, immediately catch the most common failure modes (syntactically invalid code that wastes human review time), and compose well with existing hook infrastructure. A single `validate-c-syntax.sh` script in the embedded-zephyr-engineer plugin would be immediately useful.
 
 **The ceiling**: Even with all recommendations implemented, some irreducible non-determinism remains — the hardware and infrastructure sources described in sections 2.2 through 2.6 are outside user control when using API-based inference. The goal is not zero variance but **managed variance** — variance that is concentrated in low-stakes decisions and minimized for high-stakes ones. Claude-kit's layered control stack achieves exactly this, addressing non-determinism at every layer the user can control.
+
+---
+
+## Traces
+
+- **Upstream:** Market signals, competitive analysis, user research
+- **Downstream:** Informs requirements derivation
+- **Quality Attributes:** None identified
 
 ---
 

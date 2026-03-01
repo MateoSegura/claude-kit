@@ -2,17 +2,16 @@
 # docs/ System — Quick Reference
 
 claude-kit uses a structured documentation system. Process governance is
-maintained in the external Process Asset Library (`MateoSegura/process-asset-library`).
-The docs/ layer architecture below maps directories to their governing processes.
+maintained in the Process Asset Library at `pal/`. The docs/ layer architecture
+below maps directories to their governing processes.
 
 ## Layer Architecture
 
 ```
-research/ → requirements/ → architecture/ → specs/ → code → testing/ → benchmarks/
-                ↑    ↓                                          ↑
-        methodology/ quality/                            operations/ (cross-cutting)
-           (meta)   (quality attributes)
-                                                      compliance/ (gov overlay)
+research/ → requirements/ → architecture/ → specs/ → code
+                     ↓
+                   quality/
+              (quality attributes)
 ```
 
 | Layer | Directory | ID Prefix | Governing Process |
@@ -22,15 +21,13 @@ research/ → requirements/ → architecture/ → specs/ → code → testing/ �
 | Architecture | `docs/architecture/decisions/` | ADR-XXX | PROC-LC-003 |
 | Architecture | `docs/architecture/components/` | — | PROC-LC-003 |
 | Specs | `docs/specs/` | SPEC-XXX | PROC-LC-004 |
-| Testing | `docs/testing/evidence/` | TEST-XXX | PROC-LC-005 |
-| Testing | `docs/testing/regression/` | REG-XXX | PROC-LC-005 |
-| Benchmarks | `docs/benchmarks/` | BM-XXX | PROC-ORG-002 |
-| Operations | `docs/operations/incidents/` | INC-XXX | PROC-LC-007 |
-| Operations | `docs/operations/runbooks/` | RB-XXX | PROC-LC-007 |
-| Operations | `docs/operations/migration/` | MIG-XXX | PROC-LC-007 |
 | Quality | `docs/quality/` | QA-XXX | PROC-SP-002 |
-| Methodology | `docs/methodology/` | — | PROC-ORG-001 |
-| Compliance | `docs/compliance/` | — | PROC-GOV-* |
+
+> **Note:** Methodology docs live at `docs/methodology/` — they are
+> project-specific engineering guides, not PAL-governed artifacts.
+>
+> Testing, benchmarks, and operations directories are defined by PAL but
+> not yet created — they will be added when those artifacts are needed.
 
 ## When to Consult
 
@@ -38,10 +35,9 @@ research/ → requirements/ → architecture/ → specs/ → code → testing/ �
 |---------------------|-------------|
 | Start a new feature | `docs/requirements/` for existing REQs, `docs/specs/` for active SPECs |
 | Make an architecture decision | `docs/architecture/decisions/` for prior ADRs on the same topic |
-| Prepare a release | `docs/specs/` for active SPECs, `docs/testing/` for evidence gaps |
-| Debug a production issue | `docs/operations/incidents/` for similar past incidents |
+| Prepare a release | `docs/specs/` for active SPECs |
 | Change a core subsystem | `docs/architecture/components/` for component documentation |
-| Check regulatory compliance | `docs/compliance/` for control mappings and customer packages |
+| Check engineering methodology | `docs/methodology/` for derivation rules, evidence standards |
 
 ## When to Update
 
@@ -49,8 +45,7 @@ research/ → requirements/ → architecture/ → specs/ → code → testing/ �
 |-------------|--------|
 | Implemented a requirement | Set REQ status to `active`, link to SPEC and ADR |
 | Made an architecture decision | Create a new ADR (never edit accepted ADRs) |
-| Completed a spec | Set SPEC status to `completed`, create TEST evidence |
-| Fixed a regression | Update REG status to `fixed`, note the fix |
+| Completed a spec | Set SPEC status to `completed` |
 | Changed a requirement | Check if downstream ADRs and SPECs need updating |
 
 ## Cross-Reference Format

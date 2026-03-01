@@ -1,8 +1,9 @@
 # REQ-004: Runtime Enforcement
 
 **Status:** active
-**Priority:** must
+**Priority:** must-have
 **Created:** 2026-02-28
+**Governing Process:** PROC-LC-002 (Requirements Engineering)
 
 ## Context
 
@@ -65,6 +66,7 @@ complementary layers:
 
 ## Traces
 
-- **From:** runtime-governance.md (governance gap, enforcement spectrum),
+- **Upstream:** runtime-governance.md (governance gap, enforcement spectrum),
   symbolic-scaffolding.md (neuro-symbolic constraint embedding, Bayesian priors)
-- **To:** ADR-003 (dual enforcement architecture)
+- **Downstream:** ADR-003 (dual enforcement architecture)
+- **Quality Attributes:** None identified

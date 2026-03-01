@@ -2,6 +2,7 @@
 
 **Status:** accepted
 **Date:** 2026-02-28
+**Governing Process:** PROC-LC-003 (Architecture Design)
 
 ## Context
 
@@ -59,7 +60,8 @@ The layers are complementary:
 
 ## Consequences
 
-**Positive:**
+### Positive
+
 - Defense-in-depth — no single layer failure compromises the system
 - Skills handle the long tail of domain-specific guidance that would be
   impractical to encode as hook patterns
@@ -68,7 +70,8 @@ The layers are complementary:
   (testable via ablation)
 - Hooks are auditable shell scripts — no ML interpretation required
 
-**Negative:**
+### Negative
+
 - Two layers to maintain — skill updates and hook updates must stay consistent
 - Hook pattern matching is limited to textual patterns — semantic violations
   that don't match a regex escape the deterministic layer
@@ -77,7 +80,16 @@ The layers are complementary:
 - The interaction between layers can be complex — a skill might instruct
   behavior that a hook then blocks, creating confusing user experiences
 
+### Neutral
+
+- No neutral consequences identified.
+
+## Alternatives Considered
+
+See Context section above for the alternatives evaluated during this decision.
+
 ## Traces
 
-- **From:** REQ-004 (Runtime Enforcement)
-- **To:** (future SPEC documents implementing hook and skill enforcement)
+- **Upstream:** REQ-004 (Runtime Enforcement)
+- **Downstream:** (future SPEC documents implementing hook and skill enforcement)
+- **Quality Attributes:** safety, reliability, auditability

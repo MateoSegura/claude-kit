@@ -3,8 +3,7 @@
 **Status:** draft
 **Priority:** must
 **Category:** compliance
-
----
+**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -21,8 +20,6 @@ Additionally, all federal agencies are mandated to adopt Zero Trust architecture
 Version 2.0 provides the implementation roadmap. claude-kit orchestrates AI
 agents that access and modify code — a high-privilege operation that demands Zero
 Trust principles.
-
----
 
 ## Constraint
 
@@ -61,8 +58,6 @@ NIST Secure Software Development Framework (SSDF, SP 800-218):
 | Network-agnostic access | Location (inside/outside firewall) does not determine access level |
 | Policy-driven decisions | Access decisions based on dynamic policy evaluation |
 
----
-
 ## Architectural Impact
 
 | Constraint | Impact |
@@ -73,8 +68,6 @@ NIST Secure Software Development Framework (SSDF, SP 800-218):
 | Vulnerability disclosure | Public vulnerability disclosure policy and process |
 | Zero Trust integration | On-prem deployments must integrate with customer identity providers and policy engines |
 | Session authentication | Each claude-kit session must be independently authenticated, not relying on prior session state |
-
----
 
 ## Phased Approach
 
@@ -108,8 +101,6 @@ NIST Secure Software Development Framework (SSDF, SP 800-218):
 
 **Estimated total: $7K–$20K external + 156–216 hours internal.**
 
----
-
 ## Artifacts Required
 
 | Artifact | Format | Frequency |
@@ -121,8 +112,6 @@ NIST Secure Software Development Framework (SSDF, SP 800-218):
 | SSDF attestation letter | PDF/document | Annual |
 | Zero Trust architecture documentation | Markdown/PDF | Per major version |
 
----
-
 ## Recommended Tools
 
 | Tool | Purpose | Cost Range |
@@ -133,13 +122,12 @@ NIST Secure Software Development Framework (SSDF, SP 800-218):
 | SLSA framework | Supply chain integrity levels | Standard/free |
 | Semgrep | SAST for secure coding practices | Free tier available |
 
----
-
 ## Traces
 
-- **From:** REQ-008 (Secure Distribution — encryption and distribution
+- **Upstream:** REQ-008 (Secure Distribution — encryption and distribution
   mechanisms are part of the supply chain), REQ-005 (Transparent Execution —
   session logging supports Zero Trust audit requirements)
-- **To:** QA-003 (Defense Contractor Compliance — CMMC requires supply chain
+- **Downstream:** QA-003 (Defense Contractor Compliance — CMMC requires supply chain
   documentation), QA-008 (Dual Deployment — air-gapped distribution requires
   offline integrity verification)
+- **Standards:** NIST SP 800-218 (SSDF), NIST SP 800-207 (Zero Trust)

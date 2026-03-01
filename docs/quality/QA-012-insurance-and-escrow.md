@@ -3,8 +3,7 @@
 **Status:** draft
 **Priority:** should
 **Category:** insurance
-
----
+**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -13,8 +12,6 @@ often demand source code escrow as conditions of purchase. These are not
 technical constraints — they are business prerequisites that gate every
 enterprise and government deal. Not having the right coverage or escrow
 arrangement is a deal-breaker, not a negotiation point.
-
----
 
 ## Constraint
 
@@ -78,8 +75,6 @@ expected by sophisticated buyers.
 code rather than escrow. This decision depends on the business model and IP
 strategy (see ADR-007).
 
----
-
 ## Phased Approach
 
 ### Phase 1: Insurance (months 1–2)
@@ -114,8 +109,6 @@ QA-001 (SOC 2) and QA-009 (Incident Response).
 
 **Estimated annual ongoing cost: $12K–$38K (insurance + escrow).**
 
----
-
 ## Decision: Escrow vs. Source Access
 
 | Approach | Pros | Cons |
@@ -133,8 +126,6 @@ approach depends on the customer segment:
 - **Defense (ITAR):** Escrow with verified builds; source rights may be required
   for classified-adjacent programs
 
----
-
 ## Artifacts Required
 
 | Artifact | Audience | Frequency |
@@ -145,12 +136,11 @@ approach depends on the customer segment:
 | Escrow deposit receipt | Customer legal teams | Per deposit |
 | Escrow verification report | Customer legal teams | Annual |
 
----
-
 ## Traces
 
-- **From:** ADR-007 (IP Protection Model — escrow is part of IP protection
+- **Upstream:** ADR-007 (IP Protection Model — escrow is part of IP protection
   strategy), REQ-008 (Secure Distribution — escrow deposits include encrypted
   plugin content and build tooling)
-- **To:** QA-001 (SOC 2 — insurance providers want to see SOC 2 controls),
+- **Downstream:** QA-001 (SOC 2 — insurance providers want to see SOC 2 controls),
   QA-009 (Vendor Risk — insurance certificates are vendor assessment artifacts)
+- **Standards:** None identified

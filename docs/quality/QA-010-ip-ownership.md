@@ -3,8 +3,7 @@
 **Status:** draft
 **Priority:** should
 **Category:** business
-
----
+**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -19,8 +18,6 @@ rather than generating code autonomously. This framing is both technically
 accurate (the human developer directs, reviews, and accepts/rejects every
 suggestion) and legally important (it preserves the "human authorship"
 requirement for copyright protection).
-
----
 
 ## Constraint
 
@@ -61,8 +58,6 @@ claude-kit's customers need clarity on:
    something else
 4. How to document the human review and approval process for audit purposes
 
----
-
 ## Architectural Impact
 
 | Constraint | Impact |
@@ -72,8 +67,6 @@ claude-kit's customers need clarity on:
 | No training on customer data | Architecture must guarantee (and document) that customer code is never used to train or fine-tune any model |
 | Code provenance tracking | Audit trail must show which code was human-written vs AI-suggested vs AI-suggested-then-modified |
 | Contractual language | Standard customer agreements must address IP ownership, data usage, and training restrictions |
-
----
 
 ## Phased Approach
 
@@ -105,8 +98,6 @@ claude-kit's customers need clarity on:
 **Estimated total: $10K–$25K legal + 44 hours documentation + engineering
 effort.**
 
----
-
 ## Artifacts Required
 
 | Artifact | Audience | Frequency |
@@ -116,14 +107,13 @@ effort.**
 | Product framing guidelines | Marketing, documentation, sales | Maintained continuously |
 | Code provenance audit report template | Customer compliance teams | Per major version |
 
----
-
 ## Traces
 
-- **From:** REQ-005 (Transparent Execution — session logging captures human
+- **Upstream:** REQ-005 (Transparent Execution — session logging captures human
   approval status), REQ-006 (Autonomous Operation — controlled mode ensures
   human review), ADR-007 (IP Protection Model — honest assessment of what's
   protectable)
-- **To:** QA-007 (AI Regulatory Compliance — OMB procurement rules reference
+- **Downstream:** QA-007 (AI Regulatory Compliance — OMB procurement rules reference
   IP ownership), QA-009 (Vendor Risk — IP questions appear in vendor
   assessments)
+- **Standards:** None identified

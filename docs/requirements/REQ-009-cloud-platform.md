@@ -1,8 +1,9 @@
 # REQ-009: Cloud Platform
 
 **Status:** active
-**Priority:** could
+**Priority:** nice-to-have
 **Created:** 2026-02-28
+**Governing Process:** PROC-LC-002 (Requirements Engineering)
 
 ## Context
 
@@ -54,6 +55,7 @@ The system shall support a cloud platform that provides:
 
 ## Traces
 
-- **From:** developer-tools-landscape.md (CLI-to-platform trajectory, enterprise
+- **Upstream:** developer-tools-landscape.md (CLI-to-platform trajectory, enterprise
   features), human-agent-orchestration.md (session data aggregation value)
-- **To:** ADR-008 (ESLint trajectory — ecosystem and community platform)
+- **Downstream:** ADR-008 (ESLint trajectory — ecosystem and community platform)
+- **Quality Attributes:** None identified

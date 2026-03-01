@@ -6,6 +6,9 @@
 > system, and what research tells us about reliability, verifiability, and
 > architectural implications.
 
+**Date:** 2026-02-28
+**Governing Process:** PROC-LC-001 (Market Analysis)
+
 ---
 
 ## Table of Contents
@@ -1021,6 +1024,14 @@ Constraint drift test:
 This protocol can be implemented as a command (`/constraint-audit`) that the
 grader agent executes, using the grader's existing read-only tool access and
 evaluation rubric infrastructure.
+
+---
+
+## Traces
+
+- **Upstream:** Market signals, competitive analysis, user research
+- **Downstream:** REQ-002 (Scope-Aware Planning), REQ-004 (Runtime Enforcement)
+- **Quality Attributes:** None identified
 
 ---
 

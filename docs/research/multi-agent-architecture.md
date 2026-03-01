@@ -4,6 +4,9 @@
 > of multi-agent LLM systems — with direct implications for the 5-role team
 > architecture of claude-kit.
 
+**Date:** 2026-02-28
+**Governing Process:** PROC-LC-001 (Market Analysis)
+
 ---
 
 ## Table of Contents
@@ -1098,6 +1101,14 @@ formalism (commands as implicit orchestrators), inter-agent handoff structure
 (prose-mediated context vs. structured artifacts), and observability (no
 structured trace for debugger consumption). These are solvable within the
 existing plugin architecture without fundamental redesign.
+
+---
+
+## Traces
+
+- **Upstream:** Market signals, competitive analysis, user research
+- **Downstream:** REQ-003 (Role Specialization)
+- **Quality Attributes:** None identified
 
 ---
 

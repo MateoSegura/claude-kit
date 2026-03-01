@@ -1,8 +1,9 @@
 # REQ-007: Measurable Impact
 
 **Status:** active
-**Priority:** should
+**Priority:** should-have
 **Created:** 2026-02-28
+**Governing Process:** PROC-LC-002 (Requirements Engineering)
 
 ## Context
 
@@ -53,8 +54,9 @@ The system shall provide mechanisms to measure and compare output quality:
 
 ## Traces
 
-- **From:** agent-friendly-codebases.md (measurable agent performance on
+- **Upstream:** agent-friendly-codebases.md (measurable agent performance on
   structured vs. unstructured projects), state-and-roadmap.md (level ablation
   study, benchmarking design), theory-context-cache.md (predicted improvement
   at each cache level)
-- **To:** ADR-006 (grader as verifier — the scoring mechanism)
+- **Downstream:** ADR-006 (grader as verifier — the scoring mechanism)
+- **Quality Attributes:** None identified

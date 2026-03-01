@@ -2,6 +2,7 @@
 
 **Status:** accepted
 **Date:** 2026-02-28
+**Governing Process:** PROC-LC-003 (Architecture Design)
 
 ## Context
 
@@ -58,14 +59,16 @@ This means:
 
 ## Consequences
 
-**Positive:**
+### Positive
+
 - Zero infrastructure cost — no GPUs, no vector DBs, no embedding pipelines
 - Instant iteration — edit a skill file, restart the session, see the effect
 - Full transparency — every piece of injected knowledge is human-readable
 - Model-agnostic — works with any model that accepts long context
 - Composable — skills are independent units that can be mixed per task
 
-**Negative:**
+### Negative
+
 - Context window is finite — cannot inject unlimited domain knowledge
 - Skill quality is critical — bad context actively overrides correct parametric
   knowledge, producing worse results than no context at all
@@ -74,7 +77,16 @@ This means:
 - No persistent learning — the model does not retain session-to-session
   improvements; every session starts from the same skill baseline
 
+### Neutral
+
+- No neutral consequences identified.
+
+## Alternatives Considered
+
+See Context section above for the alternatives evaluated during this decision.
+
 ## Traces
 
-- **From:** REQ-001 (Domain Knowledge Injection)
-- **To:** (future SPEC documents implementing the skill system)
+- **Upstream:** REQ-001 (Domain Knowledge Injection)
+- **Downstream:** (future SPEC documents implementing the skill system)
+- **Quality Attributes:** modifiability, transparency, composability

@@ -3,8 +3,7 @@
 **Status:** draft
 **Priority:** should
 **Category:** compliance
-
----
+**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -21,8 +20,6 @@ procurement.
 Since claude-kit is primarily a CLI tool, the accessibility surface is narrower
 than a web application. However, the constraint still applies to CLI output,
 documentation, and any web-based components (dashboards, configuration UIs).
-
----
 
 ## Constraint
 
@@ -61,8 +58,6 @@ A VPAT (Voluntary Product Accessibility Template) must document:
 3. Product version and evaluation date
 4. Testing methodology
 
----
-
 ## Architectural Impact
 
 | Constraint | Impact |
@@ -71,8 +66,6 @@ A VPAT (Voluntary Product Accessibility Template) must document:
 | Screen reader compatibility | Evaluate ANSI escape sequence usage; provide a `--no-color` or `--accessible` flag if needed |
 | Web accessibility | Future dashboards (REQ-009) must be built accessibility-first, not retrofitted |
 | Documentation | All markdown documentation must follow accessible formatting (proper headings, alt text, link text) |
-
----
 
 ## Phased Approach
 
@@ -103,8 +96,6 @@ A VPAT (Voluntary Product Accessibility Template) must document:
 
 **Estimated total (CLI only): $2K–$5K + 48–72 hours internal.**
 
----
-
 ## Artifacts Required
 
 | Artifact | Audience | Frequency |
@@ -113,11 +104,10 @@ A VPAT (Voluntary Product Accessibility Template) must document:
 | Accessibility conformance report | Auditors | Per major version |
 | Accessibility testing results | Internal QA | Per release |
 
----
-
 ## Traces
 
-- **From:** REQ-005 (Transparent Execution — debug output must be accessible),
+- **Upstream:** REQ-005 (Transparent Execution — debug output must be accessible),
   REQ-009 (Cloud Platform — web components must be 508-compliant)
-- **To:** QA-002 (FedRAMP — 508 compliance is a FedRAMP prerequisite for
+- **Downstream:** QA-002 (FedRAMP — 508 compliance is a FedRAMP prerequisite for
   federal procurement)
+- **Standards:** Section 508 (Rehabilitation Act), WCAG 2.0 Level AA

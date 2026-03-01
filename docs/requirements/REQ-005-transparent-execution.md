@@ -1,8 +1,9 @@
 # REQ-005: Transparent Execution
 
 **Status:** active
-**Priority:** must
+**Priority:** must-have
 **Created:** 2026-02-28
+**Governing Process:** PROC-LC-002 (Requirements Engineering)
 
 ## Context
 
@@ -55,7 +56,8 @@ The system shall provide glass-box observability through:
 
 ## Traces
 
-- **From:** human-agent-orchestration.md (glass-box observability, trust
+- **Upstream:** human-agent-orchestration.md (glass-box observability, trust
   calibration), ai-native-engineer.md (manager-of-agents role, new
   observability needs), state-and-roadmap.md (two-layer transparency design)
-- **To:** ADR-005 (glass-box transparency architecture)
+- **Downstream:** ADR-005 (glass-box transparency architecture)
+- **Quality Attributes:** None identified

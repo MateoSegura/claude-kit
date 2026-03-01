@@ -456,17 +456,7 @@ plugins/<name>/
 
 ## Process Asset Library (PAL)
 
-claude-kit includes a **Process Asset Library** as a git submodule at `pal/`. PAL provides 37 process documents, 13 templates, 7 workflow guides, and 5 standards mappings — a complete product documentation framework for engineering teams building governed software.
-
-### Submodule Setup
-
-```bash
-# After cloning claude-kit, initialize the submodule
-git submodule update --init pal
-
-# Pull latest PAL changes
-git submodule update --remote pal
-```
+claude-kit includes a **Process Asset Library** as a git submodule at `pal/` ([MateoSegura/process-asset-library](https://github.com/MateoSegura/process-asset-library)). PAL provides 37 process documents, 13 templates, 7 workflow guides, and 5 standards mappings — a complete product documentation framework for engineering teams building governed software.
 
 ### What PAL Provides
 

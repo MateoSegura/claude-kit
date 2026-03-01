@@ -3,6 +3,9 @@
 > **Living document.** Extended as new research is added to this directory.
 > Last updated: 2026-02-27
 
+**Date:** 2026-02-28
+**Governing Process:** PROC-LC-001 (Market Analysis)
+
 ---
 
 ## Table of Contents

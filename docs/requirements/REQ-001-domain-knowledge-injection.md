@@ -1,8 +1,9 @@
 # REQ-001: Domain Knowledge Injection
 
 **Status:** active
-**Priority:** must
+**Priority:** must-have
 **Created:** 2026-02-28
+**Governing Process:** PROC-LC-002 (Requirements Engineering)
 
 ## Context
 
@@ -55,7 +56,8 @@ LLM context windows, where:
 
 ## Traces
 
-- **From:** theory-context-cache.md (hierarchical context cache framework),
+- **Upstream:** theory-context-cache.md (hierarchical context cache framework),
   memory-architecture.md (contextual vs parametric knowledge preference)
-- **To:** ADR-001 (context engineering as primary intervention),
+- **Downstream:** ADR-001 (context engineering as primary intervention),
   ADR-004 (companion system for cross-role knowledge sharing)
+- **Quality Attributes:** None identified

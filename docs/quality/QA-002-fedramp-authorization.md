@@ -3,8 +3,7 @@
 **Status:** draft
 **Priority:** should
 **Category:** compliance
-
----
+**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -24,8 +23,6 @@ FedRAMP 20x (rolling out through 2026) is replacing the traditional
 documentation-heavy process with continuous compliance via machine-readable Key
 Security Indicators (KSIs). Phase 3 formalization expected FY26 Q3–Q4. Timing
 the FedRAMP journey to align with 20x significantly reduces the burden.
-
----
 
 ## Constraint
 
@@ -51,8 +48,6 @@ level. FedRAMP is built on NIST 800-53 Rev 5.
 5. **3PAO assessment** — a Third-Party Assessment Organization must independently
    evaluate the system
 
----
-
 ## Architectural Impact
 
 - The cloud platform must be deployable on FedRAMP-authorized infrastructure
@@ -66,8 +61,6 @@ level. FedRAMP is built on NIST 800-53 Rev 5.
   configurations, change tracking, least functionality)
 - Every component in the technology stack needs a FIPS 140-2/3 validation
   certificate or must be replaced
-
----
 
 ## Phased Approach
 
@@ -109,8 +102,6 @@ level. FedRAMP is built on NIST 800-53 Rev 5.
 **Estimated total for initial authorization: $250K–$650K + 12–18 months.**
 **Estimated annual continuous monitoring: $100K–$215K/year.**
 
----
-
 ## Artifacts Required
 
 | Artifact | Purpose | Maintenance |
@@ -121,8 +112,6 @@ level. FedRAMP is built on NIST 800-53 Rev 5.
 | Continuous monitoring deliverables | Monthly scans, incident reports | Monthly |
 | Authorization package | Submission to FedRAMP PMO | Initial + updates |
 | Interconnection Security Agreements (ISA) | For external service dependencies | Per connection |
-
----
 
 ## Relationship to NIST 800-53
 
@@ -141,11 +130,10 @@ System and Information Integrity (SI), Supply Chain Risk Management (SR).
 **Supply Chain Risk Management (SR)** is a Rev 5 addition directly relevant to
 claude-kit as an AI tool in the customer's software supply chain.
 
----
-
 ## Traces
 
-- **From:** REQ-009 (Cloud Platform — the SaaS offering that requires
+- **Upstream:** REQ-009 (Cloud Platform — the SaaS offering that requires
   authorization), QA-001 (SOC 2 — prerequisite baseline)
-- **To:** QA-005 (DoD Impact Levels — built on top of FedRAMP), future SPEC
+- **Downstream:** QA-005 (DoD Impact Levels — built on top of FedRAMP), future SPEC
   for cloud platform infrastructure
+- **Standards:** NIST SP 800-53 Rev 5, FIPS 140-2/140-3

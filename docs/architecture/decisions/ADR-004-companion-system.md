@@ -2,6 +2,7 @@
 
 **Status:** accepted
 **Date:** 2026-02-28
+**Governing Process:** PROC-LC-003 (Architecture Design)
 
 ## Context
 
@@ -55,7 +56,8 @@ declaration system:
 
 ## Consequences
 
-**Positive:**
+### Positive
+
 - Single source of truth — domain facts are defined once, shared by all roles
 - Natural version coherence — all roles always use the same knowledge version
 - Automatic propagation — updating the knowledge plugin updates all roles
@@ -65,7 +67,8 @@ declaration system:
 - Auditable — `ctl.json` explicitly declares dependencies, enabling validation
   that referenced skills exist
 
-**Negative:**
+### Negative
+
 - Load-time cost — every companion's skills consume context window tokens,
   even if a particular role doesn't need all of them
 - Coupling — changing the knowledge plugin's skill names breaks references in
@@ -76,8 +79,17 @@ declaration system:
 - Validation complexity — the validator must check that all companion
   references resolve to real plugins and that referenced skills exist
 
+### Neutral
+
+- No neutral consequences identified.
+
+## Alternatives Considered
+
+See Context section above for the alternatives evaluated during this decision.
+
 ## Traces
 
-- **From:** REQ-001 (Domain Knowledge Injection), REQ-003 (Role Specialization
+- **Upstream:** REQ-001 (Domain Knowledge Injection), REQ-003 (Role Specialization
   — shared knowledge substrate requirement)
-- **To:** (future SPEC documents implementing companion resolution and loading)
+- **Downstream:** (future SPEC documents implementing companion resolution and loading)
+- **Quality Attributes:** consistency, composability, auditability

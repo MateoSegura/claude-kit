@@ -7,6 +7,9 @@
 > claude-kit manages skill injection, knowledge drift, and policy-driven
 > forgetting.
 
+**Date:** 2026-02-28
+**Governing Process:** PROC-LC-001 (Market Analysis)
+
 ---
 
 ## Table of Contents
@@ -1263,6 +1266,14 @@ bounded domain (embedded/firmware/backend/frontend engineering). RAG becomes
 attractive when the skill count exceeds approximately 20–30 per domain — beyond
 that point, context dilution from loading all skills likely outweighs the
 retrieval noise from RAG-based skill selection.
+
+---
+
+## Traces
+
+- **Upstream:** Market signals, competitive analysis, user research
+- **Downstream:** REQ-001 (Domain Knowledge Injection)
+- **Quality Attributes:** None identified
 
 ---
 

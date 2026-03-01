@@ -1,8 +1,9 @@
 # REQ-008: Secure Distribution
 
 **Status:** active
-**Priority:** must
+**Priority:** must-have
 **Created:** 2026-02-28
+**Governing Process:** PROC-LC-002 (Requirements Engineering)
 
 ## Context
 
@@ -56,5 +57,6 @@ through:
 
 ## Traces
 
-- **From:** (product requirement — IP protection for commercial distribution)
-- **To:** ADR-007 (IP protection model — what is and is not defensible)
+- **Upstream:** (product requirement — IP protection for commercial distribution)
+- **Downstream:** ADR-007 (IP protection model — what is and is not defensible)
+- **Quality Attributes:** None identified

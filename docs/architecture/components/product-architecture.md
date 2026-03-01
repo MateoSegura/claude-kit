@@ -1,5 +1,9 @@
 # Product Architecture — claude-kit
 
+**Status:** active
+**Date:** 2026-02-28
+**Governing Process:** PROC-LC-003 (Architecture Design)
+
 ## Overview
 
 claude-kit is a context engineering framework that makes AI coding agents
@@ -145,5 +149,6 @@ and incrementally valuable.
 
 ## Traces
 
-- **From:** REQ-001 through REQ-010 (product requirements)
-- **References:** ADR-001 through ADR-008 (architecture decisions)
+- **Upstream:** REQ-001 through REQ-010 (product requirements)
+- **Downstream:** ADR-001 through ADR-008 (architecture decisions)
+- **Quality Attributes:** modularity, transparency, composability, offline-first

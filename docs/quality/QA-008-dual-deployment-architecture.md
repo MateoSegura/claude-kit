@@ -3,8 +3,7 @@
 **Status:** draft
 **Priority:** must
 **Category:** deployment
-
----
+**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -23,8 +22,6 @@ eventually federal agencies through FedRAMP authorization (QA-002).
 Every architectural decision must be validated against both deployment models.
 A feature that requires cloud connectivity is unusable for the defense market.
 A feature that only works on-prem misses the commercial market.
-
----
 
 ## Constraint
 
@@ -95,8 +92,6 @@ parts) is appropriate for plugin encryption but does NOT satisfy FIPS 140-2
 requirements for CUI protection. On-prem customers must bring their own key
 management for CUI-grade encryption.
 
----
-
 ## Architectural Impact
 
 | Constraint | SaaS Impact | On-Prem Impact |
@@ -109,8 +104,6 @@ management for CUI-grade encryption.
 | Key management | Managed KMS + BYOK option | Customer KMS with PKCS#11/KMIP integration |
 | Telemetry | Cloud analytics with opt-out | Local-only with sneakernet export |
 | Documentation | Web-hosted docs acceptable | Everything bundled in distributable |
-
----
 
 ## Phased Approach
 
@@ -154,8 +147,6 @@ management for CUI-grade encryption.
 **Estimated total: 100–120 hours documentation + significant engineering effort
 across all phases.**
 
----
-
 ## Artifacts Required
 
 | Artifact | Purpose |
@@ -168,14 +159,13 @@ across all phases.**
 | Key management integration guide | PKCS#11/KMIP setup for on-prem customers |
 | Air-gap test results | CI evidence of zero external dependencies |
 
----
-
 ## Traces
 
-- **From:** REQ-006 (Autonomous Operation — deployment model determines
+- **Upstream:** REQ-006 (Autonomous Operation — deployment model determines
   autonomy mode), REQ-008 (Secure Distribution — encryption must work in both
   models), REQ-009 (Cloud Platform — SaaS deployment), QA-003 (Defense
   Contractor Compliance — on-prem required for CUI), QA-004 (Export Control —
   on-prem required for ITAR)
-- **To:** ADR-007 (IP Protection Model — key management architecture),
+- **Downstream:** ADR-007 (IP Protection Model — key management architecture),
   future SPEC for dual deployment implementation
+- **Standards:** NIST SP 800-53 (SC-7), FIPS 140-2/140-3, NIST SP 800-88

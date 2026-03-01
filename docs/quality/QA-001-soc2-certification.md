@@ -3,8 +3,7 @@
 **Status:** draft
 **Priority:** must
 **Category:** compliance
-
----
+**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -16,8 +15,6 @@ pursue because it has the broadest unblocking effect on sales cycles.
 
 SOC 2 evaluates controls across five Trust Services Criteria: Security,
 Availability, Processing Integrity, Confidentiality, and Privacy.
-
----
 
 ## Constraint
 
@@ -38,8 +35,6 @@ in a manner that satisfies SOC 2 Type II audit requirements. Specifically:
 7. **Vendor management** — Third-party risk assessment for all service providers
    (including Anthropic as the AI model provider)
 
----
-
 ## Architectural Impact
 
 - Session logging (REQ-005) must produce audit-grade logs that satisfy the
@@ -50,8 +45,6 @@ in a manner that satisfies SOC 2 Type II audit requirements. Specifically:
   (AES-256 for data at rest, TLS 1.2+ for transit)
 - Build pipelines must produce change management evidence automatically (commit
   history, PR reviews, deployment logs)
-
----
 
 ## Phased Approach
 
@@ -82,8 +75,6 @@ Proves controls are *operating effectively* over a 6–12 month observation peri
 
 **Estimated total: $35K–$115K + ongoing operational overhead.**
 
----
-
 ## Artifacts Required
 
 | Artifact | Purpose | Frequency |
@@ -97,8 +88,6 @@ Proves controls are *operating effectively* over a 6–12 month observation peri
 | Vendor risk assessments | Prove supply chain diligence | Per vendor, annual review |
 | SOC 2 report (Type I or II) | Deliver to customers | Annual |
 
----
-
 ## Recommended Tools
 
 | Tool | Purpose | Cost Range |
@@ -108,10 +97,9 @@ Proves controls are *operating effectively* over a 6–12 month observation peri
 | Vulnerability scanner (Nessus, Qualys) | Continuous vuln management | $3K–$10K/year |
 | SIEM (Datadog, Panther, Wiz) | Log aggregation and alerting | Varies |
 
----
-
 ## Traces
 
-- **From:** REQ-005 (Transparent Execution — audit trail requirements),
+- **Upstream:** REQ-005 (Transparent Execution — audit trail requirements),
   REQ-009 (Cloud Platform — infrastructure that must be certified)
-- **To:** Future SPEC for cloud platform security architecture
+- **Downstream:** Future SPEC for cloud platform security architecture
+- **Standards:** None identified

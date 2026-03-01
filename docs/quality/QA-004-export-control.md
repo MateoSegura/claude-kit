@@ -3,8 +3,7 @@
 **Status:** draft
 **Priority:** must
 **Category:** compliance
-
----
+**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -28,8 +27,6 @@ EAR is less restrictive but still requires compliance. Since claude-kit uses
 AES-256-CBC encryption (REQ-008), it likely falls under ECCN 5D002 (information
 security software) or 5D992 (mass-market encryption software). Mass-market
 classification has simplified export procedures.
-
----
 
 ## Constraint
 
@@ -56,8 +53,6 @@ classification has simplified export procedures.
 3. **Denied party screening** — screen customers against BIS Entity List,
    OFAC SDN list, and other restricted party lists before selling internationally
 
----
-
 ## Architectural Impact
 
 | Constraint | Impact |
@@ -67,8 +62,6 @@ classification has simplified export procedures.
 | On-prem mandatory for ITAR | The dual deployment architecture (QA-008) is not optional — it is required for this market |
 | Data flow isolation | Data flow diagrams must prove no ITAR data leaves the controlled boundary, including through logs, telemetry, crash reports, or analytics |
 | ECCN classification | One-time filing requirement; does not affect architecture but must happen before international distribution |
-
----
 
 ## Phased Approach
 
@@ -100,8 +93,6 @@ classification has simplified export procedures.
 
 **Estimated total: $18K–$40K external + 100–140 hours internal.**
 
----
-
 ## Artifacts Required
 
 | Artifact | Audience | Purpose |
@@ -114,13 +105,12 @@ classification has simplified export procedures.
 | ITAR-safe deployment guide | Customer IT | Step-by-step for deploying in ITAR environments |
 | Denied party screening records | Internal compliance | Evidence of screening for international sales |
 
----
-
 ## Traces
 
-- **From:** REQ-006 (Autonomous Operation — ITAR environments demand controlled
+- **Upstream:** REQ-006 (Autonomous Operation — ITAR environments demand controlled
   mode with mandatory human review), REQ-008 (Secure Distribution — encryption
   must use ITAR-compliant methods), ADR-007 (IP Protection Model)
-- **To:** QA-003 (Defense Contractor Compliance — many ITAR programs also
+- **Downstream:** QA-003 (Defense Contractor Compliance — many ITAR programs also
   require CMMC), QA-008 (Dual Deployment Architecture — on-prem is mandatory
   for ITAR)
+- **Standards:** ITAR, EAR

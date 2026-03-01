@@ -41,8 +41,9 @@ What follows from this decision — both positive and negative.
 
 ## Traces
 
-- **From:** REQ-XXX (the requirement this decision addresses)
-- **To:** SPEC-XXX, component docs (downstream implementations)
+- **Upstream:** REQ-XXX (the requirement this decision addresses)
+- **Downstream:** SPEC-XXX, component docs (downstream implementations)
+- **Quality Attributes:** (relevant quality attributes)
 ```
 
 ### Immutability Rule

@@ -3,8 +3,7 @@
 **Status:** draft
 **Priority:** could
 **Category:** compliance
-
----
+**Governing Process:** PROC-SP-002 (Quality Assurance)
 
 ## Context
 
@@ -18,8 +17,6 @@ The on-prem deployment model sidesteps this entirely — the customer's
 environment already has its own IL authorization, and claude-kit operates within
 their boundary. This constraint is prioritized "could" because on-prem covers
 the immediate DoD market; direct DoD SaaS is a future expansion.
-
----
 
 ## Constraint
 
@@ -42,8 +39,6 @@ the immediate DoD market; direct DoD SaaS is a future expansion.
 4. **DoD-specific incident reporting** — more stringent than standard FedRAMP
    continuous monitoring.
 
----
-
 ## Architectural Impact
 
 | Constraint | Impact |
@@ -52,8 +47,6 @@ the immediate DoD market; direct DoD SaaS is a future expansion.
 | Dedicated infrastructure | Cannot use shared multi-tenant for IL5; must architect for single-tenant deployment option in SaaS model. |
 | NIPRNet connectivity | Network architecture must support DoD network interconnection, which requires additional ISAs (Interconnection Security Agreements). |
 | 421+ controls | Every FedRAMP control plus DoD-specific additions; significantly more evidence and documentation than FedRAMP alone. |
-
----
 
 ## Phased Approach
 
@@ -87,8 +80,6 @@ IL4/IL5 authorization is built ON TOP of FedRAMP. FedRAMP must be obtained first
 **Estimated total (on top of FedRAMP): $175K–$400K + dedicated infrastructure
 costs.**
 
----
-
 ## Artifacts Required
 
 All FedRAMP artifacts (see QA-002) plus:
@@ -100,10 +91,9 @@ All FedRAMP artifacts (see QA-002) plus:
 | U.S. person/citizen verification records | Proves access restrictions |
 | Dedicated infrastructure documentation | Architecture diagrams for isolated deployment |
 
----
-
 ## Traces
 
-- **From:** QA-002 (FedRAMP — prerequisite authorization), REQ-009 (Cloud
+- **Upstream:** QA-002 (FedRAMP — prerequisite authorization), REQ-009 (Cloud
   Platform — the SaaS offering)
-- **To:** Future SPEC for DoD-dedicated infrastructure deployment
+- **Downstream:** Future SPEC for DoD-dedicated infrastructure deployment
+- **Standards:** DoD CC SRG, NIST SP 800-53 Rev 5

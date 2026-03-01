@@ -2,6 +2,7 @@
 
 **Status:** accepted
 **Date:** 2026-02-28
+**Governing Process:** PROC-LC-003 (Architecture Design)
 
 ## Context
 
@@ -49,7 +50,8 @@ has no agents, no commands, and no independent behavior.
 
 ## Consequences
 
-**Positive:**
+### Positive
+
 - Each role has a focused context window — only the tools, knowledge, and
   instructions relevant to its function
 - The grader provides independent verification that the engineer cannot
@@ -60,7 +62,8 @@ has no agents, no commands, and no independent behavior.
 - Adding a new domain requires implementing five well-defined roles, not
   designing a new team structure
 
-**Negative:**
+### Negative
+
 - Five roles per domain is a significant content investment — creating a new
   team requires authoring 4 agent definitions, multiple commands, and a full
   knowledge plugin
@@ -71,7 +74,16 @@ has no agents, no commands, and no independent behavior.
 - Inter-role handoff protocols are not yet formalized — the roles exist but
   structured communication between them is manual
 
+### Neutral
+
+- No neutral consequences identified.
+
+## Alternatives Considered
+
+See Context section above for the alternatives evaluated during this decision.
+
 ## Traces
 
-- **From:** REQ-003 (Role Specialization)
-- **To:** (future SPEC documents implementing team plugin structure)
+- **Upstream:** REQ-003 (Role Specialization)
+- **Downstream:** (future SPEC documents implementing team plugin structure)
+- **Quality Attributes:** modularity, predictability, separation of concerns

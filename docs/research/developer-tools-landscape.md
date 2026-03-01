@@ -3,6 +3,9 @@
 > Research document — February 2026
 > Version: 1.0
 
+**Date:** 2026-02-28
+**Governing Process:** PROC-LC-001 (Market Analysis)
+
 ---
 
 ## Table of Contents
@@ -695,6 +698,14 @@ ESLint's downloads: 79.3 million per week on npm, used by Microsoft, Airbnb, Net
 **Developer communities:** Hacker News, developer Twitter/X, the Claude Code Discord, and GitHub's community discussions are the primary channels for reaching AI-native developers. The claude-kit feedback command (already built) is the right signal-gathering mechanism; the public registry will be the distribution mechanism.
 
 **VS Code / Cursor integration:** While claude-kit is terminal-native, a VS Code extension that shows the active plugin configuration, allows switching kits from the IDE, and surfaces plugin-validated output in the editor would expand the addressable audience to developers who prefer IDE-based workflows.
+
+---
+
+## Traces
+
+- **Upstream:** Market signals, competitive analysis, user research
+- **Downstream:** REQ-009 (Cloud Platform), REQ-010 (Plugin Ecosystem)
+- **Quality Attributes:** None identified
 
 ---
 

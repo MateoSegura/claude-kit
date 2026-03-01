@@ -2,6 +2,7 @@
 
 **Status:** accepted
 **Date:** 2026-02-28
+**Governing Process:** PROC-LC-003 (Architecture Design)
 
 ## Context
 
@@ -58,7 +59,8 @@ The two layers serve different audiences:
 
 ## Consequences
 
-**Positive:**
+### Positive
+
 - Trust calibration — users develop intuition for agent behavior through
   narrative traces and validate it against deterministic logs
 - Benchmarking substrate — structured logs enable quantitative comparison
@@ -68,7 +70,8 @@ The two layers serve different audiences:
 - Progressive disclosure — casual users see the narrative; power users
   consult the logs; neither is forced on the other
 
-**Negative:**
+### Negative
+
 - Two systems to maintain — hook scripts, log formats, and debug rules must
   evolve together
 - Storage cost — session logs accumulate on disk and need retention management
@@ -76,8 +79,17 @@ The two layers serve different audiences:
   be omitted, abbreviated, or incorrect; users must understand this limitation
 - Performance — hook scripts that log every event add per-tool-call overhead
 
+### Neutral
+
+- No neutral consequences identified.
+
+## Alternatives Considered
+
+See Context section above for the alternatives evaluated during this decision.
+
 ## Traces
 
-- **From:** REQ-005 (Transparent Execution), REQ-006 (Autonomous Operation
+- **Upstream:** REQ-005 (Transparent Execution), REQ-006 (Autonomous Operation
   — transparency as prerequisite for autonomous trust)
-- **To:** (future SPEC documents implementing session logging and debug mode)
+- **Downstream:** (future SPEC documents implementing session logging and debug mode)
+- **Quality Attributes:** observability, trustworthiness, debuggability

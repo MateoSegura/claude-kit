@@ -4,6 +4,9 @@
 > Companion to `overview.md`. Where overview.md defines the north star,
 > this document maps the distance between today and that destination.
 
+**Date:** 2026-02-28
+**Governing Process:** PROC-LC-001 (Market Analysis)
+
 ---
 
 ## Table of Contents

@@ -1,8 +1,9 @@
 # REQ-006: Autonomous Operation
 
 **Status:** active
-**Priority:** should
+**Priority:** should-have
 **Created:** 2026-02-28
+**Governing Process:** PROC-LC-002 (Requirements Engineering)
 
 ## Context
 
@@ -59,7 +60,8 @@ flags and interaction patterns, not through separate plugin architectures.
 
 ## Traces
 
-- **From:** state-and-roadmap.md (three operational modes, same infrastructure),
+- **Upstream:** state-and-roadmap.md (three operational modes, same infrastructure),
   human-agent-orchestration.md (fire-and-forget pattern, manager-of-agents
   mental model), ai-native-engineer.md (task allocation across agents)
-- **To:** ADR-005 (glass-box transparency — prerequisite for autonomous trust)
+- **Downstream:** ADR-005 (glass-box transparency — prerequisite for autonomous trust)
+- **Quality Attributes:** None identified

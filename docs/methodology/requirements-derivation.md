@@ -1,5 +1,8 @@
 # Requirements Derivation Methodology
 
+**Date:** 2026-02-28
+**Governing Process:** PROC-ORG-001 (Process Governance)
+
 > How claude-kit's 10 product requirements were systematically derived from
 > empirical evidence, and how we validated their completeness.
 

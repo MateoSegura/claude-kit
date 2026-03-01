@@ -1,8 +1,9 @@
 # REQ-003: Role Specialization
 
 **Status:** active
-**Priority:** must
+**Priority:** must-have
 **Created:** 2026-02-28
+**Governing Process:** PROC-LC-002 (Requirements Engineering)
 
 ## Context
 
@@ -58,7 +59,8 @@ The system shall support team-based agent specialization where:
 
 ## Traces
 
-- **From:** multi-agent-architecture.md (specialization vs generalization,
+- **Upstream:** multi-agent-architecture.md (specialization vs generalization,
   4-6 role sweet spot), theory-context-cache.md (heterogeneous core analogy)
-- **To:** ADR-002 (five-role team architecture), ADR-004 (companion system
+- **Downstream:** ADR-002 (five-role team architecture), ADR-004 (companion system
   for shared knowledge), ADR-006 (grader as verifier)
+- **Quality Attributes:** None identified
