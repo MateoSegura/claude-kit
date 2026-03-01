@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 # lint-python.sh — Runs ruff, YAML validation, and hadolint on modified files
 # Called by hooks.json as a PostToolUse hook on Write|Edit tools

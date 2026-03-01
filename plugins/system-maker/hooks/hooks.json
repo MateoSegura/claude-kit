@@ -19,10 +19,6 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/validate-plugin-file.sh",
             "description": "Validate plugin file frontmatter conventions (agents use tools:, commands use allowed-tools:)"
-          },
-          {
-            "type": "prompt",
-            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a PLUGIN BUILDER (creating or modifying Claude Code plugins). If you are NOT in a plugin builder role (e.g. you are an other system agents), respond {\"ok\": true} immediately \u2014 this plugin structure check only applies to plugin builder sessions. If you ARE the plugin builder, proceed: A file was just written or edited. Check the tool result for the file path. ONLY check files inside a plugin build directory (/tmp/claude-kit-build-*/) whose path contains agents/*.md, commands/*.md, or skills/*/*.md. For ALL other files (specs, docs, phases, configs, scripts, any file not matching those three plugin subdirectory patterns) respond with a single word: ok. For matching plugin files: verify real substantive content exists \u2014 not just headers, TODOs, or placeholder text. If fewer than 20 lines of actual content, respond: WARN: <filename> appears to be a skeleton with insufficient content. Otherwise respond: ok"
           }
         ]
       }
@@ -45,6 +41,10 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-uncommitted-build.sh"
+          },
+          {
+            "type": "prompt",
+            "prompt": "Context: $ARGUMENTS. FIRST: Determine if you are currently operating as a PLUGIN BUILDER (creating or modifying Claude Code plugins). If you are NOT in a plugin builder role (e.g. you are an other system agents), respond {\"ok\": true} immediately \u2014 this plugin structure check only applies to plugin builder sessions. If you ARE the plugin builder, proceed: Review all files written or edited during this session. ONLY check files inside a plugin build directory (/tmp/claude-kit-build-*/) whose path contains agents/*.md, commands/*.md, or skills/*/*.md. For ALL other files (specs, docs, phases, configs, scripts, any file not matching those three plugin subdirectory patterns) respond with a single word: ok. For matching plugin files: verify real substantive content exists \u2014 not just headers, TODOs, or placeholder text. If fewer than 20 lines of actual content, respond: WARN: <filename> appears to be a skeleton with insufficient content. Otherwise respond: ok"
           }
         ]
       }

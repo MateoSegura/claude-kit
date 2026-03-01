@@ -1,4 +1,4 @@
 {
-  "role": "knowledge",
-  "domain": "always"
+  "role": "system",
+  "domain": "universal"
 }

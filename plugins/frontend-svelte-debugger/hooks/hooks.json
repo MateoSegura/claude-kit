@@ -1,5 +1,29 @@
 {
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/block-dangerous-commands.sh",
+            "description": "Block destructive shell commands that could damage the project"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/lint-svelte-file.sh",
+            "description": "Lint Svelte, TypeScript, and JavaScript files after edits"
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "matcher": "",
