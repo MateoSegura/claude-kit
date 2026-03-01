@@ -54,7 +54,7 @@ claude-kit from a black box into a glass box.
 
 ```
 Session runtime → Hook scripts → Structured logs (events.jsonl)
-                → Debug mode  → Narrative traces ([kit:*] blocks)
+                → Debug mode  → Narrative traces ([claude-kit:*] blocks)
                 → Stop hook   → Grader evaluation (score + issues)
 ```
 
@@ -62,7 +62,7 @@ Session runtime → Hook scripts → Structured logs (events.jsonl)
 - **Session logging** — Every hook firing, tool use, and enforcement verdict
   recorded to structured files on disk. Ground truth for what happened
   (REQ-005, ADR-005).
-- **Debug traces** — Human-readable `[kit:*]` blocks showing routing decisions,
+- **Debug traces** — Human-readable `[claude-kit:*]` blocks showing routing decisions,
   agent spawns, skill loading, and constraint checking. Approximate but
   intuition-building (ADR-005).
 - **Grader evaluation** — Independent quality scoring at session end via the

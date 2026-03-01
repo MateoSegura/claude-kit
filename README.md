@@ -64,6 +64,24 @@ claude-kit uninstall
 
 ---
 
+## Telemetry (Opt-in)
+
+claude-kit can capture structured session events for analysis. Telemetry is **off by default** and requires explicit configuration:
+
+```bash
+# Enable local JSONL logging only
+export CLAUDE_KIT_TELEMETRY=local
+
+# Enable full telemetry with API upload
+export CLAUDE_KIT_TELEMETRY=full
+export CLAUDE_KIT_API_URL=https://your-api.example.com
+export CLAUDE_KIT_API_KEY=ck_live_...
+```
+
+Events captured: session lifecycle, plugin loads, skill invocations, hook firings, autorouter matches. See `docs/architecture/components/telemetry.md` for the full architecture.
+
+---
+
 ## How It Works
 
 claude-kit builds on Claude Code's native configuration hierarchy — it doesn't replace it, bypass it, or modify it. It's a thin launcher that resolves plugins and calls `claude` with `--plugin-dir` arguments, then exits. After launch, claude-kit is not running — it's just Claude Code with more plugins loaded.

@@ -1,7 +1,7 @@
 # Developer Workflow Automation — claude-kit Repo
 
 This rule governs how you behave when developing **inside** the claude-kit
-repository. It complements the global `[kit:]` debug traces with `[dev:]`
+repository. It complements the global `[claude-kit:]` debug traces with `[codebase:]`
 traces and makes you proactively execute development workflows so the
 developer never has to ask.
 
@@ -10,17 +10,17 @@ developer never has to ask.
 ## 1. Dev Session Header
 
 At the start of every conversation turn where you perform an action, print a
-`[dev:session]` line **before** the `[kit:session]` line:
+`[codebase:session]` line **before** the `[claude-kit:session]` line:
 
 ```
-[dev:session] branch: <branch> | dirty: <file zones> | layers: <affected test layers>
+[codebase:session] branch: <branch> | dirty: <file zones> | layers: <affected test layers>
 ```
 
 - **branch**: current git branch (warn if `main`)
 - **dirty**: summarize what zones have uncommitted changes — `cli`, `plugins`,
-  `scripts`, `docs`, `rules`, `ci`, `templates`, or `clean`
+  `scripts`, `docs`, `rules`, `ci`, `api`, `templates`, or `clean`
 - **layers**: which test layers are relevant based on dirty zones — `1`, `2`,
-  `3`, `4`, or `all`
+  `3`, `4`, `5`, or `all`
 
 To determine these values, check `git branch --show-current` and categorize
 the output of `git diff --name-only` (both staged and unstaged). Cache the
@@ -28,8 +28,8 @@ result for the turn — do not re-run git on every tool call.
 
 Example:
 ```
-[dev:session] branch: fix/hook-script-path | dirty: plugins, scripts | layers: 2, 3
-[kit:session] core: architecture, git, kit | teams: none | system: maker, updater | routing: active
+[codebase:session] branch: fix/hook-script-path | dirty: plugins, scripts | layers: 2, 3
+[claude-kit:session] core: architecture, git, kit | teams: none | system: maker, updater | routing: active
 ```
 
 ---
@@ -40,7 +40,7 @@ If you detect that the current branch is `main` and the user's intent requires
 code changes, **create a branch before doing anything else**. Print:
 
 ```
-[dev:guard] on main — creating branch <type>/<description>
+[codebase:guard] on main — creating branch <type>/<description>
 ```
 
 Use the branch naming convention from `git-workflow.md`. Infer the type from
@@ -55,7 +55,7 @@ proactively run the test layers affected by your changes. Do not wait to be
 asked. Print:
 
 ```
-[dev:validate] running layers <N, N> — triggered by changes to <zone>
+[codebase:validate] running layers <N, N> — triggered by changes to <zone>
 ```
 
 ### Zone-to-Layer Map
@@ -68,6 +68,7 @@ asked. Print:
 | `scripts/validate-plugins.py` or `scripts/test-plugin-consistency.sh` | 3 | `python3 scripts/validate-plugins.py --all --strict && bash scripts/test-plugin-consistency.sh` |
 | `docs/**` | 4 | `bash scripts/validate-docs.sh` |
 | `scripts/validate-docs.sh` | 4 | `bash scripts/validate-docs.sh` |
+| `api/**` | 5 | `cd api && pip install -q -e ".[dev]" && python3 -m pytest -v --tb=short` |
 | Multiple zones | union of layers | Run each affected layer in order |
 
 If validation fails, **fix the issue before proceeding**. Do not commit broken
@@ -81,7 +82,7 @@ When you edit a file inside a team plugin (e.g., `plugins/embedded-zephyr-engine
 **proactively check the same role in every other team** before committing. Print:
 
 ```
-[dev:xteam] checking <role> across teams: <team1>, <team2>, ...
+[codebase:xteam] checking <role> across teams: <team1>, <team2>, ...
             same issue found in: <list or "none">
 ```
 
@@ -96,7 +97,7 @@ Before every `git commit`, run the full validation suite for all affected
 layers. Print:
 
 ```
-[dev:gate] pre-commit — running layers <N, N, ...>
+[codebase:gate] pre-commit — running layers <N, N, ...>
 ```
 
 If any layer fails, do not commit. Fix first, then retry.
@@ -104,7 +105,7 @@ If any layer fails, do not commit. Fix first, then retry.
 After a successful commit, print:
 
 ```
-[dev:commit] <short hash> on <branch> — <commit subject>
+[codebase:commit] <short hash> on <branch> — <commit subject>
 ```
 
 ---
@@ -115,7 +116,7 @@ When you modify plugin content files (agents, commands, skills, hooks, scripts)
 — not just README or docs — check whether a version bump is needed. Print:
 
 ```
-[dev:version] <plugin-name> modified — bump needed: <patch|minor|major|none>
+[codebase:version] <plugin-name> modified — bump needed: <patch|minor|major|none>
               reason: <what changed>
 ```
 
@@ -139,13 +140,13 @@ a command exists — just run it.
 
 | Intent | Invoke | Trace |
 |--------|--------|-------|
-| "validate", "check plugins", "run checks" | `validate-all` | `[dev:route] validate → validate-all` |
-| "bump version", "bump the plugin" | `bump-plugin` | `[dev:route] bump → bump-plugin` |
-| "release", "publish", "ship it" | `release` | `[dev:route] release → release` |
-| "auto release", "CI release" | `auto-release` | `[dev:route] ci-release → auto-release` |
+| "validate", "check plugins", "run checks" | `validate-all` | `[codebase:route] validate → validate-all` |
+| "bump version", "bump the plugin" | `bump-plugin` | `[codebase:route] bump → bump-plugin` |
+| "release", "publish", "ship it" | `release` | `[codebase:route] release → release` |
+| "auto release", "CI release" | `auto-release` | `[codebase:route] ci-release → auto-release` |
 
-This extends the `[kit:route]` system — `[dev:route]` handles repo-internal
-commands while `[kit:route]` handles plugin-loaded skills.
+This extends the `[claude-kit:route]` system — `[codebase:route]` handles repo-internal
+commands while `[claude-kit:route]` handles plugin-loaded skills.
 
 ---
 
@@ -154,7 +155,7 @@ commands while `[kit:route]` handles plugin-loaded skills.
 After pushing a branch, check CI status proactively:
 
 ```
-[dev:ci] watching fast-validate on <branch>...
+[codebase:ci] watching fast-validate on <branch>...
 ```
 
 Use `gh run list --branch <branch> --limit 1` to check. If CI fails, fetch
@@ -164,26 +165,26 @@ the logs and diagnose without being asked.
 
 ## 9. Debug Trace Reference
 
-All `[dev:]` prefixes at a glance:
+All `[codebase:]` prefixes at a glance:
 
 | Prefix | When |
 |--------|------|
-| `[dev:session]` | Start of every action turn |
-| `[dev:guard]` | Branch protection triggered |
-| `[dev:validate]` | Auto-validation running |
-| `[dev:xteam]` | Cross-team consistency check |
-| `[dev:gate]` | Pre-commit validation gate |
-| `[dev:commit]` | Commit completed |
-| `[dev:version]` | Version bump assessment |
-| `[dev:route]` | Developer command auto-routing |
-| `[dev:ci]` | CI status monitoring |
+| `[codebase:session]` | Start of every action turn |
+| `[codebase:guard]` | Branch protection triggered |
+| `[codebase:validate]` | Auto-validation running |
+| `[codebase:xteam]` | Cross-team consistency check |
+| `[codebase:gate]` | Pre-commit validation gate |
+| `[codebase:commit]` | Commit completed |
+| `[codebase:version]` | Version bump assessment |
+| `[codebase:route]` | Developer command auto-routing |
+| `[codebase:ci]` | CI status monitoring |
 
-These print **alongside** the `[kit:]` traces, not instead of them. A typical
+These print **alongside** the `[claude-kit:]` traces, not instead of them. A typical
 turn header looks like:
 
 ```
-[dev:session] branch: feat/new-agent | dirty: plugins | layers: 3
-[kit:session] core: kit, architecture | teams: none | system: maker | routing: active
+[codebase:session] branch: feat/new-agent | dirty: plugins | layers: 3
+[claude-kit:session] core: kit, architecture | teams: none | system: maker | routing: active
 ```
 
 ---
@@ -195,5 +196,5 @@ file following the pattern:
 
 1. Describe the **trigger** (what the agent observes)
 2. Describe the **action** (what the agent does proactively)
-3. Assign a **`[dev:tag]`** trace prefix
+3. Assign a **`[codebase:tag]`** trace prefix
 4. Add the tag to the reference table in section 9

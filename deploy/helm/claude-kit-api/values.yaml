@@ -1,0 +1,61 @@
+# Staging defaults
+
+replicaCount: 2
+
+image:
+  repository: ghcr.io/mateosegura/claude-kit-api
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: api-staging.claudekit.dev
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: claude-kit-api-tls
+      hosts:
+        - api-staging.claudekit.dev
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+config:
+  APP_NAME: claude-kit-api
+  LOG_LEVEL: INFO
+  JWT_ACCESS_TOKEN_EXPIRE_MINUTES: "15"
+  JWT_REFRESH_TOKEN_EXPIRE_DAYS: "7"
+
+secrets:
+  DATABASE_URL: ""
+  JWT_SECRET: ""
+  GITHUB_CLIENT_ID: ""
+  GITHUB_CLIENT_SECRET: ""
+  GOOGLE_CLIENT_ID: ""
+  GOOGLE_CLIENT_SECRET: ""
+
+migration:
+  enabled: true
+
+postgresql:
+  enabled: false

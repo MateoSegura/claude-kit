@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "claude-kit-api.fullname" . }}-config
+  labels:
+    {{- include "claude-kit-api.labels" . | nindent 4 }}
+data:
+  APP_NAME: {{ .Values.config.APP_NAME | quote }}
+  LOG_LEVEL: {{ .Values.config.LOG_LEVEL | quote }}
+  JWT_ACCESS_TOKEN_EXPIRE_MINUTES: {{ .Values.config.JWT_ACCESS_TOKEN_EXPIRE_MINUTES | quote }}
+  JWT_REFRESH_TOKEN_EXPIRE_DAYS: {{ .Values.config.JWT_REFRESH_TOKEN_EXPIRE_DAYS | quote }}

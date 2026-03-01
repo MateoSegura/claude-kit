@@ -172,8 +172,20 @@ local/                      # user-mode runtime directory (not committed)
   backups/                  # pre-update backup snapshots
   setup-manifest.json       # tracks installed plugin state
 
+api/                        # FastAPI telemetry + auth service
+  app/                      # application package
+    auth/                   # JWT, API keys, OAuth models + endpoints
+    telemetry/              # event ingestion, queries, aggregation
+    models/                 # SQLAlchemy base
+    middleware/             # request ID, logging
+  tests/                    # pytest-asyncio test suite (SQLite in-memory)
+  migrations/               # Alembic migration scaffold
+  Dockerfile                # multi-stage Python 3.12 image
+  docker-compose.yml        # local dev with PostgreSQL
+  pyproject.toml            # deps, pytest config, ruff config
+
 test/                       # test fixtures and scenarios
-  scenarios/                # test input scenarios
+  scenarios/                # test input scenarios (YAML format)
   src/                      # test source helpers
   results/                  # test output artifacts
 

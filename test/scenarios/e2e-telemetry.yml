@@ -1,0 +1,54 @@
+name: "E2E telemetry — session lifecycle events"
+description: |
+  Load core-kit, run a simple prompt, and verify that:
+  1. Local JSONL file was created with expected events
+  2. Events match the v1 schema (schema_version, event_type, timestamp, session_id, payload)
+  3. Session start and end events are present with correct counters
+  Note: API upload verification requires a running API instance and
+  CLAUDE_KIT_API_URL + CLAUDE_KIT_API_KEY environment variables.
+model: "claude-sonnet-4-20250514"
+max_tokens: 1024
+plugins: ["core-kit"]
+
+environment:
+  CLAUDE_KIT_TELEMETRY: "full"
+
+turns:
+  - role: user
+    content: "What is 2 + 2? Answer in one word."
+  - role: expected
+    contains:
+      - "4"
+    max_tokens: 50
+
+validations:
+  - type: response_contains
+    value: "4"
+  - type: no_error
+
+  # Telemetry validations: check the JSONL output file
+  - type: telemetry_jsonl_exists
+    description: "A .jsonl file should be created in the telemetry output directory"
+
+  - type: telemetry_event_types
+    description: "The JSONL should contain at minimum session.start and session.end events"
+    required_types:
+      - "session.start"
+      - "session.end"
+      - "plugin.loaded"
+
+  - type: telemetry_schema_v1
+    description: "Every event line should have schema_version=1, event_type, timestamp, session_id, payload"
+    required_fields:
+      - "schema_version"
+      - "event_type"
+      - "timestamp"
+      - "session_id"
+      - "payload"
+
+  - type: telemetry_session_summary
+    description: "The session.end payload should contain duration_s, plugins_loaded, skills_invoked"
+    required_payload_fields:
+      - "duration_s"
+      - "plugins_loaded"
+      - "skills_invoked"

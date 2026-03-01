@@ -1,0 +1,38 @@
+{{- if .Values.migration.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "claude-kit-api.fullname" . }}-migrate
+  labels:
+    {{- include "claude-kit-api.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        {{- include "claude-kit-api.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["alembic", "upgrade", "head"]
+          workingDir: /app
+          envFrom:
+            - configMapRef:
+                name: {{ include "claude-kit-api.fullname" . }}-config
+            - secretRef:
+                name: {{ include "claude-kit-api.fullname" . }}-secret
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+{{- end }}
