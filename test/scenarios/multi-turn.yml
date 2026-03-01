@@ -1,0 +1,30 @@
+name: "Multi-turn — conversation with simulated human"
+description: "Test a multi-turn conversation with a human_sim injection between API calls"
+model: "claude-sonnet-4-20250514"
+max_tokens: 1024
+plugins: []
+
+turns:
+  # First user turn — ask Claude to list three items
+  - role: user
+    content: "List exactly three programming languages that are commonly used for web development. Just list the names, one per line."
+
+  # Validate the first response
+  - role: expected
+    contains:
+      - "JavaScript"
+
+  # Simulated human follow-up (injected into conversation history)
+  - role: human_sim
+    content: "Now pick one of those and explain in one sentence why it is popular."
+
+  # Second API call — Claude sees the full conversation history including the human_sim
+  - role: user
+    content: "Go ahead."
+
+  # Validate the second response contains a reason
+  - role: expected
+    contains: []
+
+validations:
+  - type: no_error
