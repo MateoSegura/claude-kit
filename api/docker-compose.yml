@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: claudekit
+      POSTGRES_PASSWORD: localdev
+      POSTGRES_DB: claudekit
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U claudekit"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://claudekit:localdev@db:5432/claudekit"
+      JWT_SECRET: "dev-secret-change-in-prod"
+      LOG_LEVEL: "INFO"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python3", "-m", "pytest", "-v", "--tb=short"]
+    environment:
+      DATABASE_URL: "sqlite+aiosqlite:///:memory:"
+      JWT_SECRET: "test-secret"
+    profiles:
+      - test
+
+volumes:
+  pgdata:

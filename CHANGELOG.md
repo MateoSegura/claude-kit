@@ -4,6 +4,29 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Telemetry system** — opt-in structured event capture during Claude Code
+  sessions. Configurable via `CLAUDE_KIT_TELEMETRY` env var with four levels:
+  `off` (default), `debug`, `local`, `full`
+- **TelemetryEmitter** in CLI — captures session lifecycle events (start, end,
+  plugin loads, skill invocations, hook firings, autorouter matches/misses) as
+  JSON with schema versioning
+- **Telemetry API** — FastAPI service (`api/`) with JWT and API key auth,
+  batch event ingestion, paginated session queries, and dashboard-ready
+  aggregate metrics (summary, skill heatmap, plugin comparison, token usage,
+  cost tracking)
+- **CLI upload path** — automatic HTTP upload of session events to the
+  telemetry API when `CLAUDE_KIT_TELEMETRY=full` and API credentials are
+  configured; uses stdlib `http.client` with graceful failure
+- **Test harness** — Claude SDK-based test runner (`test/`) with YAML scenario
+  format for scripted multi-turn conversations with validation assertions
+- **E2E telemetry scenario** — `test/scenarios/e2e-telemetry.yml` validates
+  local JSONL output and event schema compliance
+- **API test suite** — 50+ async tests covering auth, telemetry ingestion,
+  session queries, metrics aggregation, and cross-user isolation
+- **Architecture documentation** — `docs/architecture/components/telemetry.md`
+  covering data flow, event schema, configuration, and API endpoints
+
 ## [0.12.0] - 2026-03-01
 
 ### Changed
@@ -236,10 +259,10 @@ All notable changes to claude-kit will be documented in this file.
 
 ### Changed
 - **Debug mode launch indicator** — `claude-kit --kit` now shows a yellow
-  `debug  ·  [kit:*] routing visible` line in the launch header when debug
+  `debug  ·  [claude-kit:*] routing visible` line in the launch header when debug
   mode is active
 - **Debug output formatting** — switched from code blocks to blockquote style
-  with bold `[kit:*]` prefix for better visual distinction in Claude Code
+  with bold `[claude-kit:*]` prefix for better visual distinction in Claude Code
 
 ## [0.7.1] - 2026-02-26
 
@@ -272,7 +295,7 @@ All notable changes to claude-kit will be documented in this file.
   natural language intents to loaded skills and commands transparently, with
   `routing` and `identity` skills (universal knowledge companion)
 - **`claude-kit debug [on|off]` command** — toggle debug mode that prints
-  `[kit:*]` blocks before every skill invocation, agent spawn, and hook trigger
+  `[claude-kit:*]` blocks before every skill invocation, agent spawn, and hook trigger
 - **`--plugin` / `-p` CLI flag** — load exactly one plugin by name without
   prefix expansion, companion resolution, or core auto-loading
 - **Auto-routing rules** installed by `claude-kit setup` — copies

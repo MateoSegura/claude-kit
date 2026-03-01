@@ -61,7 +61,7 @@ A VPAT (Voluntary Product Accessibility Template) must document:
 
 | Constraint | Impact |
 |------------|--------|
-| Color independence | All `[kit:]` and `[dev:]` debug traces must include text labels, not just colored output |
+| Color independence | All `[claude-kit:]` and `[codebase:]` debug traces must include text labels, not just colored output |
 | Screen reader compatibility | Evaluate ANSI escape sequence usage; provide a `--no-color` or `--accessible` flag if needed |
 | Web accessibility | Future dashboards (REQ-009) must be built accessibility-first, not retrofitted |
 | Documentation | All markdown documentation must follow accessible formatting (proper headings, alt text, link text) |

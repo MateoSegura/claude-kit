@@ -1,0 +1,30 @@
+# Production overrides
+
+replicaCount: 3
+
+ingress:
+  hosts:
+    - host: api.claudekit.dev
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: claude-kit-api-prod-tls
+      hosts:
+        - api.claudekit.dev
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+autoscaling:
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 60
+
+config:
+  LOG_LEVEL: WARNING
