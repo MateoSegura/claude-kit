@@ -11,6 +11,7 @@ from app.health import router as health_router
 from app.middleware.logging import setup_logging
 from app.middleware.request_id import RequestIDMiddleware
 from app.models.base import engine
+from app.telemetry.router import router as telemetry_router
 
 
 @asynccontextmanager
@@ -36,5 +37,6 @@ def create_app() -> FastAPI:
 
     app.include_router(health_router)
     app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
+    app.include_router(telemetry_router, prefix="/api/v1/telemetry", tags=["telemetry"])
 
     return app

@@ -1,5 +1,6 @@
 """JWT token creation and validation using HS256."""
 
+import uuid
 from datetime import UTC, datetime, timedelta
 
 from jose import JWTError, jwt
@@ -36,6 +37,7 @@ def create_refresh_token(user_id: str) -> tuple[str, datetime]:
         "sub": user_id,
         "exp": expire,
         "type": "refresh",
+        "jti": str(uuid.uuid4()),
     }
     token = jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
     return token, expire

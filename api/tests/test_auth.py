@@ -157,7 +157,7 @@ class TestMe:
 
     async def test_me_unauthenticated(self, client: AsyncClient):
         resp = await client.get("/api/v1/auth/me")
-        assert resp.status_code == 403
+        assert resp.status_code == 401
 
 
 class TestAPIKeys:
@@ -218,7 +218,7 @@ class TestAPIKeys:
             "/api/v1/auth/api-keys",
             json={"name": "Unauthorized Key"},
         )
-        assert resp.status_code == 403
+        assert resp.status_code == 401
 
 
 class TestOAuth:

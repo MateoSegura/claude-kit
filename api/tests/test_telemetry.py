@@ -1,0 +1,329 @@
+"""Telemetry ingestion and query endpoint tests."""
+
+from datetime import UTC, datetime, timedelta
+
+import pytest
+from httpx import AsyncClient
+
+
+@pytest.fixture
+async def auth_headers(client: AsyncClient) -> dict[str, str]:
+    """Register a user and return auth headers."""
+    resp = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "telemetry@example.com",
+            "password": "securepassword123",
+            "display_name": "Telemetry User",
+        },
+    )
+    assert resp.status_code == 201
+    token = resp.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+async def api_key_headers(client: AsyncClient, auth_headers: dict) -> dict[str, str]:
+    """Create an API key and return headers using it."""
+    resp = await client.post(
+        "/api/v1/auth/api-keys",
+        json={"name": "telemetry-cli", "is_test": False},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 201
+    raw_key = resp.json()["raw_key"]
+    return {"X-API-Key": raw_key}
+
+
+def _make_events(
+    session_id: str = "test-session-001",
+    start_offset_hours: int = 0,
+) -> dict:
+    """Build a valid ingest request body with session start + end + some events."""
+    base_time = datetime.now(UTC) - timedelta(hours=start_offset_hours)
+    return {
+        "session_id": session_id,
+        "events": [
+            {
+                "event_type": "session.start",
+                "timestamp": base_time.isoformat(),
+                "payload": {
+                    "plugins": ["core-kit", "cloud-python-engineer"],
+                    "mode": "dev",
+                    "telemetry_level": "full",
+                },
+            },
+            {
+                "event_type": "plugin.loaded",
+                "timestamp": (base_time + timedelta(seconds=1)).isoformat(),
+                "payload": {
+                    "plugin": "core-kit",
+                    "role": "system",
+                    "domain": "universal",
+                },
+            },
+            {
+                "event_type": "plugin.loaded",
+                "timestamp": (base_time + timedelta(seconds=2)).isoformat(),
+                "payload": {
+                    "plugin": "cloud-python-engineer",
+                    "role": "engineer",
+                    "domain": "backend",
+                },
+            },
+            {
+                "event_type": "skill.invoked",
+                "timestamp": (base_time + timedelta(seconds=30)).isoformat(),
+                "payload": {"skill": "core-kit:routing", "trigger": "autoroute"},
+            },
+            {
+                "event_type": "skill.invoked",
+                "timestamp": (base_time + timedelta(seconds=60)).isoformat(),
+                "payload": {
+                    "skill": "cloud-python-engineer:engineer",
+                    "trigger": "explicit",
+                },
+            },
+            {
+                "event_type": "autorouter.match",
+                "timestamp": (base_time + timedelta(seconds=30)).isoformat(),
+                "payload": {
+                    "intent": "build a service",
+                    "matched_skill": "core-kit:routing",
+                },
+            },
+            {
+                "event_type": "session.end",
+                "timestamp": (base_time + timedelta(seconds=120)).isoformat(),
+                "payload": {
+                    "duration_s": 120.0,
+                    "plugins_loaded": 2,
+                    "skills_invoked": {
+                        "core-kit:routing": 1,
+                        "cloud-python-engineer:engineer": 1,
+                    },
+                    "hooks_fired": {"PreToolUse": 3},
+                    "autorouter_matches": 1,
+                    "autorouter_misses": 0,
+                },
+            },
+        ],
+    }
+
+
+class TestIngest:
+    """Telemetry ingest endpoint tests."""
+
+    async def test_ingest_with_jwt(self, client: AsyncClient, auth_headers: dict):
+        body = _make_events()
+        resp = await client.post(
+            "/api/v1/telemetry/ingest",
+            json=body,
+            headers=auth_headers,
+        )
+        assert resp.status_code == 202
+        data = resp.json()
+        assert data["accepted"] == 7
+        assert data["session_id"] == "test-session-001"
+
+    async def test_ingest_with_api_key(
+        self, client: AsyncClient, api_key_headers: dict
+    ):
+        body = _make_events(session_id="api-key-session")
+        resp = await client.post(
+            "/api/v1/telemetry/ingest",
+            json=body,
+            headers=api_key_headers,
+        )
+        assert resp.status_code == 202
+        assert resp.json()["accepted"] == 7
+
+    async def test_ingest_without_auth(self, client: AsyncClient):
+        body = _make_events()
+        resp = await client.post("/api/v1/telemetry/ingest", json=body)
+        assert resp.status_code == 401
+
+    async def test_ingest_invalid_event_type(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        body = {
+            "session_id": "bad-session",
+            "events": [
+                {
+                    "event_type": "invalid.type",
+                    "timestamp": datetime.now(UTC).isoformat(),
+                    "payload": {},
+                }
+            ],
+        }
+        resp = await client.post(
+            "/api/v1/telemetry/ingest",
+            json=body,
+            headers=auth_headers,
+        )
+        assert resp.status_code == 422
+
+    async def test_ingest_empty_events(self, client: AsyncClient, auth_headers: dict):
+        body = {"session_id": "empty-session", "events": []}
+        resp = await client.post(
+            "/api/v1/telemetry/ingest",
+            json=body,
+            headers=auth_headers,
+        )
+        assert resp.status_code == 422
+
+
+class TestSessions:
+    """Session query endpoint tests."""
+
+    async def test_list_sessions_empty(self, client: AsyncClient, auth_headers: dict):
+        resp = await client.get("/api/v1/telemetry/sessions", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["sessions"] == []
+        assert data["total"] == 0
+        assert data["page"] == 1
+
+    async def test_list_sessions_with_data(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        # Ingest a session first
+        await client.post(
+            "/api/v1/telemetry/ingest",
+            json=_make_events(),
+            headers=auth_headers,
+        )
+
+        resp = await client.get("/api/v1/telemetry/sessions", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total"] == 1
+        assert len(data["sessions"]) == 1
+        session = data["sessions"][0]
+        assert session["session_id"] == "test-session-001"
+        assert session["duration_s"] == 120.0
+        assert session["autorouter_matches"] == 1
+
+    async def test_session_detail(self, client: AsyncClient, auth_headers: dict):
+        await client.post(
+            "/api/v1/telemetry/ingest",
+            json=_make_events(),
+            headers=auth_headers,
+        )
+
+        resp = await client.get(
+            "/api/v1/telemetry/sessions/test-session-001",
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["session_id"] == "test-session-001"
+        assert data["event_count"] == 7
+
+    async def test_session_detail_not_found(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        resp = await client.get(
+            "/api/v1/telemetry/sessions/nonexistent",
+            headers=auth_headers,
+        )
+        assert resp.status_code == 404
+
+    async def test_session_events(self, client: AsyncClient, auth_headers: dict):
+        await client.post(
+            "/api/v1/telemetry/ingest",
+            json=_make_events(),
+            headers=auth_headers,
+        )
+
+        resp = await client.get(
+            "/api/v1/telemetry/sessions/test-session-001/events",
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total"] == 7
+        assert len(data["events"]) == 7
+        # Events should be ordered by timestamp
+        types = [e["event_type"] for e in data["events"]]
+        assert types[0] == "session.start"
+        assert types[-1] == "session.end"
+
+    async def test_session_events_not_found(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        resp = await client.get(
+            "/api/v1/telemetry/sessions/nonexistent/events",
+            headers=auth_headers,
+        )
+        assert resp.status_code == 404
+
+    async def test_sessions_unauthenticated(self, client: AsyncClient):
+        resp = await client.get("/api/v1/telemetry/sessions")
+        assert resp.status_code == 401
+
+
+class TestMetrics:
+    """Metrics query endpoint tests."""
+
+    async def test_summary_empty(self, client: AsyncClient, auth_headers: dict):
+        resp = await client.get(
+            "/api/v1/telemetry/metrics/summary", headers=auth_headers
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total_sessions"] == 0
+        assert data["total_tokens_in"] == 0
+        assert data["autorouter_hit_rate"] == 0.0
+
+    async def test_summary_with_data(self, client: AsyncClient, auth_headers: dict):
+        await client.post(
+            "/api/v1/telemetry/ingest",
+            json=_make_events(),
+            headers=auth_headers,
+        )
+
+        resp = await client.get(
+            "/api/v1/telemetry/metrics/summary",
+            params={"period": "month"},
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total_sessions"] == 1
+        assert data["period"] == "month"
+
+    async def test_skills_empty(self, client: AsyncClient, auth_headers: dict):
+        resp = await client.get(
+            "/api/v1/telemetry/metrics/skills", headers=auth_headers
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["buckets"] == []
+
+    async def test_plugins_empty(self, client: AsyncClient, auth_headers: dict):
+        resp = await client.get(
+            "/api/v1/telemetry/metrics/plugins", headers=auth_headers
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["plugins"] == []
+
+    async def test_tokens_empty(self, client: AsyncClient, auth_headers: dict):
+        resp = await client.get(
+            "/api/v1/telemetry/metrics/tokens", headers=auth_headers
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["buckets"] == []
+
+    async def test_cost_empty(self, client: AsyncClient, auth_headers: dict):
+        resp = await client.get("/api/v1/telemetry/metrics/cost", headers=auth_headers)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["buckets"] == []
+        assert data["total_cost_usd"] == 0.0
+
+    async def test_metrics_unauthenticated(self, client: AsyncClient):
+        resp = await client.get("/api/v1/telemetry/metrics/summary")
+        assert resp.status_code == 401

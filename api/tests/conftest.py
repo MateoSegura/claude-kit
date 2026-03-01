@@ -10,6 +10,7 @@ from app.auth.models import APIKey, OAuthConnection, RefreshToken, User  # noqa:
 from app.dependencies import get_db
 from app.main import create_app
 from app.models.base import Base
+from app.telemetry.models import SessionSummary, TelemetryEvent  # noqa: F401
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
