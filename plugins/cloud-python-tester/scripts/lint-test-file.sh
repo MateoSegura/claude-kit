@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 # lint-test-file.sh — Runs ruff check and ruff format --check on written test files
 # Called by hooks.json as a PostToolUse hook on Write|Edit tools

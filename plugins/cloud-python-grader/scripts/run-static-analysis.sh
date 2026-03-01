@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 # run-static-analysis.sh — Runs ruff check and mypy on graded Python files (background)
 # Called by hooks.json as an async PostToolUse hook on Bash tool

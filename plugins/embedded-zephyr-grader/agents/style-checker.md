@@ -5,7 +5,7 @@ description: "Runs checkpatch.pl on Zephyr submissions to assess coding style co
 tools: Read, Glob, Grep, Bash
 skills: identity, grading-rubrics, tool-pipeline, scoring-engine
 color: "#9B59B6"
-permissionMode: default
+permissionMode: plan
 ---
 
 <role>

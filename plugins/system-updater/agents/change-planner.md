@@ -105,7 +105,7 @@ When the change FITS, produce a change plan following these rules:
 
 7. **Identity skill updates**: If the change affects domain scope or methodology, plan an update to `skills/identity/SKILL.md` to reflect new components. Plugins do NOT read CLAUDE.md.
 
-8. **plugin.json updates**: Update keywords and description if the domain scope expands.
+8. **plugin.json updates**: Update description if the domain scope expands. Never add fields beyond `name`, `description`, and `version` — extra fields cause silent load failures.
 
 9. **Design pattern coverage**: When updating a domain plugin, check whether it has design pattern/architecture skills. If missing, recommend adding them. Should cover: domain-specific design patterns, architecture principles, theoretical concepts. This aligns with system-maker which generates these for new domain plugins.
 
@@ -203,8 +203,8 @@ Return a JSON object:
       {
         "file": ".claude-plugin/plugin.json",
         "action": "modify",
-        "description": "Add 'bluetooth', 'ble' to keywords array",
-        "specific_change": "Merge new keywords into existing keywords array",
+        "description": "Update description to reflect expanded Bluetooth coverage",
+        "specific_change": "Revise description field to mention Bluetooth support",
         "depends_on": []
       }
     ]
@@ -232,6 +232,6 @@ When `fitness` is `gray_area`, include BOTH a `change_plan` (what it would look 
 - If a skill is over 400 lines and the update would push it over 500, plan to split it into multi-file format as part of the change.
 - New agent colors MUST be distinct from all colors listed in `extension_points.colors_in_use`.
 - When adding a new skill that agents should preload, include the agent frontmatter modification in the plan.
-- Always include plugin.json keyword updates when adding new domain coverage.
+- When adding new domain coverage, update the plugin.json `description` field to reflect the expanded scope. Never add extra fields beyond `name`, `description`, and `version`.
 - Do NOT produce actual file contents — only describe what each file should contain. The change-writer handles implementation.
 </constraints>

@@ -8,8 +8,8 @@ set -euo pipefail
 INPUT=$(cat)
 
 # Extract the Bash command and exit code
-COMMAND=$(echo "$INPUT" | jq -r '.arguments.command // ""')
-EXIT_CODE=$(echo "$INPUT" | jq -r '.output.exit_code // 1')
+COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
+EXIT_CODE=$(echo "$INPUT" | jq -r '.tool_result.exit_code // 1')
 
 # Only proceed if the command was a west build and it succeeded
 if ! echo "$COMMAND" | grep -qE '^west build'; then

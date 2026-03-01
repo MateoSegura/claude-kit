@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 # block-dangerous-commands.sh — Blocks destructive commands in cloud/container environments
 # Called by hooks.json as a PreToolUse hook on Bash tool

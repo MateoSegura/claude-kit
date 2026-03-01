@@ -5,7 +5,7 @@ description: "Runs cppcheck and clang-tidy on Zephyr submissions, parses finding
 tools: Read, Glob, Grep, Bash
 skills: identity, grading-rubrics, tool-pipeline, scoring-engine
 color: "#4A90D9"
-permissionMode: default
+permissionMode: plan
 ---
 
 <role>
