@@ -81,3 +81,12 @@ jobs:
 
       - name: Tier 1 — changed plugins
         run: python3 scripts/validate-plugins.py --changed --json
+
+      - name: API syntax check
+        run: python3 -m py_compile api/app/main.py && echo "API syntax OK"
+
+      - name: API tests
+        run: |
+          cd api
+          pip install -q -e ".[dev]"
+          python3 -m pytest -v --tb=short

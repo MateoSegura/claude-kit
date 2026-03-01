@@ -10,13 +10,31 @@ from app.config import get_settings
 from app.health import router as health_router
 from app.middleware.logging import setup_logging
 from app.middleware.request_id import RequestIDMiddleware
-from app.models.base import engine
+from app.models.base import Base, engine
 from app.telemetry.router import router as telemetry_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Manage application startup and shutdown."""
+    """Manage application startup and shutdown.
+
+    When using SQLite (dev/test), auto-creates tables on startup.
+    PostgreSQL environments should use Alembic migrations instead.
+    """
+    if "sqlite" in str(engine.url):
+        from app.auth.models import (
+            APIKey,  # noqa: F401
+            OAuthConnection,  # noqa: F401
+            RefreshToken,  # noqa: F401
+            User,  # noqa: F401
+        )
+        from app.telemetry.models import (
+            SessionSummary,  # noqa: F401
+            TelemetryEvent,  # noqa: F401
+        )
+
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
     yield
     await engine.dispose()
 

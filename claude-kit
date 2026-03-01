@@ -45,6 +45,7 @@ _CONTENT_DIRS = ("agents", "commands", "skills", "hooks", "scripts")
 #   full   — stderr + JSONL + buffer for API upload
 
 _TELEMETRY_DIR = pathlib.Path.home() / ".claude-kit" / "telemetry"
+_TELEMETRY_CONF = pathlib.Path.home() / ".claude-kit" / "telemetry.conf"
 _SCHEMA_VERSION = 1
 
 
@@ -173,13 +174,93 @@ class TelemetryEmitter:
         })
 
     def flush_buffer(self) -> list:
-        """Return buffered events and clear. For future API upload."""
+        """Return buffered events and clear the internal buffer.
+
+        The returned list contains raw event dicts ready for API upload
+        or any other consumer (e.g., a future Python SDK wrapper).
+        """
         events = list(self._buffer)
         self._buffer.clear()
         return events
 
+    def upload_to_api(self) -> bool:
+        """Upload buffered events to the telemetry API.
+
+        Requires CLAUDE_KIT_API_URL and CLAUDE_KIT_API_KEY env vars.
+        Returns True if upload succeeded, False otherwise.
+        Uses stdlib http.client — no third-party dependencies.
+        """
+        if self.level != "full":
+            return False
+        api_url = os.environ.get("CLAUDE_KIT_API_URL", "").rstrip("/")
+        api_key = os.environ.get("CLAUDE_KIT_API_KEY", "")
+        if not api_url or not api_key:
+            return False
+
+        events = self.flush_buffer()
+        if not events:
+            return True  # nothing to upload is not a failure
+
+        # Build the ingest payload
+        payload = json.dumps({
+            "session_id": self.session_id,
+            "events": [
+                {
+                    "event_type": e["event_type"],
+                    "timestamp": e["timestamp"],
+                    "payload": e["payload"],
+                }
+                for e in events
+            ],
+        })
+
+        import http.client
+        import urllib.parse
+
+        parsed = urllib.parse.urlparse(api_url)
+        host = parsed.hostname or "localhost"
+        port = parsed.port
+        use_https = parsed.scheme == "https"
+        path = f"{parsed.path}/api/v1/telemetry/ingest"
+
+        headers = {
+            "Content-Type": "application/json",
+            "X-API-Key": api_key,
+        }
+
+        for attempt in range(2):  # one retry on failure
+            try:
+                if use_https:
+                    conn = http.client.HTTPSConnection(host, port, timeout=5)
+                else:
+                    conn = http.client.HTTPConnection(host, port, timeout=5)
+                conn.request("POST", path, body=payload, headers=headers)
+                resp = conn.getresponse()
+                conn.close()
+                if 200 <= resp.status < 300:
+                    return True
+                # Non-success — log and retry
+                if attempt == 0:
+                    continue
+                print(
+                    f"[claude-kit:telemetry] upload failed: HTTP {resp.status}",
+                    file=sys.stderr,
+                )
+                return False
+            except (OSError, http.client.HTTPException) as exc:
+                if attempt == 0:
+                    continue
+                print(
+                    f"[claude-kit:telemetry] upload failed: {exc}",
+                    file=sys.stderr,
+                )
+                return False
+        return False
+
     def close(self) -> None:
-        """Close open file handles."""
+        """Flush buffer, upload to API if configured, close file handles."""
+        if self.level == "full":
+            self.upload_to_api()
         if self._jsonl_file is not None:
             try:
                 self._jsonl_file.close()
@@ -193,9 +274,13 @@ _telemetry: TelemetryEmitter | None = None
 
 
 def _init_telemetry() -> TelemetryEmitter:
-    """Initialize the global telemetry emitter from env config."""
+    """Initialize the global telemetry emitter from env or config file."""
     global _telemetry
-    level = os.environ.get("CLAUDE_KIT_TELEMETRY", "off").lower()
+    level = os.environ.get("CLAUDE_KIT_TELEMETRY", "").lower()
+    if not level and _TELEMETRY_CONF.exists():
+        level = _TELEMETRY_CONF.read_text().strip().lower()
+    if not level:
+        level = "off"
     _telemetry = TelemetryEmitter(level)
     return _telemetry
 
@@ -1950,8 +2035,76 @@ def cmd_help() -> None:
     {CY}claude-kit feedback{C.N}            share feedback — creates a GitHub issue
     {CY}claude-kit roadmap{C.N}            see what's coming and what shipped
     {CY}claude-kit debug [on|off]{C.N}     toggle debug mode ([claude-kit:*] routing info)
+    {CY}claude-kit telemetry [on|off]{C.N} toggle session telemetry (off by default)
     {CY}claude-kit uninstall{C.N}          remove claude-kit and the CLI symlink
 """)
+
+# ── cmd_telemetry ─────────────────────────────────────────────────────────────
+
+def cmd_telemetry(args: list) -> None:
+    """Toggle telemetry on/off, or set a specific level."""
+    conf = _TELEMETRY_CONF
+    current = conf.read_text().strip().lower() if conf.exists() else "off"
+
+    if not args:
+        state = col(C.G, current) if current != "off" else col(C.DIM, "off")
+        p()
+        p(f"  Telemetry: {state}")
+        p()
+        if current != "off":
+            p(f"  Level: {col(C.W, current)}")
+            p(f"  JSONL dir: {col(C.DIM, str(_TELEMETRY_DIR))}")
+            p()
+            p(f"  Turn off:    {col(C.CY, 'claude-kit telemetry off')}")
+            p(f"  Change level: {col(C.CY, 'claude-kit telemetry [local|full]')}")
+        else:
+            p(f"  Levels:")
+            p(f"    {col(C.W, 'local')}  — JSONL file per session (no network)")
+            p(f"    {col(C.W, 'full')}   — JSONL + API upload (requires API config)")
+            p()
+            p(f"  Turn on:  {col(C.CY, 'claude-kit telemetry on')}")
+            p(f"            {col(C.CY, 'claude-kit telemetry local')}")
+        p()
+        return
+
+    action = args[0].lower()
+
+    if action in ("on", "local"):
+        level = "local"
+        conf.parent.mkdir(parents=True, exist_ok=True)
+        conf.write_text(level + "\n")
+        p()
+        p(f"  {col(C.G, '✓')} Telemetry {col(C.G, level)}")
+        p()
+        p(f"  Sessions write JSONL to {col(C.DIM, str(_TELEMETRY_DIR))}")
+        p(f"  Takes effect on next {col(C.CY, 'claude-kit --kit')} session.")
+        p()
+
+    elif action == "full":
+        conf.parent.mkdir(parents=True, exist_ok=True)
+        conf.write_text("full\n")
+        p()
+        p(f"  {col(C.G, '✓')} Telemetry {col(C.G, 'full')}")
+        p()
+        p(f"  Sessions write JSONL + upload to API on close.")
+        p(f"  Requires: {col(C.W, 'CLAUDE_KIT_API_URL')} and {col(C.W, 'CLAUDE_KIT_API_KEY')}")
+        p(f"  Takes effect on next {col(C.CY, 'claude-kit --kit')} session.")
+        p()
+
+    elif action == "off":
+        if conf.exists():
+            conf.unlink()
+        p()
+        p(f"  {col(C.G, '✓')} Telemetry {col(C.DIM, 'off')}")
+        p()
+        p(f"  Takes effect on next {col(C.CY, 'claude-kit --kit')} session.")
+        p()
+
+    else:
+        p()
+        p(f"  Usage: {col(C.CY, 'claude-kit telemetry [on|off|local|full]')}")
+        p()
+
 
 # ── cmd_telemetry_test ───────────────────────────────────────────────────────
 
@@ -2062,7 +2215,7 @@ def main() -> None:
     # Extract -v/--verbose for subcommands (not for launch mode via cmd_run)
     subcommands = {"list", "update", "version", "setup", "restore", "debug",
                    "validate", "uninstall", "feedback", "roadmap",
-                   "telemetry-test"}
+                   "telemetry", "telemetry-test"}
     if cmd in subcommands:
         if "-v" in rest or "--verbose" in rest:
             VERBOSE = True
@@ -2089,6 +2242,7 @@ def main() -> None:
         "uninstall":       lambda: cmd_uninstall(),
         "feedback":        lambda: cmd_feedback(),
         "roadmap":         lambda: cmd_roadmap(),
+        "telemetry":       lambda: cmd_telemetry(rest),
         "telemetry-test":  lambda: cmd_telemetry_test(),
     }
 

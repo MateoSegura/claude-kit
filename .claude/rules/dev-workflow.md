@@ -18,9 +18,9 @@ At the start of every conversation turn where you perform an action, print a
 
 - **branch**: current git branch (warn if `main`)
 - **dirty**: summarize what zones have uncommitted changes — `cli`, `plugins`,
-  `scripts`, `docs`, `rules`, `ci`, `templates`, or `clean`
+  `scripts`, `docs`, `rules`, `ci`, `api`, `templates`, or `clean`
 - **layers**: which test layers are relevant based on dirty zones — `1`, `2`,
-  `3`, `4`, or `all`
+  `3`, `4`, `5`, or `all`
 
 To determine these values, check `git branch --show-current` and categorize
 the output of `git diff --name-only` (both staged and unstaged). Cache the
@@ -68,6 +68,7 @@ asked. Print:
 | `scripts/validate-plugins.py` or `scripts/test-plugin-consistency.sh` | 3 | `python3 scripts/validate-plugins.py --all --strict && bash scripts/test-plugin-consistency.sh` |
 | `docs/**` | 4 | `bash scripts/validate-docs.sh` |
 | `scripts/validate-docs.sh` | 4 | `bash scripts/validate-docs.sh` |
+| `api/**` | 5 | `cd api && pip install -q -e ".[dev]" && python3 -m pytest -v --tb=short` |
 | Multiple zones | union of layers | Run each affected layer in order |
 
 If validation fails, **fix the issue before proceeding**. Do not commit broken
