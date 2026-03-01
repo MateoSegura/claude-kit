@@ -104,12 +104,16 @@ green. The job takes approximately 10 seconds.
 The `claude-validate` job in `pr.yml` runs a deeper semantic review on plugin
 changes but is **not** a required merge gate.
 
-## Process Validation (External)
+## PAL Validation (Submodule)
 
-Process validation is maintained in the standalone Process Asset Library
-repository (`MateoSegura/process-asset-library`). When working with PAL
-processes, run validation from the submodule:
+The Process Asset Library lives at `pal/` as a git submodule
+(`MateoSegura/process-asset-library`). PAL has two validators that run as
+part of `fast-validate` in CI:
 
 ```bash
-bash pal/scripts/validate-processes.sh
+bash pal/scripts/validate-processes.sh    # 37 processes, 8 structural checks
+bash pal/docs-site/validate-site.sh       # nav, orphans, cross-refs, metadata
 ```
+
+Run both after any change to files inside `pal/`. CI runs them automatically
+when the submodule is initialized.

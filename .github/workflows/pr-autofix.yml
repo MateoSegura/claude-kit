@@ -82,6 +82,7 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
+          submodules: true
 
       - name: Refresh tag cache
         run: git fetch --tags --force

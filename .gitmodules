@@ -1,3 +1,4 @@
 [submodule "pal"]
 	path = pal
 	url = https://github.com/MateoSegura/process-asset-library.git
+	branch = main
