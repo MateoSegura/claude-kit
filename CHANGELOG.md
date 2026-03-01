@@ -236,10 +236,10 @@ All notable changes to claude-kit will be documented in this file.
 
 ### Changed
 - **Debug mode launch indicator** — `claude-kit --kit` now shows a yellow
-  `debug  ·  [kit:*] routing visible` line in the launch header when debug
+  `debug  ·  [claude-kit:*] routing visible` line in the launch header when debug
   mode is active
 - **Debug output formatting** — switched from code blocks to blockquote style
-  with bold `[kit:*]` prefix for better visual distinction in Claude Code
+  with bold `[claude-kit:*]` prefix for better visual distinction in Claude Code
 
 ## [0.7.1] - 2026-02-26
 
@@ -272,7 +272,7 @@ All notable changes to claude-kit will be documented in this file.
   natural language intents to loaded skills and commands transparently, with
   `routing` and `identity` skills (universal knowledge companion)
 - **`claude-kit debug [on|off]` command** — toggle debug mode that prints
-  `[kit:*]` blocks before every skill invocation, agent spawn, and hook trigger
+  `[claude-kit:*]` blocks before every skill invocation, agent spawn, and hook trigger
 - **`--plugin` / `-p` CLI flag** — load exactly one plugin by name without
   prefix expansion, companion resolution, or core auto-loading
 - **Auto-routing rules** installed by `claude-kit setup` — copies

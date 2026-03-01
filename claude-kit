@@ -1552,7 +1552,7 @@ def cmd_debug(args: list) -> None:
         p(f"  Debug mode: {state}")
         p()
         if is_on:
-            p(f"  Claude will print {col(C.W, '[kit:*]')} blocks before every")
+            p(f"  Claude will print {col(C.W, '[claude-kit:*]')} blocks before every")
             p(f"  skill invocation, agent spawn, and hook trigger.")
             p()
             p(f"  Turn off:  {col(C.CY, 'claude-kit debug off')}")
@@ -1580,7 +1580,7 @@ def cmd_debug(args: list) -> None:
         p()
         p(f"  {col(C.G, '✓')} Debug mode {col(C.G, 'on')}")
         p()
-        p(f"  Claude will print {col(C.W, '[kit:*]')} blocks before every")
+        p(f"  Claude will print {col(C.W, '[claude-kit:*]')} blocks before every")
         p(f"  skill invocation, agent spawn, and hook trigger.")
         p()
         p(f"  Takes effect on next {col(C.CY, 'claude-kit --kit')} session.")
@@ -1949,7 +1949,7 @@ def cmd_help() -> None:
     {CY}claude-kit version{C.N}            show current version and check for updates
     {CY}claude-kit feedback{C.N}            share feedback — creates a GitHub issue
     {CY}claude-kit roadmap{C.N}            see what's coming and what shipped
-    {CY}claude-kit debug [on|off]{C.N}     toggle debug mode ([kit:*] routing info)
+    {CY}claude-kit debug [on|off]{C.N}     toggle debug mode ([claude-kit:*] routing info)
     {CY}claude-kit uninstall{C.N}          remove claude-kit and the CLI symlink
 """)
 

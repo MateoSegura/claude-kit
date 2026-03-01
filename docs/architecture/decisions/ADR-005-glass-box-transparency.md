@@ -18,7 +18,7 @@ The state-and-roadmap research designs a two-layer transparency architecture:
   truth — it records exactly what happened, not what the agent claims happened.
 
 - **Layer 2 — Narrative:** The agent generates human-readable trace blocks
-  (`[kit:route]`, `[kit:agent]`, `[kit:hook]`) that explain its reasoning,
+  (`[claude-kit:route]`, `[claude-kit:agent]`, `[claude-kit:hook]`) that explain its reasoning,
   routing decisions, and constraint checking. This layer is approximate (LLM-
   generated, may vary) but provides the intuition-building signal that helps
   users calibrate trust.
@@ -44,7 +44,7 @@ claude-kit implements glass-box transparency through two complementary layers:
 - This log is the source of truth for what happened in a session
 
 **Narrative layer (debug mode → terminal output):**
-- Debug mode instructs the agent to emit `[kit:*]` trace blocks before
+- Debug mode instructs the agent to emit `[claude-kit:*]` trace blocks before
   routing decisions, agent spawns, skill loading, and hook responses
 - These blocks are human-readable but LLM-generated (approximate)
 - Debug mode can be activated per-session (transient) or persistently

@@ -50,7 +50,7 @@ Glob: .claude/hooks.json
 Spawn the repo-analyzer agent to scan the repository:
 
 ```
-[kit:agent] spawning repo-analyzer
+[claude-kit:agent] spawning repo-analyzer
             skills: identity, instrumentation
             tools: Read, Glob, Grep, Bash
             mode: plan
