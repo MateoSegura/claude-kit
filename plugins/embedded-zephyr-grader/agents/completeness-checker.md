@@ -5,7 +5,7 @@ description: "Checks submission completeness (required files, test structure, do
 tools: Read, Glob, Grep, Bash
 skills: identity, grading-rubrics
 color: "#32CD32"
-permissionMode: default
+permissionMode: plan
 ---
 
 <role>

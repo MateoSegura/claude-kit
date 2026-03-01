@@ -10,6 +10,20 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/run-svelte-check.sh",
+            "async": true,
+            "timeout": 120,
+            "description": "Run svelte-check project-wide after Bash commands"
+          }
+        ]
+      }
     ]
   }
 }

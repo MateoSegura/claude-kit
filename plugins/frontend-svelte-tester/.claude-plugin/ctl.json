@@ -1,5 +1,5 @@
 {
   "role": "tester",
   "domain": "frontend",
-  "companions": ["frontend-svelte-knowledge"]
+  "companions": ["frontend-svelte-knowledge", "core-frontend"]
 }

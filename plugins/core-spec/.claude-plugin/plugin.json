@@ -1,5 +1,5 @@
 {
   "name": "core-spec",
-  "description": "Spec-driven development for long-running Claude Code sessions — write the spec first, derive implementation phases from it, track progress via file-based state, and recover context after compaction through hooks and agents.",
-  "version": "0.0.1"
+  "description": "Tiered planning system for long-running Claude Code sessions — assesses complexity, creates structured plans or phased specifications, and ensures plan adherence across context compactions.",
+  "version": "0.2.0"
 }

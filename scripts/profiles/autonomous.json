@@ -1,0 +1,20 @@
+{
+  "name": "autonomous",
+  "label": "Autonomous",
+  "icon": "\ud83e\udd16",
+  "tagline": "Claude leads. Makes decisions, only stops when truly stuck.",
+  "description": "Maximum independence for containers, CI, or unattended runs. Claude makes all decisions, does web research before unfamiliar implementations, verifies its work, and only stops when a problem genuinely cannot be solved automatically.",
+  "settings": {
+    "env": {
+      "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    },
+    "permissions": {
+      "defaultMode": "bypassPermissions"
+    },
+    "sandbox": {
+      "enabled": true,
+      "autoAllowBashIfSandboxed": true
+    }
+  },
+  "behavior_file": "behavior-autonomous.md"
+}

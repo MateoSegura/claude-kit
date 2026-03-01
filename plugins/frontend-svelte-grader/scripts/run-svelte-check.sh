@@ -38,7 +38,7 @@ if [[ -z "$SUBMISSION_DIR" ]]; then
 fi
 
 # Output file for diagnostics (readable by reviewer agents)
-DIAGNOSTICS_FILE="/tmp/svelte-check-diagnostics-$$.txt"
+DIAGNOSTICS_FILE="${TMPDIR:-/tmp}/svelte-check-diagnostics-$$.txt"
 
 {
   echo "=== svelte-check diagnostics ==="
@@ -76,7 +76,7 @@ DIAGNOSTICS_FILE="/tmp/svelte-check-diagnostics-$$.txt"
 } > "$DIAGNOSTICS_FILE" 2>&1
 
 # Write a stable symlink so reviewer agents can find the latest diagnostics
-LATEST_LINK="/tmp/svelte-check-diagnostics-latest.txt"
+LATEST_LINK="${TMPDIR:-/tmp}/svelte-check-diagnostics-latest.txt"
 ln -sf "$DIAGNOSTICS_FILE" "$LATEST_LINK" 2>/dev/null || true
 
 exit 0

@@ -84,15 +84,28 @@ Located at `.claude-plugin/ctl.json` (alongside plugin.json). Read by `ctl.sh`, 
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `role` | string | no | Plugin archetype. Standard values: `engineer`, `grader`, `tester`, `debugger`, `knowledge` |
+| `role` | string | no | Plugin archetype. Standard values: `engineer`, `grader`, `tester`, `debugger`, `knowledge`, `system` |
 | `companions` | string[] | no | Companion plugin names to auto-load. Example: `["embedded-zephyr-knowledge"]` |
+| `domain` | string | no | Controls auto-loading for core-* plugins. See domain tiers below. |
+
+### Domain Auto-Loading Tiers
+
+Core plugins (`core-*`) use the `domain` field to control when they auto-load:
+
+| Value | Loads when | Example |
+|-------|-----------|---------|
+| `"always"` | Every kit, unconditionally | `core-kit` (routing infrastructure) |
+| `"universal"` | Any kit that has an active domain | `core-git`, `core-testing` (shared knowledge) |
+| `"<name>"` | Kit domain matches | `core-embedded`, `core-frontend` |
+| *(absent)* | Only via companion or explicit `-k` | `core-spec` (loaded as companion) |
 
 ### ctl.json Example
 
 ```json
 {
   "role": "engineer",
-  "companions": ["embedded-zephyr-knowledge"]
+  "companions": ["embedded-zephyr-knowledge"],
+  "domain": "embedded"
 }
 ```
 

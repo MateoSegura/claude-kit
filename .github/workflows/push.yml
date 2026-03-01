@@ -58,5 +58,26 @@ jobs:
       - name: Docs structure validation
         run: bash scripts/validate-docs.sh
 
+      - name: Upgrade safety check
+        if: github.ref != 'refs/heads/main'
+        run: |
+          bash scripts/test-upgrade-safety.sh --from HEAD~1 --to HEAD --ci --json | tee /tmp/upgrade-safety.json
+          # Parse results for GitHub Actions annotations
+          python3 -c "
+          import json, sys
+          data = json.load(open('/tmp/upgrade-safety.json'))
+          for item in data.get('breaking', []):
+              print(f'::error::BREAKING: {item}')
+          for item in data.get('cautionary', []):
+              print(f'::warning::CAUTIONARY: {item}')
+          if data['breaking_count'] > 0:
+              print(f'::error::{data[\"breaking_count\"]} breaking change(s) detected')
+              sys.exit(1)
+          elif data['cautionary_count'] > 0:
+              print(f'{data[\"cautionary_count\"]} cautionary change(s) — review before releasing')
+          else:
+              print('No API surface changes')
+          "
+
       - name: Tier 1 — changed plugins
         run: python3 scripts/validate-plugins.py --changed --json

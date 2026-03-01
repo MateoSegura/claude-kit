@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 # run-tests-async.sh — Runs pytest on the specific test file in the background
 # Called by hooks.json as a PostToolUse async hook on Write|Edit tools (timeout: 300s)

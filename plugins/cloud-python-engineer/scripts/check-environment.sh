@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 # check-environment.sh — Verifies required tools are available at session start
 # Called by hooks.json as a SessionStart hook
