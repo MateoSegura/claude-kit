@@ -12,13 +12,22 @@ Thumbs.db
 # Local overrides
 *.local
 
+# Python runtime
+__pycache__/
+*.egg-info/
+.venv/
+.venv-*/
+
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+
 # User-created plugins (installed by user, not shipped with claude-kit)
 local/
-__pycache__/
-.venv/
 
-# Test harness output
+# Test output
 test/results/*.json
+test/results/*.md
 
 # Specs (per-project, not shipped)
 docs/specs/

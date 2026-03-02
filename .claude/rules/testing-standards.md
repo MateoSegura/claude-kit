@@ -91,14 +91,15 @@ The API tests require these packages (installed via `pip install -e ".[dev]"`):
 ### Layer 6 — Library Unit Tests
 
 ```bash
-python3 -m venv .venv
-.venv/bin/pip install -e ".[dev]"
-.venv/bin/python -m pytest test/ -v --tb=short \
-  --ignore=test/harness --ignore=test/scenarios --ignore=test/src
+python3 -m venv .venv-lib
+.venv-lib/bin/pip install -e ".[dev]"
+.venv-lib/bin/python -m pytest test/ -v --tb=short \
+  --ignore=test/scenarios --ignore=test/src
 ```
 
-Runs pytest on the `claude_kit` library's unit tests and parity checks.
-Run this after **any** file change inside `claude_kit/`.
+Runs pytest on the `claude_kit` library's unit tests, parity checks, and
+benchmark framework tests. Run this after **any** file change inside
+`claude_kit/` or `test/`.
 
 Tests cover:
 - Parity enforcement (CLI must not duplicate library classes/functions)
@@ -108,10 +109,17 @@ Tests cover:
 - SessionManager (prepare, finalize, env vars)
 - PluginDecryptor and TempDirManager
 - VersionManager (version file, changelog, git)
+- Benchmark engine (config, executor, human simulator)
+- Scoring pipeline (deterministic scorers, LLM judge, statistical analysis)
+- Benchmark orchestration (runner, comparator, report generation)
 
 The library tests require these packages (installed via `pip install -e ".[dev]"`):
 - `pytest` — test framework
 - `ruff` — linting (dev-only)
+
+The benchmark tests optionally use `anthropic` and `pyyaml` (guarded with
+`try/except ImportError`). Tests that require these packages are automatically
+skipped in CI where only `pytest` and `ruff` are installed.
 
 ## When to Run Each Layer
 
@@ -127,6 +135,7 @@ The library tests require these packages (installed via `pip install -e ".[dev]"
 | `api/pyproject.toml` | Layer 5 |
 | Any file inside `claude_kit/` | Layer 1 + Layer 6 |
 | `test/test_*.py` (library tests) | Layer 6 |
+| `test/engine/`, `test/scoring/`, `test/benchmark/` | Layer 6 |
 | `pyproject.toml` (root) | Layer 6 |
 | Multiple categories in one commit | All six layers |
 
@@ -145,7 +154,7 @@ bash scripts/validate-docs.sh && \
 (cd api && pip install -q -e ".[dev]" && python3 -m pytest -v --tb=short) && \
 (python3 -m venv .venv-lib && .venv-lib/bin/pip install -q -e ".[dev]" && \
  .venv-lib/bin/python -m pytest test/ -v --tb=short \
-   --ignore=test/harness --ignore=test/scenarios --ignore=test/src)
+   --ignore=test/scenarios --ignore=test/src)
 ```
 
 ## CI Integration

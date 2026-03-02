@@ -204,8 +204,24 @@ test/                       # test fixtures, scenarios, and library unit tests
   test_session.py           # SessionManager tests
   test_encryption.py        # PluginDecryptor + TempDirManager tests
   test_version.py           # VersionManager tests
+  engine/                   # unified execution layer
+    config.py               # EvalScenario, RunConfig, RunResult, BenchmarkResult
+    executor.py             # ConversationExecutor (API conversation driver)
+    human.py                # HumanSimulator (Claude-backed human stand-in)
+    session_factory.py      # wraps claude_kit library for benchmark use
+  scoring/                  # scoring pipeline
+    base.py                 # Scorer protocol + ScoringResult
+    deterministic.py        # Contains, NoError, TelemetrySchema, TokenEfficiency
+    llm_judge.py            # LLM-as-Judge (individual + pairwise)
+    rubric.py               # Rubric definitions (YAML-loadable)
+    statistical.py          # Bootstrap CI, paired tests (stdlib only)
+  benchmark/                # orchestration + reporting
+    runner.py               # BenchmarkRunner (wires executor + scorers)
+    comparator.py           # PairwiseComparator (kit vs raw)
+    report.py               # JSON + markdown report generation
+    __main__.py             # CLI entry point for running benchmarks
   scenarios/                # test input scenarios (YAML format)
-  src/                      # test source helpers
+    benchmarks/             # benchmark scenario definitions
   results/                  # test output artifacts
 
 .devcontainer/              # developer environment (not for end users)

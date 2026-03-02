@@ -72,6 +72,7 @@ asked. Print:
 | `claude_kit/**` | 1, 6 | `python3 -m py_compile claude-kit && pytest test/` |
 | `pyproject.toml` (root) | 6 | `pytest test/` |
 | `test/test_*.py` (library tests) | 6 | `pytest test/` |
+| `test/engine/**`, `test/scoring/**`, `test/benchmark/**` | 6 | `pytest test/` |
 | Multiple zones | union of layers | Run each affected layer in order |
 
 If validation fails, **fix the issue before proceeding**. Do not commit broken
