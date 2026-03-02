@@ -64,6 +64,12 @@ class SessionSummary(Base):
     total_tokens_in: Mapped[int] = mapped_column(Integer, default=0)
     total_tokens_out: Mapped[int] = mapped_column(Integer, default=0)
     estimated_cost_usd: Mapped[float] = mapped_column(Float, default=0.0)
+    tool_uses: Mapped[dict] = mapped_column(JSON, default=dict)
+    mcp_calls: Mapped[dict] = mapped_column(JSON, default=dict)
+    compact_count: Mapped[int] = mapped_column(Integer, default=0)
+    model: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    cost_usd: Mapped[float | None] = mapped_column(Float, nullable=True)
+    total_turns: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

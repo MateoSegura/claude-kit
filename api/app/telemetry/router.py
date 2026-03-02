@@ -104,6 +104,14 @@ async def _update_session_summary(
                 summary.hooks_fired = event.payload.get("hooks_fired", {})
                 summary.autorouter_matches = event.payload.get("autorouter_matches", 0)
                 summary.autorouter_misses = event.payload.get("autorouter_misses", 0)
+                summary.tool_uses = event.payload.get("tool_uses", {})
+                summary.mcp_calls = event.payload.get("mcp_calls", {})
+                summary.compact_count = event.payload.get("compact_count", 0)
+                summary.total_tokens_in = event.payload.get("total_tokens_in", 0)
+                summary.total_tokens_out = event.payload.get("total_tokens_out", 0)
+                summary.cost_usd = event.payload.get("cost_usd")
+                summary.model = event.payload.get("model")
+                summary.total_turns = event.payload.get("total_turns", 0)
 
 
 # --- Sessions ---

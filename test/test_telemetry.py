@@ -296,3 +296,69 @@ def test_telemetry_dir_not_created_when_off(tmp_path: Path):
     subdir = tmp_path / "should" / "not" / "exist"
     TelemetryEmitter(level="off", telemetry_dir=subdir)
     assert not subdir.exists()
+
+
+# ── New Telemetry Counters ──────────────────────────────────────────────
+
+
+def test_emit_tool_used_increments_counter():
+    from claude_kit.telemetry import TelemetryEmitter
+
+    captured: list[dict] = []
+    e = TelemetryEmitter(level="debug", on_emit=captured.append)
+    e.emit("tool.used", {"tool_name": "Read", "is_mcp": False})
+    e.emit("tool.used", {"tool_name": "Read", "is_mcp": False})
+    e.emit("tool.used", {"tool_name": "Bash", "is_mcp": False})
+    e.emit(
+        "tool.used",
+        {"tool_name": "mcp__github__get_issue", "is_mcp": True, "mcp_server": "github"},
+    )
+    e.emit_session_end()
+
+    end_event = [ev for ev in captured if ev["event_type"] == "session.end"][0]
+    payload = end_event["payload"]
+    assert payload["tool_uses"] == {
+        "Read": 2,
+        "Bash": 1,
+        "mcp__github__get_issue": 1,
+    }
+    assert payload["mcp_calls"] == {"github": 1}
+
+
+def test_emit_session_compact_increments_counter():
+    from claude_kit.telemetry import TelemetryEmitter
+
+    captured: list[dict] = []
+    e = TelemetryEmitter(level="debug", on_emit=captured.append)
+    e.emit("session.compact", {"subtype": "auto_compact"})
+    e.emit("session.compact", {"subtype": "auto_compact"})
+    e.emit_session_end()
+
+    end_event = [ev for ev in captured if ev["event_type"] == "session.end"][0]
+    assert end_event["payload"]["compact_count"] == 2
+
+
+def test_session_end_includes_new_fields():
+    from claude_kit.telemetry import TelemetryEmitter
+
+    captured: list[dict] = []
+    e = TelemetryEmitter(level="debug", on_emit=captured.append)
+    e.emit(
+        "session.result",
+        {
+            "usage": {"input_tokens": 1000, "output_tokens": 500},
+            "cost_usd": 0.01,
+            "model": "claude-haiku-4-5-20251001",
+        },
+    )
+    e.emit_session_end()
+
+    end_event = [ev for ev in captured if ev["event_type"] == "session.end"][0]
+    payload = end_event["payload"]
+    assert payload["total_tokens_in"] == 1000
+    assert payload["total_tokens_out"] == 500
+    assert payload["cost_usd"] == 0.01
+    assert payload["model"] == "claude-haiku-4-5-20251001"
+    assert payload["tool_uses"] == {}
+    assert payload["mcp_calls"] == {}
+    assert payload["compact_count"] == 0

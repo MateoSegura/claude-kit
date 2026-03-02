@@ -26,8 +26,17 @@ try:
         AssistantMessage,
         ClaudeCodeOptions,
         ResultMessage,
+        SystemMessage,
         TextBlock,
+        ToolResultBlock,
+        ToolUseBlock,
     )
+
+    # ThinkingBlock may not exist in all SDK versions
+    try:
+        from claude_code_sdk.types import ThinkingBlock
+    except ImportError:
+        ThinkingBlock = None  # type: ignore[assignment,misc]
 except ModuleNotFoundError:  # CI: claude-code-sdk not installed
     claude_code_sdk = None  # type: ignore[assignment]
     query = None  # type: ignore[assignment]
@@ -36,7 +45,11 @@ except ModuleNotFoundError:  # CI: claude-code-sdk not installed
     AssistantMessage = None  # type: ignore[assignment,misc]
     ClaudeCodeOptions = None  # type: ignore[assignment,misc]
     ResultMessage = None  # type: ignore[assignment,misc]
+    SystemMessage = None  # type: ignore[assignment,misc]
     TextBlock = None  # type: ignore[assignment,misc]
+    ToolResultBlock = None  # type: ignore[assignment,misc]
+    ToolUseBlock = None  # type: ignore[assignment,misc]
+    ThinkingBlock = None  # type: ignore[assignment,misc]
 
 from test.engine.config import EvalScenario, RunConfig, RunResult, Transcript
 from test.engine.session_factory import SessionFactory
@@ -161,6 +174,12 @@ class SdkExecutor:
         responses: list[str] = []
         result_msg: ResultMessage | None = None
 
+        # Per-message tracking
+        turn_number = 0
+        tool_counter = 0
+        mcp_counter = 0
+        compact_counter = 0
+
         start = time.monotonic()
 
         # Unset CLAUDECODE to avoid nested session error
@@ -189,17 +208,168 @@ class SdkExecutor:
                         continue
 
                     if isinstance(message, AssistantMessage):
-                        text_parts = [
-                            block.text
-                            for block in message.content
-                            if isinstance(block, TextBlock)
-                        ]
+                        turn_number += 1
+
+                        # Classify content block types
+                        content_types: list[str] = []
+                        text_parts: list[str] = []
+                        turn_tool_calls: list[str] = []
+                        turn_mcp_calls: list[str] = []
+
+                        for block in message.content:
+                            if isinstance(block, TextBlock):
+                                content_types.append("text")
+                                text_parts.append(block.text)
+                            elif ToolUseBlock is not None and isinstance(
+                                block, ToolUseBlock
+                            ):
+                                content_types.append("tool_use")
+                                tool_counter += 1
+                                tool_name = block.name
+                                is_mcp = tool_name.startswith("mcp__")
+                                if is_mcp:
+                                    mcp_counter += 1
+                                    parts = tool_name.split("__", 2)
+                                    server = parts[1] if len(parts) >= 2 else "unknown"
+                                    method = parts[2] if len(parts) == 3 else tool_name
+                                    turn_mcp_calls.append(tool_name)
+                                else:
+                                    server = None
+                                    method = None
+                                turn_tool_calls.append(tool_name)
+
+                                # Emit tool.used event
+                                input_preview = (
+                                    str(block.input)[:500] if block.input else ""
+                                )
+                                tool_payload: dict[str, Any] = {
+                                    "tool_name": tool_name,
+                                    "tool_use_id": block.id,
+                                    "input_preview": input_preview,
+                                    "is_mcp": is_mcp,
+                                }
+                                if is_mcp:
+                                    tool_payload["mcp_server"] = server
+                                    tool_payload["mcp_method"] = method
+                                telemetry_events.append(
+                                    {
+                                        "event_type": "tool.used",
+                                        "payload": tool_payload,
+                                    },
+                                )
+
+                                # Add to transcript
+                                transcript.append(
+                                    Transcript(
+                                        role="tool_use",
+                                        content=input_preview,
+                                        tool_name=tool_name,
+                                        tool_use_id=block.id,
+                                    ),
+                                )
+                            elif ToolResultBlock is not None and isinstance(
+                                block, ToolResultBlock
+                            ):
+                                content_types.append("tool_result")
+                                content_preview = (
+                                    str(block.content)[:500] if block.content else ""
+                                )
+                                telemetry_events.append(
+                                    {
+                                        "event_type": "tool.result",
+                                        "payload": {
+                                            "tool_use_id": block.tool_use_id,
+                                            "is_error": bool(block.is_error),
+                                            "content_preview": content_preview,
+                                        },
+                                    },
+                                )
+                                transcript.append(
+                                    Transcript(
+                                        role="tool_result",
+                                        content=content_preview,
+                                        tool_use_id=block.tool_use_id,
+                                        is_error=bool(block.is_error),
+                                    ),
+                                )
+                            elif ThinkingBlock is not None and isinstance(
+                                block, ThinkingBlock
+                            ):
+                                content_types.append("thinking")
+
+                        # Emit message.assistant for text content
                         if text_parts:
                             text = "\n".join(text_parts)
                             responses.append(text)
                             transcript.append(
-                                Transcript(role="assistant", content=text),
+                                Transcript(
+                                    role="assistant",
+                                    content=text,
+                                    model=getattr(message, "model", None),
+                                    content_types=content_types,
+                                ),
                             )
+                            telemetry_events.append(
+                                {
+                                    "event_type": "message.assistant",
+                                    "payload": {
+                                        "model": getattr(message, "model", None),
+                                        "text": text[:500],
+                                        "content_types": content_types,
+                                    },
+                                },
+                            )
+
+                        # Emit turn.completed
+                        telemetry_events.append(
+                            {
+                                "event_type": "turn.completed",
+                                "payload": {
+                                    "turn": turn_number,
+                                    "model": getattr(message, "model", None),
+                                    "content_types": list(dict.fromkeys(content_types)),
+                                    "tool_calls": turn_tool_calls,
+                                    "mcp_calls": turn_mcp_calls,
+                                },
+                            },
+                        )
+
+                    elif SystemMessage is not None and isinstance(
+                        message, SystemMessage
+                    ):
+                        msg_subtype = getattr(message, "subtype", "") or ""
+                        msg_data = getattr(message, "data", None)
+
+                        if "compact" in msg_subtype.lower():
+                            compact_counter += 1
+                            telemetry_events.append(
+                                {
+                                    "event_type": "session.compact",
+                                    "payload": {
+                                        "subtype": msg_subtype,
+                                        "data": msg_data,
+                                    },
+                                },
+                            )
+                        else:
+                            telemetry_events.append(
+                                {
+                                    "event_type": "message.system",
+                                    "payload": {
+                                        "subtype": msg_subtype,
+                                        "data": msg_data,
+                                    },
+                                },
+                            )
+
+                        transcript.append(
+                            Transcript(
+                                role="system",
+                                content=str(msg_data) if msg_data else "",
+                                subtype=msg_subtype,
+                            ),
+                        )
+
                     elif isinstance(message, ResultMessage):
                         result_msg = message
         except Exception as exc:
@@ -229,13 +399,21 @@ class SdkExecutor:
         total_out = 0
         turns = 0
         cost: float | None = None
+        usage_dict: dict[str, Any] = {}
+        sdk_session_id: str | None = None
+        sdk_duration_ms = 0
+        sdk_duration_api_ms = 0
 
         if result_msg is not None:
             turns = result_msg.num_turns
             cost = result_msg.total_cost_usd
-            if result_msg.usage:
-                total_in = result_msg.usage.get("input_tokens", 0)
-                total_out = result_msg.usage.get("output_tokens", 0)
+            usage_dict = result_msg.usage or {}
+            sdk_session_id = getattr(result_msg, "session_id", None)
+            sdk_duration_ms = getattr(result_msg, "duration_ms", 0) or 0
+            sdk_duration_api_ms = getattr(result_msg, "duration_api_ms", 0) or 0
+            if usage_dict:
+                total_in = usage_dict.get("input_tokens", 0)
+                total_out = usage_dict.get("output_tokens", 0)
             if result_msg.is_error and result_msg.result:
                 telemetry_events.append(
                     {
@@ -243,6 +421,23 @@ class SdkExecutor:
                         "payload": {"error": result_msg.result},
                     },
                 )
+
+            # Emit session.result with full usage
+            telemetry_events.append(
+                {
+                    "event_type": "session.result",
+                    "payload": {
+                        "usage": usage_dict,
+                        "duration_ms": sdk_duration_ms,
+                        "duration_api_ms": sdk_duration_api_ms,
+                        "session_id": sdk_session_id,
+                        "cost_usd": cost,
+                        "num_turns": turns,
+                        "is_error": result_msg.is_error,
+                        "result": result_msg.result,
+                    },
+                },
+            )
         else:
             turns = len(responses)
 
@@ -256,6 +451,9 @@ class SdkExecutor:
                     "total_tokens_out": total_out,
                     "wall_clock_s": round(elapsed, 3),
                     "cost_usd": cost,
+                    "tool_use_count": tool_counter,
+                    "mcp_call_count": mcp_counter,
+                    "compact_count": compact_counter,
                 },
             },
         )
@@ -271,4 +469,11 @@ class SdkExecutor:
             model=self.scenario.model,
             transcript=transcript,
             cost_usd=cost,
+            usage=usage_dict,
+            session_id=sdk_session_id,
+            duration_ms=sdk_duration_ms,
+            duration_api_ms=sdk_duration_api_ms,
+            tool_use_count=tool_counter,
+            mcp_call_count=mcp_counter,
+            compact_count=compact_counter,
         )

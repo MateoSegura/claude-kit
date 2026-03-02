@@ -268,3 +268,209 @@ def test_execute_model_passed_to_options():
         call_kwargs = mock_query.call_args
         options = call_kwargs.kwargs.get("options") or call_kwargs[1].get("options")
         assert options.model == "claude-haiku-4-5-20251001"
+
+
+# ── Per-message telemetry ────────────────────────────────
+
+
+def _make_tool_use_block(name: str, tool_id: str, input_data: dict | None = None):
+    """Create a mock ToolUseBlock."""
+    from claude_code_sdk.types import ToolUseBlock
+
+    return ToolUseBlock(name=name, id=tool_id, input=input_data or {})
+
+
+def _make_tool_result_block(
+    tool_use_id: str, content: str = "ok", is_error: bool = False
+):
+    """Create a mock ToolResultBlock."""
+    from claude_code_sdk.types import ToolResultBlock
+
+    return ToolResultBlock(tool_use_id=tool_use_id, content=content, is_error=is_error)
+
+
+def _make_system_message(subtype: str, data: str | None = None):
+    """Create a mock SystemMessage."""
+    from claude_code_sdk.types import SystemMessage
+
+    return SystemMessage(subtype=subtype, data=data)
+
+
+def _make_assistant_with_tools(text: str, tools: list):
+    """Create a mock AssistantMessage with text and tool blocks."""
+    from claude_code_sdk.types import AssistantMessage, TextBlock
+
+    content = [TextBlock(text=text)] + tools
+    return AssistantMessage(content=content, model="claude-haiku-4-5-20251001")
+
+
+@skip_no_sdk
+def test_execute_emits_turn_completed():
+    """turn.completed events are emitted per assistant message."""
+    scenario = _make_scenario()
+    executor = SdkExecutor(scenario)
+
+    a1 = _make_assistant_message("First")
+    a2 = _make_assistant_message("Second")
+    result_msg = _make_result_message(num_turns=2)
+
+    with patch("test.engine.sdk_executor.query") as mock_query:
+        mock_query.return_value = _mock_query_generator([a1, a2, result_msg])
+        result = executor.execute(RunConfig(name="raw", plugins=[]))
+
+    turn_events = [
+        e for e in result.telemetry_events if e.get("event_type") == "turn.completed"
+    ]
+    assert len(turn_events) == 2
+    assert turn_events[0]["payload"]["turn"] == 1
+    assert turn_events[1]["payload"]["turn"] == 2
+
+
+@skip_no_sdk
+def test_execute_emits_tool_used():
+    """tool.used events are emitted from ToolUseBlock."""
+    scenario = _make_scenario()
+    executor = SdkExecutor(scenario)
+
+    tool_block = _make_tool_use_block("Read", "tu-1", {"path": "/tmp/x"})
+    assistant = _make_assistant_with_tools("Reading file", [tool_block])
+    result_msg = _make_result_message()
+
+    with patch("test.engine.sdk_executor.query") as mock_query:
+        mock_query.return_value = _mock_query_generator([assistant, result_msg])
+        result = executor.execute(RunConfig(name="raw", plugins=[]))
+
+    tool_events = [
+        e for e in result.telemetry_events if e.get("event_type") == "tool.used"
+    ]
+    assert len(tool_events) == 1
+    assert tool_events[0]["payload"]["tool_name"] == "Read"
+    assert tool_events[0]["payload"]["tool_use_id"] == "tu-1"
+    assert tool_events[0]["payload"]["is_mcp"] is False
+    assert result.tool_use_count == 1
+
+
+@skip_no_sdk
+def test_execute_detects_mcp_calls():
+    """mcp__ prefix is detected and parsed into server/method."""
+    scenario = _make_scenario()
+    executor = SdkExecutor(scenario)
+
+    mcp_block = _make_tool_use_block("mcp__github__get_issue", "tu-mcp", {"number": 42})
+    assistant = _make_assistant_with_tools("Checking issue", [mcp_block])
+    result_msg = _make_result_message()
+
+    with patch("test.engine.sdk_executor.query") as mock_query:
+        mock_query.return_value = _mock_query_generator([assistant, result_msg])
+        result = executor.execute(RunConfig(name="raw", plugins=[]))
+
+    tool_events = [
+        e for e in result.telemetry_events if e.get("event_type") == "tool.used"
+    ]
+    assert len(tool_events) == 1
+    assert tool_events[0]["payload"]["is_mcp"] is True
+    assert tool_events[0]["payload"]["mcp_server"] == "github"
+    assert tool_events[0]["payload"]["mcp_method"] == "get_issue"
+    assert result.mcp_call_count == 1
+    assert result.tool_use_count == 1
+
+
+@skip_no_sdk
+def test_execute_emits_session_result():
+    """session.result event contains full usage dict."""
+    scenario = _make_scenario()
+    executor = SdkExecutor(scenario)
+
+    assistant = _make_assistant_message("Hello!")
+    result_msg = _make_result_message(
+        usage={"input_tokens": 300, "output_tokens": 100},
+        total_cost_usd=0.005,
+        session_id="sess-xyz",
+        duration_ms=2000,
+        duration_api_ms=1800,
+    )
+
+    with patch("test.engine.sdk_executor.query") as mock_query:
+        mock_query.return_value = _mock_query_generator([assistant, result_msg])
+        result = executor.execute(RunConfig(name="raw", plugins=[]))
+
+    result_events = [
+        e for e in result.telemetry_events if e.get("event_type") == "session.result"
+    ]
+    assert len(result_events) == 1
+    payload = result_events[0]["payload"]
+    assert payload["usage"]["input_tokens"] == 300
+    assert payload["cost_usd"] == 0.005
+    assert payload["session_id"] == "sess-xyz"
+    assert payload["duration_ms"] == 2000
+    assert payload["duration_api_ms"] == 1800
+
+
+@skip_no_sdk
+def test_execute_tracks_compact():
+    """SystemMessage with compact subtype emits session.compact."""
+    scenario = _make_scenario()
+    executor = SdkExecutor(scenario)
+
+    assistant = _make_assistant_message("Hi!")
+    sys_msg = _make_system_message(subtype="auto_compact", data="reduced")
+    result_msg = _make_result_message()
+
+    with patch("test.engine.sdk_executor.query") as mock_query:
+        mock_query.return_value = _mock_query_generator(
+            [assistant, sys_msg, result_msg]
+        )
+        result = executor.execute(RunConfig(name="raw", plugins=[]))
+
+    compact_events = [
+        e for e in result.telemetry_events if e.get("event_type") == "session.compact"
+    ]
+    assert len(compact_events) == 1
+    assert compact_events[0]["payload"]["subtype"] == "auto_compact"
+    assert result.compact_count == 1
+
+
+@skip_no_sdk
+def test_execute_populates_usage_dict():
+    """RunResult.usage is populated from ResultMessage."""
+    scenario = _make_scenario()
+    executor = SdkExecutor(scenario)
+
+    assistant = _make_assistant_message("Hi!")
+    result_msg = _make_result_message(
+        usage={
+            "input_tokens": 500,
+            "output_tokens": 200,
+            "cache_read_input_tokens": 50,
+        },
+    )
+
+    with patch("test.engine.sdk_executor.query") as mock_query:
+        mock_query.return_value = _mock_query_generator([assistant, result_msg])
+        result = executor.execute(RunConfig(name="raw", plugins=[]))
+
+    assert result.usage["input_tokens"] == 500
+    assert result.usage["output_tokens"] == 200
+    assert result.usage["cache_read_input_tokens"] == 50
+    assert result.session_id == "test-session-123"
+    assert result.duration_ms == 1500
+
+
+@skip_no_sdk
+def test_execute_transcript_includes_tools():
+    """Transcript includes tool_use and tool_result entries."""
+    scenario = _make_scenario()
+    executor = SdkExecutor(scenario)
+
+    tool_block = _make_tool_use_block("Bash", "tu-2", {"command": "ls"})
+    assistant = _make_assistant_with_tools("Running ls", [tool_block])
+    result_msg = _make_result_message()
+
+    with patch("test.engine.sdk_executor.query") as mock_query:
+        mock_query.return_value = _mock_query_generator([assistant, result_msg])
+        result = executor.execute(RunConfig(name="raw", plugins=[]))
+
+    tool_entries = [t for t in result.transcript if t.role == "tool_use"]
+    assert len(tool_entries) == 1
+    assert tool_entries[0].tool_name == "Bash"
+    assert tool_entries[0].tool_use_id == "tu-2"

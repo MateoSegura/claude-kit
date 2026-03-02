@@ -13,12 +13,20 @@ class EventType(StrEnum):
 
     SESSION_START = "session.start"
     SESSION_END = "session.end"
+    SESSION_ERROR = "session.error"
+    SESSION_RESULT = "session.result"
+    SESSION_COMPACT = "session.compact"
     PLUGIN_LOADED = "plugin.loaded"
     SKILL_INVOKED = "skill.invoked"
     HOOK_FIRED = "hook.fired"
     AUTOROUTER_MATCH = "autorouter.match"
     AUTOROUTER_MISS = "autorouter.miss"
     VALIDATION_RESULT = "validation.result"
+    TURN_COMPLETED = "turn.completed"
+    TOOL_USED = "tool.used"
+    TOOL_RESULT = "tool.result"
+    MESSAGE_ASSISTANT = "message.assistant"
+    MESSAGE_SYSTEM = "message.system"
 
 
 class MetricsPeriod(StrEnum):
@@ -72,6 +80,12 @@ class SessionSummaryResponse(BaseModel):
     total_tokens_in: int
     total_tokens_out: int
     estimated_cost_usd: float
+    tool_uses: dict[str, int] = Field(default_factory=dict)
+    mcp_calls: dict[str, int] = Field(default_factory=dict)
+    compact_count: int = 0
+    model: str | None = None
+    cost_usd: float | None = None
+    total_turns: int = 0
 
     model_config = {"from_attributes": True}
 

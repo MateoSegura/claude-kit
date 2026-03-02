@@ -55,6 +55,13 @@ class TelemetryEmitter:
         self._hooks: dict[str, int] = {}
         self._autorouter_matches = 0
         self._autorouter_misses = 0
+        self._tool_uses: dict[str, int] = {}
+        self._mcp_calls: dict[str, int] = {}
+        self._compact_count = 0
+        self._total_tokens_in = 0
+        self._total_tokens_out = 0
+        self._cost_usd: float | None = None
+        self._model: str | None = None
 
         if self.level in ("local", "full"):
             tel_dir = telemetry_dir or _DEFAULT_TELEMETRY_DIR
@@ -113,6 +120,21 @@ class TelemetryEmitter:
             self._autorouter_matches += 1
         elif event_type == "autorouter.miss":
             self._autorouter_misses += 1
+        elif event_type == "tool.used":
+            tool = (payload or {}).get("tool_name", "?")
+            self._tool_uses[tool] = self._tool_uses.get(tool, 0) + 1
+            if (payload or {}).get("is_mcp"):
+                server = (payload or {}).get("mcp_server", "?")
+                self._mcp_calls[server] = self._mcp_calls.get(server, 0) + 1
+        elif event_type == "session.compact":
+            self._compact_count += 1
+        elif event_type == "session.result":
+            p = payload or {}
+            usage = p.get("usage", {})
+            self._total_tokens_in = usage.get("input_tokens", 0)
+            self._total_tokens_out = usage.get("output_tokens", 0)
+            self._cost_usd = p.get("cost_usd")
+            self._model = p.get("model")
 
         # Route to sinks
         if self._on_emit is not None:
@@ -157,6 +179,13 @@ class TelemetryEmitter:
                 "hooks_fired": dict(self._hooks),
                 "autorouter_matches": self._autorouter_matches,
                 "autorouter_misses": self._autorouter_misses,
+                "tool_uses": dict(self._tool_uses),
+                "mcp_calls": dict(self._mcp_calls),
+                "compact_count": self._compact_count,
+                "total_tokens_in": self._total_tokens_in,
+                "total_tokens_out": self._total_tokens_out,
+                "cost_usd": self._cost_usd,
+                "model": self._model,
             },
         )
 

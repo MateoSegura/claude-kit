@@ -66,16 +66,28 @@ class Transcript:
     """A single message in the conversation transcript.
 
     Attributes:
-        role: "user", "assistant", or "human_sim".
+        role: "user", "assistant", "system", "tool_use", or "tool_result".
         content: Message text.
         tokens_in: Input tokens for this turn (assistant only).
         tokens_out: Output tokens for this turn (assistant only).
+        model: Which model responded (assistant messages).
+        tool_name: Tool name for tool_use/tool_result entries.
+        tool_use_id: Links tool_use to tool_result.
+        is_error: Whether a tool_result was an error.
+        subtype: System message subtype (e.g. "compact").
+        content_types: Block types in this message (e.g. ["text", "tool_use"]).
     """
 
     role: str
     content: str
     tokens_in: int = 0
     tokens_out: int = 0
+    model: str | None = None
+    tool_name: str | None = None
+    tool_use_id: str | None = None
+    is_error: bool = False
+    subtype: str | None = None
+    content_types: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -93,6 +105,14 @@ class RunResult:
         model: Model ID used for the conversation.
         transcript: Full message-level transcript.
         error: Error message if the run failed.
+        cost_usd: Actual cost from SDK (if available).
+        usage: Full SDK usage dict (cache tokens, service tier, etc.).
+        session_id: SDK session_id.
+        duration_ms: SDK duration_ms.
+        duration_api_ms: SDK duration_api_ms.
+        tool_use_count: Total tool calls in the session.
+        mcp_call_count: Tool calls starting with mcp__.
+        compact_count: Auto-compact events observed.
     """
 
     config_name: str
@@ -106,6 +126,13 @@ class RunResult:
     transcript: list[Transcript] = field(default_factory=list)
     error: str | None = None
     cost_usd: float | None = None
+    usage: dict[str, Any] = field(default_factory=dict)
+    session_id: str | None = None
+    duration_ms: int = 0
+    duration_api_ms: int = 0
+    tool_use_count: int = 0
+    mcp_call_count: int = 0
+    compact_count: int = 0
 
     @property
     def estimated_cost_usd(self) -> float:

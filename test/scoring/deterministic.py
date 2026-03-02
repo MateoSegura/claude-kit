@@ -67,7 +67,17 @@ class TelemetrySchemaScorer(Scorer):
     """Validate telemetry events have correct schema structure."""
 
     REQUIRED_FIELDS = {"event_type"}
-    PAYLOAD_EVENTS = {"turn.completed", "human.responded", "session.end"}
+    PAYLOAD_EVENTS = {
+        "turn.completed",
+        "human.responded",
+        "session.end",
+        "tool.used",
+        "tool.result",
+        "message.assistant",
+        "message.system",
+        "session.result",
+        "session.compact",
+    }
 
     @property
     def name(self) -> str:
@@ -116,7 +126,12 @@ class TelemetrySchemaScorer(Scorer):
 class TelemetryCompletenessScorer(Scorer):
     """Validate that essential telemetry events are present."""
 
-    ESSENTIAL_EVENTS = {"session.start", "session.end", "turn.completed"}
+    ESSENTIAL_EVENTS = {
+        "session.start",
+        "session.end",
+        "turn.completed",
+        "session.result",
+    }
 
     @property
     def name(self) -> str:

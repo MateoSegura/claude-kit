@@ -161,6 +161,7 @@ def test_completeness_all_present():
         telemetry_events=[
             {"event_type": "session.start"},
             {"event_type": "turn.completed", "payload": {"turn": 1}},
+            {"event_type": "session.result", "payload": {"usage": {}}},
             {"event_type": "session.end", "payload": {"total_turns": 1}},
         ]
     )
