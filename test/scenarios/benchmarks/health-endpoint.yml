@@ -1,0 +1,29 @@
+name: Health Endpoint Implementation
+description: >
+  Real-world scenario: add a /health endpoint to a FastAPI service.
+  Tests basic code generation, framework awareness, and endpoint structure.
+
+model: claude-sonnet-4-20250514
+max_turns: 5
+max_tokens: 4096
+runs: 3
+
+prompt: >
+  Add a GET /health endpoint to our FastAPI service. It should return
+  a JSON object with status, version (from an environment variable
+  SERVICE_VERSION defaulting to "unknown"), and a UTC timestamp.
+  Use proper HTTP status codes.
+
+configs:
+  - name: raw-claude
+    plugins: []
+
+  - name: cloud-python-kit
+    plugins:
+      - cloud-python-engineer
+      - cloud-python-knowledge
+
+expected_strings:
+  - "/health"
+  - "status"
+  - "FastAPI"
