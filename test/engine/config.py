@@ -105,10 +105,17 @@ class RunResult:
     model: str = ""
     transcript: list[Transcript] = field(default_factory=list)
     error: str | None = None
+    cost_usd: float | None = None
 
     @property
     def estimated_cost_usd(self) -> float:
-        """Compute estimated cost based on token counts and model pricing."""
+        """Compute estimated cost based on token counts and model pricing.
+
+        If cost_usd is set (from real SDK data), returns that directly.
+        Otherwise falls back to estimation from token counts.
+        """
+        if self.cost_usd is not None:
+            return self.cost_usd
         rates = MODEL_PRICING.get(self.model, (3.0, 15.0))
         cost_in = self.total_tokens_in * rates[0]
         cost_out = self.total_tokens_out * rates[1]

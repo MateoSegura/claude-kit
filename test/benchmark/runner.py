@@ -14,6 +14,7 @@ from test.engine.config import (
 )
 from test.engine.executor import ConversationExecutor
 from test.engine.human import HumanSimulator
+from test.engine.sdk_executor import SdkExecutor
 from test.scoring.base import Scorer, ScoringResult
 from test.scoring.deterministic import (
     ContainsScorer,
@@ -51,6 +52,7 @@ class BenchmarkRunner:
         scenario: EvalScenario,
         plugins_dirs: list[Path | str] | None = None,
         scorers: list[Scorer] | None = None,
+        executor_type: str = "api",
     ) -> None:
         self.scenario = scenario
         self._plugins_dirs = [
@@ -58,6 +60,7 @@ class BenchmarkRunner:
         ]
         self.scorers = scorers or self._default_scorers()
         self.human = HumanSimulator()
+        self._executor_type = executor_type
 
     def _default_scorers(self) -> list[Scorer]:
         return [
@@ -82,11 +85,17 @@ class BenchmarkRunner:
         Returns:
             ScoredRun with result and scores.
         """
-        executor = ConversationExecutor(
-            scenario=self.scenario,
-            plugins_dirs=self._plugins_dirs or None,
-            human=self.human,
-        )
+        if self._executor_type == "sdk":
+            executor = SdkExecutor(
+                scenario=self.scenario,
+                plugins_dirs=self._plugins_dirs or None,
+            )
+        else:
+            executor = ConversationExecutor(
+                scenario=self.scenario,
+                plugins_dirs=self._plugins_dirs or None,
+                human=self.human,
+            )
 
         result = executor.execute(config)
 

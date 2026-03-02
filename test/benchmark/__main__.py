@@ -91,6 +91,13 @@ def main() -> int:
         default=Path("plugins"),
         help="Directory containing plugins (default: plugins/)",
     )
+    parser.add_argument(
+        "--executor",
+        type=str,
+        choices=["sdk", "api"],
+        default="sdk",
+        help="Executor: sdk (Claude Code CLI) or api (Anthropic SDK)",
+    )
     args = parser.parse_args()
 
     if not args.scenario.exists():
@@ -117,9 +124,12 @@ def main() -> int:
     expected_strings = raw.get("expected_strings", [])
     score_kwargs = {"expected_strings": expected_strings}
 
+    print(f"Executor: {args.executor}")
+
     runner = BenchmarkRunner(
         scenario=scenario,
         plugins_dirs=[args.plugins_dir],
+        executor_type=args.executor,
     )
 
     benchmark = runner.run_all(score_kwargs=score_kwargs)
