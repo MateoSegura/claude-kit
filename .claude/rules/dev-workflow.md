@@ -69,6 +69,9 @@ asked. Print:
 | `docs/**` | 4 | `bash scripts/validate-docs.sh` |
 | `scripts/validate-docs.sh` | 4 | `bash scripts/validate-docs.sh` |
 | `api/**` | 5 | `cd api && pip install -q -e ".[dev]" && python3 -m pytest -v --tb=short` |
+| `claude_kit/**` | 1, 6 | `python3 -m py_compile claude-kit && pytest test/` |
+| `pyproject.toml` (root) | 6 | `pytest test/` |
+| `test/test_*.py` (library tests) | 6 | `pytest test/` |
 | Multiple zones | union of layers | Run each affected layer in order |
 
 If validation fails, **fix the issue before proceeding**. Do not commit broken

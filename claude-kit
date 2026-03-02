@@ -17,8 +17,44 @@ import time
 import atexit
 import io
 import tarfile
-import uuid
-from datetime import datetime, timezone
+
+# ── Library import ────────────────────────────────────────────────────────────
+# The claude_kit package provides core functionality. In dev mode it's pip-
+# installed from the repo root; in user mode it ships alongside this script.
+try:
+    from claude_kit import (
+        TelemetryEmitter,
+        PluginResolver,
+        SessionManager,
+        PluginDecryptor,
+        TempDirManager,
+        VersionManager,
+        APIClient,
+        Plugin,
+    )
+    from claude_kit.exceptions import PluginNotFoundError
+except ImportError:
+    _lib_dir = pathlib.Path(os.path.realpath(__file__)).parent / "claude_kit"
+    if _lib_dir.is_dir():
+        sys.path.insert(0, str(pathlib.Path(os.path.realpath(__file__)).parent))
+        from claude_kit import (
+            TelemetryEmitter,
+            PluginResolver,
+            SessionManager,
+            PluginDecryptor,
+            TempDirManager,
+            VersionManager,
+            APIClient,
+            Plugin,
+        )
+        from claude_kit.exceptions import PluginNotFoundError
+    else:
+        print(
+            "Error: claude_kit library not found. Run 'pip install -e .' in the "
+            "repo root, or ensure claude_kit/ is alongside the claude-kit script.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
@@ -38,235 +74,28 @@ _CONTENT_DIRS = ("agents", "commands", "skills", "hooks", "scripts")
 
 # ── Telemetry ───────────────────────────────────────────────────────────────
 
-# Telemetry levels (controlled by CLAUDE_KIT_TELEMETRY env var):
-#   off    — no telemetry (default)
-#   debug  — stderr only (human-readable traces)
-#   local  — stderr + JSONL file
-#   full   — stderr + JSONL + buffer for API upload
-
 _TELEMETRY_DIR = pathlib.Path.home() / ".claude-kit" / "telemetry"
 _TELEMETRY_CONF = pathlib.Path.home() / ".claude-kit" / "telemetry.conf"
-_SCHEMA_VERSION = 1
 
 
-class TelemetryEmitter:
-    """Structured telemetry emitter with configurable sinks.
-
-    Sinks are selected by the CLAUDE_KIT_TELEMETRY environment variable.
-    Events follow the claude-kit telemetry schema (v1).
-    """
-
-    def __init__(self, level: str = "off"):
-        self.level = level if level in ("debug", "local", "full") else "off"
-        self.session_id = str(uuid.uuid4())
-        self._start_time = time.monotonic()
-        self._jsonl_path: pathlib.Path | None = None
-        self._jsonl_file = None
-        self._buffer: list = []
-
-        # Session-level counters for session.end summary
-        self._plugins_loaded: list = []
-        self._skills: dict = {}      # skill_name → count
-        self._hooks: dict = {}       # hook_event_type → count
-        self._autorouter_matches = 0
-        self._autorouter_misses = 0
-
-        if self.level in ("local", "full"):
-            _TELEMETRY_DIR.mkdir(parents=True, exist_ok=True)
-            self._jsonl_path = _TELEMETRY_DIR / f"{self.session_id}.jsonl"
-
-    @property
-    def active(self) -> bool:
-        return self.level != "off"
-
-    def _now(self) -> str:
-        return datetime.now(timezone.utc).isoformat()
-
-    def _build_event(self, event_type: str, payload: dict) -> dict:
-        return {
-            "schema_version": _SCHEMA_VERSION,
-            "event_type": event_type,
-            "timestamp": self._now(),
-            "session_id": self.session_id,
-            "payload": payload,
-        }
-
-    def _write_stderr(self, event: dict) -> None:
-        etype = event["event_type"]
-        payload = event["payload"]
-        # Build a concise one-line summary
-        parts = []
-        for k, v in payload.items():
-            if isinstance(v, list):
-                parts.append(f"{k}=[{', '.join(str(i) for i in v)}]")
-            elif isinstance(v, dict):
-                parts.append(f"{k}={{{len(v)} items}}")
-            else:
-                parts.append(f"{k}={v}")
-        summary = " ".join(parts) if parts else ""
-        line = f"[claude-kit:{etype}] {summary}"
-        if sys.stderr.isatty():
-            print(f"\033[2m{line}\033[0m", file=sys.stderr)
+def _write_stderr(event: dict) -> None:
+    """CLI-specific: format a telemetry event for stderr output."""
+    etype = event["event_type"]
+    payload = event["payload"]
+    parts = []
+    for k, v in payload.items():
+        if isinstance(v, list):
+            parts.append(f"{k}=[{', '.join(str(i) for i in v)}]")
+        elif isinstance(v, dict):
+            parts.append(f"{k}={{{len(v)} items}}")
         else:
-            print(line, file=sys.stderr)
-
-    def _write_jsonl(self, event: dict) -> None:
-        if self._jsonl_path is None:
-            return
-        try:
-            if self._jsonl_file is None:
-                self._jsonl_file = open(self._jsonl_path, "a")
-            self._jsonl_file.write(json.dumps(event, sort_keys=True) + "\n")
-            self._jsonl_file.flush()
-        except OSError:
-            pass  # non-fatal — telemetry must never crash the CLI
-
-    def _write_buffer(self, event: dict) -> None:
-        self._buffer.append(event)
-
-    def emit(self, event_type: str, payload: dict | None = None) -> None:
-        """Emit a telemetry event to all active sinks."""
-        if self.level == "off":
-            return
-        event = self._build_event(event_type, payload or {})
-
-        # Update counters for session summary
-        if event_type == "plugin.loaded":
-            self._plugins_loaded.append(payload.get("plugin", "?"))
-        elif event_type == "skill.invoked":
-            skill = payload.get("skill", "?")
-            self._skills[skill] = self._skills.get(skill, 0) + 1
-        elif event_type == "hook.fired":
-            hook_event = payload.get("hook_event", "?")
-            self._hooks[hook_event] = self._hooks.get(hook_event, 0) + 1
-        elif event_type == "autorouter.match":
-            self._autorouter_matches += 1
-        elif event_type == "autorouter.miss":
-            self._autorouter_misses += 1
-
-        # Route to sinks
-        if self.level in ("debug", "local", "full"):
-            self._write_stderr(event)
-        if self.level in ("local", "full"):
-            self._write_jsonl(event)
-        if self.level == "full":
-            self._write_buffer(event)
-
-    def emit_session_start(self, plugins: list, cli_version: str = "?") -> None:
-        """Emit a session.start event."""
-        self.emit("session.start", {
-            "plugins": plugins,
-            "mode": CK_MODE,
-            "telemetry_level": self.level,
-            "cli_version": cli_version,
-        })
-
-    def emit_session_end(self) -> None:
-        """Emit a session.end event with aggregated counters."""
-        duration = time.monotonic() - self._start_time
-        self.emit("session.end", {
-            "duration_s": round(duration, 2),
-            "plugins_loaded": len(self._plugins_loaded),
-            "skills_invoked": dict(self._skills),
-            "hooks_fired": dict(self._hooks),
-            "autorouter_matches": self._autorouter_matches,
-            "autorouter_misses": self._autorouter_misses,
-        })
-
-    def flush_buffer(self) -> list:
-        """Return buffered events and clear the internal buffer.
-
-        The returned list contains raw event dicts ready for API upload
-        or any other consumer (e.g., a future Python SDK wrapper).
-        """
-        events = list(self._buffer)
-        self._buffer.clear()
-        return events
-
-    def upload_to_api(self) -> bool:
-        """Upload buffered events to the telemetry API.
-
-        Requires CLAUDE_KIT_API_URL and CLAUDE_KIT_API_KEY env vars.
-        Returns True if upload succeeded, False otherwise.
-        Uses stdlib http.client — no third-party dependencies.
-        """
-        if self.level != "full":
-            return False
-        api_url = os.environ.get("CLAUDE_KIT_API_URL", "").rstrip("/")
-        api_key = os.environ.get("CLAUDE_KIT_API_KEY", "")
-        if not api_url or not api_key:
-            return False
-
-        events = self.flush_buffer()
-        if not events:
-            return True  # nothing to upload is not a failure
-
-        # Build the ingest payload
-        payload = json.dumps({
-            "session_id": self.session_id,
-            "events": [
-                {
-                    "event_type": e["event_type"],
-                    "timestamp": e["timestamp"],
-                    "payload": e["payload"],
-                }
-                for e in events
-            ],
-        })
-
-        import http.client
-        import urllib.parse
-
-        parsed = urllib.parse.urlparse(api_url)
-        host = parsed.hostname or "localhost"
-        port = parsed.port
-        use_https = parsed.scheme == "https"
-        path = f"{parsed.path}/api/v1/telemetry/ingest"
-
-        headers = {
-            "Content-Type": "application/json",
-            "X-API-Key": api_key,
-        }
-
-        for attempt in range(2):  # one retry on failure
-            try:
-                if use_https:
-                    conn = http.client.HTTPSConnection(host, port, timeout=5)
-                else:
-                    conn = http.client.HTTPConnection(host, port, timeout=5)
-                conn.request("POST", path, body=payload, headers=headers)
-                resp = conn.getresponse()
-                conn.close()
-                if 200 <= resp.status < 300:
-                    return True
-                # Non-success — log and retry
-                if attempt == 0:
-                    continue
-                print(
-                    f"[claude-kit:telemetry] upload failed: HTTP {resp.status}",
-                    file=sys.stderr,
-                )
-                return False
-            except (OSError, http.client.HTTPException) as exc:
-                if attempt == 0:
-                    continue
-                print(
-                    f"[claude-kit:telemetry] upload failed: {exc}",
-                    file=sys.stderr,
-                )
-                return False
-        return False
-
-    def close(self) -> None:
-        """Flush buffer, upload to API if configured, close file handles."""
-        if self.level == "full":
-            self.upload_to_api()
-        if self._jsonl_file is not None:
-            try:
-                self._jsonl_file.close()
-            except OSError:
-                pass
-            self._jsonl_file = None
+            parts.append(f"{k}={v}")
+    summary = " ".join(parts) if parts else ""
+    line = f"[claude-kit:{etype}] {summary}"
+    if sys.stderr.isatty():
+        print(f"\033[2m{line}\033[0m", file=sys.stderr)
+    else:
+        print(line, file=sys.stderr)
 
 
 # Global emitter — initialized in main() or cmd_run()
@@ -281,7 +110,11 @@ def _init_telemetry() -> TelemetryEmitter:
         level = _TELEMETRY_CONF.read_text().strip().lower()
     if not level:
         level = "off"
-    _telemetry = TelemetryEmitter(level)
+    _telemetry = TelemetryEmitter(
+        level=level,
+        telemetry_dir=_TELEMETRY_DIR,
+        on_emit=_write_stderr,
+    )
     return _telemetry
 
 
@@ -293,83 +126,42 @@ def _get_telemetry() -> TelemetryEmitter:
     return _telemetry
 
 
+def _upload_telemetry(tel: TelemetryEmitter) -> bool:
+    """Upload buffered telemetry events to the API if configured."""
+    if tel.level != "full":
+        return False
+    api_url = os.environ.get("CLAUDE_KIT_API_URL", "").rstrip("/")
+    api_key = os.environ.get("CLAUDE_KIT_API_KEY", "")
+    if not api_url or not api_key:
+        return False
+    events = tel.flush_buffer()
+    if not events:
+        return True
+    client = APIClient(base_url=api_url, api_key=api_key)
+    result = client.upload(session_id=tel.session_id, events=events)
+    if not result:
+        print("[claude-kit:telemetry] upload failed", file=sys.stderr)
+    return result
+
+
 # ── Encryption ──────────────────────────────────────────────────────────────
 
-# Temp directories created for decrypted plugins — cleaned up on exit.
-_temp_dirs: list = []
+# Temp dir manager and decryptor — initialized when needed.
+_temp_mgr = TempDirManager()
 
 def _get_key() -> str:
     """Assemble the encryption passphrase from split parts."""
     _p = ["cK9x@", "Vm4p", "Lw2R", "qJ7n", "Ht5Z", "bF3s"]
     return "".join(_p)
 
-def _is_encrypted(plugin_dir: pathlib.Path) -> bool:
-    """Check if a plugin has encrypted content (content.enc present, no plaintext dirs)."""
-    return (plugin_dir / "content.enc").exists()
-
-def _decrypt_plugin(plugin_dir: pathlib.Path, dest_dir: pathlib.Path) -> pathlib.Path:
-    """Decrypt a plugin's content.enc into dest_dir, merging with metadata.
-
-    Returns the path to the fully reconstructed plugin directory.
-    """
-    plugin_name = plugin_dir.name
-    out_dir = dest_dir / plugin_name
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    # Copy metadata files (plaintext)
-    cp_dir = plugin_dir / ".claude-plugin"
-    if cp_dir.exists():
-        shutil.copytree(cp_dir, out_dir / ".claude-plugin", dirs_exist_ok=True)
-
-    enc_file = plugin_dir / "content.enc"
-    if not enc_file.exists():
-        return out_dir
-
-    key = _get_key()
-
-    # Decrypt with openssl → tar data in memory → extract
-    result = subprocess.run(
-        ["openssl", "enc", "-d", "-aes-256-cbc", "-pbkdf2", "-iter", "100000",
-         "-pass", f"pass:{key}", "-in", str(enc_file)],
-        capture_output=True,
-    )
-    if result.returncode != 0:
-        print(f"Error: Failed to decrypt plugin '{plugin_name}'.", file=sys.stderr)
-        sys.exit(1)
-
-    with tarfile.open(fileobj=io.BytesIO(result.stdout), mode="r:gz") as tar:
-        tar.extractall(path=str(out_dir))
-
-    return out_dir
-
-def _cleanup_temp() -> None:
-    """Remove all temporary decryption directories."""
-    for d in _temp_dirs:
-        try:
-            shutil.rmtree(d, ignore_errors=True)
-        except Exception:
-            pass
-
-def _cleanup_stale_temps() -> None:
-    """Remove stale ck-* temp dirs older than 1 hour (crash recovery)."""
-    tmp = pathlib.Path(tempfile.gettempdir())
-    cutoff = time.time() - 3600
-    for d in tmp.glob("ck-*"):
-        if d.is_dir():
-            try:
-                if d.stat().st_mtime < cutoff:
-                    shutil.rmtree(d, ignore_errors=True)
-            except Exception:
-                pass
-
 def _setup_cleanup_handlers() -> None:
     """Register cleanup for temp dirs on exit and signals."""
-    atexit.register(_cleanup_temp)
+    atexit.register(_temp_mgr.cleanup)
     prev_term = signal.getsignal(signal.SIGTERM)
     prev_int = signal.getsignal(signal.SIGINT)
 
     def _on_signal(signum, frame):
-        _cleanup_temp()
+        _temp_mgr.cleanup()
         prev = prev_term if signum == signal.SIGTERM else prev_int
         if callable(prev):
             prev(signum, frame)
@@ -415,7 +207,31 @@ def _maybe_show_tip() -> None:
 
 # ── Plugin helpers ────────────────────────────────────────────────────────────
 
+# Shared resolver instance — created once, used by cmd_run, cmd_list, etc.
+_resolver: PluginResolver | None = None
+
+def _get_resolver() -> PluginResolver:
+    """Return the shared PluginResolver, creating it if needed."""
+    global _resolver
+    if _resolver is None:
+        _resolver = PluginResolver(plugins_dirs=[PLUGINS_DIR, LOCAL_DIR])
+    return _resolver
+
+def find_plugin_dir(name: str):
+    """Locate a plugin directory by name. Returns path or None."""
+    try:
+        plugin = _get_resolver().find(name)
+        return plugin.path
+    except PluginNotFoundError:
+        return None
+
+def resolve_core_plugins(domain: str) -> list[str]:
+    """Return sorted list of core plugin names matching a domain."""
+    plugins = _get_resolver().resolve_core_plugins(domain)
+    return sorted(p.name for p in plugins)
+
 def plugin_version(plugin_dir: pathlib.Path) -> str:
+    """Read version from plugin.json."""
     pjson = plugin_dir / ".claude-plugin" / "plugin.json"
     if not pjson.exists():
         return "?"
@@ -424,99 +240,9 @@ def plugin_version(plugin_dir: pathlib.Path) -> str:
     except Exception:
         return "?"
 
-def find_plugin_dir(name: str):
-    for base in [PLUGINS_DIR, LOCAL_DIR]:
-        d = base / name
-        if d.is_dir():
-            return d
-    return None
-
-def resolve_prefix(prefix: str) -> list:
-    results = []
-    for base in [PLUGINS_DIR, LOCAL_DIR]:
-        if base.exists():
-            for d in sorted(base.iterdir()):
-                if d.is_dir() and d.name.startswith(prefix + "-"):
-                    results.append(d.name)
-    return results
-
 def _read_ctl(plugin_dir: pathlib.Path) -> dict:
-    """Read and return the ctl.json for a plugin, or empty dict if missing/invalid."""
-    ctl = plugin_dir / ".claude-plugin" / "ctl.json"
-    if not ctl.exists():
-        return {}
-    try:
-        return json.loads(ctl.read_text())
-    except Exception:
-        return {}
-
-def resolve_companions(plugin_dir: pathlib.Path) -> list:
-    return _read_ctl(plugin_dir).get("companions", [])
-
-def resolve_core_plugins(domain: str) -> list:
-    """Find core-* plugins whose domain is 'universal' or matches the given domain."""
-    matches = []
-    for base in [PLUGINS_DIR, LOCAL_DIR]:
-        if not base.exists():
-            continue
-        for d in sorted(base.iterdir()):
-            if not d.is_dir() or not d.name.startswith("core-"):
-                continue
-            ctl = _read_ctl(d)
-            ctl_domain = ctl.get("domain")
-            if ctl_domain == "universal" or ctl_domain == domain:
-                if d.name not in [m for m in matches]:
-                    matches.append(d.name)
-    return sorted(set(matches))
-
-def expand_kit(kit_name: str, seen: set) -> list:
-    """Expand a kit name into deduplicated plugin names, companions first."""
-    prefix_result = resolve_prefix(kit_name)
-    plugin_names = prefix_result if prefix_result else [kit_name]
-
-    team_result = []
-    for pname in plugin_names:
-        pdir = find_plugin_dir(pname)
-        if pdir is None:
-            print(f"Error: Kit '{pname}' not found in {PLUGINS_DIR}/ or {LOCAL_DIR}/",
-                  file=sys.stderr)
-            p()
-            cmd_list()
-            sys.exit(1)
-
-        for comp in resolve_companions(pdir):
-            if comp not in seen:
-                comp_dir = find_plugin_dir(comp)
-                if comp_dir is None:
-                    print(f"Warning: Companion '{comp}' (required by '{pname}') not found.",
-                          file=sys.stderr)
-                else:
-                    seen.add(comp)
-                    team_result.append(comp)
-
-        if pname not in seen:
-            seen.add(pname)
-            team_result.append(pname)
-
-    # Auto-load core plugins matching the team's domain.
-    # Determine domain from the first resolved plugin's ctl.json.
-    domain = None
-    for pname in plugin_names:
-        pdir = find_plugin_dir(pname)
-        if pdir:
-            domain = _read_ctl(pdir).get("domain")
-            if domain:
-                break
-
-    core_result = []
-    if domain:
-        for core_name in resolve_core_plugins(domain):
-            if core_name not in seen:
-                seen.add(core_name)
-                core_result.append(core_name)
-
-    # Core plugins go before team plugins (foundational knowledge first).
-    return core_result + team_result
+    """Read ctl.json for a plugin, or empty dict if missing/invalid."""
+    return PluginResolver._read_ctl(plugin_dir)
 
 # ── Launch display ────────────────────────────────────────────────────────────
 
@@ -632,8 +358,9 @@ def cmd_run(args: list) -> None:
         cmd_list()
         sys.exit(1)
 
+    resolver = _get_resolver()
     seen: set = set()
-    all_plugins: list = []
+    all_plugins: list = []  # list of plugin name strings
 
     # --plugin/-p: load exactly the named plugin, no prefix expansion,
     # no companion resolution, no core auto-loading.
@@ -649,9 +376,20 @@ def cmd_run(args: list) -> None:
             seen.add(pname)
             all_plugins.append(pname)
 
-    # --kit/-k: full expansion (prefix match + companions + core auto-load).
+    # --kit/-k: full expansion via PluginResolver (prefix + companions + core).
     for name in kit_names:
-        all_plugins.extend(expand_kit(name, seen))
+        try:
+            expanded = resolver.expand_kit(name)
+            for plugin in expanded:
+                if plugin.name not in seen:
+                    seen.add(plugin.name)
+                    all_plugins.append(plugin.name)
+        except PluginNotFoundError:
+            print(f"Error: Kit '{name}' not found in {PLUGINS_DIR}/ or {LOCAL_DIR}/",
+                  file=sys.stderr)
+            p()
+            cmd_list()
+            sys.exit(1)
 
     os.environ["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] = "1"
     os.environ["CLAUDE_KIT_HOME"]        = str(INSTALL_DIR)
@@ -685,23 +423,21 @@ def cmd_run(args: list) -> None:
     os.environ["CLAUDE_KIT_SESSION_ID"] = tel.session_id
 
     # Determine which plugins need decryption (encrypted at rest).
-    # In dev mode, plugins are plaintext — no decryption needed.
+    decryptor = PluginDecryptor(key=_get_key())
     needs_decrypt = False
     if CK_MODE == "user":
         for pname in all_plugins:
             pdir = find_plugin_dir(pname)
-            if pdir and _is_encrypted(pdir):
+            if pdir and decryptor.is_encrypted(pdir):
                 needs_decrypt = True
                 break
 
     if needs_decrypt:
         # Clean stale temp dirs from previous crashed sessions
-        _cleanup_stale_temps()
+        _temp_mgr.cleanup_stale(pathlib.Path(tempfile.gettempdir()), max_age_hours=1)
 
-        temp_dir = tempfile.mkdtemp(prefix="ck-")
-        _temp_dirs.append(temp_dir)
+        temp_path = _temp_mgr.create(prefix="ck-")
         _setup_cleanup_handlers()
-        temp_path = pathlib.Path(temp_dir)
 
         if not shutil.which("openssl"):
             print("Error: openssl is required for plugin decryption but not found.")
@@ -710,11 +446,10 @@ def cmd_run(args: list) -> None:
         claude_args = ["claude"]
         for pname in all_plugins:
             pdir = find_plugin_dir(pname)
-            if pdir and _is_encrypted(pdir):
-                decrypted = _decrypt_plugin(pdir, temp_path)
+            if pdir and decryptor.is_encrypted(pdir):
+                decrypted = decryptor.decrypt(pdir, temp_path)
                 claude_args.extend(["--plugin-dir", str(decrypted)])
             else:
-                # Local/unencrypted plugins: pass through directly
                 claude_args.extend(["--plugin-dir", str(pdir)])
         claude_args.extend(["--model", model])
 
@@ -731,13 +466,12 @@ def cmd_run(args: list) -> None:
         # Use subprocess.run so we can clean up the temp dir afterward.
         result = subprocess.run(claude_args)
         tel.emit_session_end()
+        _upload_telemetry(tel)
         tel.close()
-        _cleanup_temp()
+        _temp_mgr.cleanup()
         sys.exit(result.returncode)
     else:
         # Dev mode or no encrypted plugins — launch directly (faster).
-        # execvp replaces the process, so emit session.end before launch
-        # and register atexit as a safety net.
         claude_args = ["claude"]
         for pname in all_plugins:
             pdir = find_plugin_dir(pname)
@@ -755,12 +489,8 @@ def cmd_run(args: list) -> None:
             p()
 
         # In dev mode we use execvp which replaces this process.
-        # Emit session.end and close before exec — the JSONL will have
-        # start + loaded events but no session.end with live counters
-        # since execvp replaces us. This is acceptable: session.end from
-        # the CLI only captures the launch phase. Full session telemetry
-        # (skills, hooks, autorouter) comes from the AI agent rules.
         tel.emit_session_end()
+        _upload_telemetry(tel)
         tel.close()
         os.execvp("claude", claude_args)
 
@@ -1293,45 +1023,15 @@ def cmd_update() -> None:
 
 # ── cmd_version ───────────────────────────────────────────────────────────────
 
-def _current_version() -> str:
-    """Return the version of the local claude-kit installation.
+_version_mgr = VersionManager(INSTALL_DIR)
 
-    Resolution order:
-    1. .version file (user installs without .git)
-    2. Exact tag at HEAD (dev mode)
-    3. Latest versioned entry in CHANGELOG.md
-    4. Nearest ancestor tag via ``git describe`` (dev fallback)
-    """
-    ver_file = INSTALL_DIR / ".version"
-    if ver_file.exists():
-        ver = ver_file.read_text().strip()
-        if ver:
-            return ver
-    tag = _git(["tag", "--points-at", "HEAD", "--sort=-version:refname"])
-    if tag:
-        return tag.splitlines()[0]
-    cl = INSTALL_DIR / "CHANGELOG.md"
-    if cl.exists():
-        try:
-            for line in cl.read_text().splitlines():
-                if line.startswith("## [") and "Unreleased" not in line:
-                    return "v" + line.split("]")[0].replace("## [", "").strip()
-        except OSError:
-            pass
-    desc = _git(["describe", "--tags", "--abbrev=0"])
-    if desc:
-        return desc
-    return _git(["rev-parse", "--short", "HEAD"]) or "unknown"
+def _current_version() -> str:
+    """Return the version of the local claude-kit installation."""
+    return _version_mgr.current_version()
 
 def _remote_version() -> str:
-    """Return the latest semver tag on origin/main, or short hash if no tags exist."""
-    tag = _git(["tag", "--points-at", "origin/main", "--sort=-version:refname"])
-    if tag:
-        return tag.splitlines()[0]
-    tag = _git(["tag", "--sort=-version:refname", "--list", "v*"])
-    if tag:
-        return tag.splitlines()[0]
-    return _git(["rev-parse", "--short", "origin/main"]) or "?"
+    """Return the latest version on origin/main."""
+    return _version_mgr.remote_version() or "?"
 
 def cmd_version() -> None:
     local_ver = _current_version()

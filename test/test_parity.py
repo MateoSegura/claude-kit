@@ -16,18 +16,25 @@ import importlib
 from pathlib import Path
 
 # Classes that MUST live in the library, not the CLI.
-# Updated as each phase extracts more logic.
 LIBRARY_CLASSES: set[str] = {
-    # Phase 2 will add: "TelemetryEmitter", "APIClient"
-    # Phase 3 will add: "PluginResolver"
-    # Phase 4 will add: "SessionManager"
-    # Phase 5 will add: "PluginDecryptor", "TempDirManager", "VersionManager"
+    "TelemetryEmitter",
+    "APIClient",
+    "PluginResolver",
+    "SessionManager",
+    "PluginDecryptor",
+    "TempDirManager",
+    "VersionManager",
 }
 
 # Functions that MUST live in the library, not the CLI.
 EXTRACTED_FUNCTIONS: set[str] = {
-    # Phase 3 will add: "find_plugin_dir", "expand_kit", etc.
-    # Phase 5 will add: "_is_encrypted", "_decrypt_plugin", etc.
+    "expand_kit",
+    "resolve_companions",
+    "resolve_prefix",
+    "_is_encrypted",
+    "_decrypt_plugin",
+    "_cleanup_temp",
+    "_cleanup_stale_temps",
 }
 
 CLI_PATH = Path(__file__).parent.parent / "claude-kit"
@@ -117,4 +124,18 @@ def test_exceptions_importable():
         ClaudeKitError,
         DecryptionError,
         PluginNotFoundError,
+    )
+
+
+def test_cli_imports_from_claude_kit():
+    """Verify CLI imports core classes from claude_kit."""
+    content = CLI_PATH.read_text()
+
+    required_imports = [
+        "from claude_kit import",
+        "from claude_kit.",
+    ]
+    assert any(imp in content for imp in required_imports), (
+        "CLI does not import from claude_kit — "
+        "it should use the library, not reimplement"
     )

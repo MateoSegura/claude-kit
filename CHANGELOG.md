@@ -32,11 +32,27 @@ All notable changes to claude-kit will be documented in this file.
   (`APIClient`), plugin resolution (`PluginResolver`), session management
   (`SessionManager`), encryption (`PluginDecryptor`, `TempDirManager`), and
   version detection (`VersionManager`)
-- **Library test suite** — 145 pytest unit tests covering all library modules
+- **System prompt builder** — `build_system_prompt()` function in
+  `claude_kit.prompt` reads and concatenates skill content from loaded plugins,
+  stripping YAML frontmatter for use with the Anthropic Messages API
+- **Library-mode test harness** — test harness supports `mode: library` in
+  scenarios for programmatic plugin resolution and in-memory telemetry capture
+  (no JSONL file parsing needed)
+- **Library test suite** — 154 pytest unit tests covering all library modules
   with TDD (red-green-refactor) methodology
 - **CI Layer 6** — library unit tests added to `push.yml` fast-validate pipeline
 - **Parity enforcement** — AST-based tests verifying CLI does not duplicate
-  library classes or functions
+  library classes or functions; import validation ensures CLI uses library
+- **Architecture documentation** — `docs/architecture/components/python-library.md`
+  covering public API, design principles, security boundary, and consumers
+
+### Changed
+- **CLI refactored to thin wrapper** — core logic (telemetry, plugin resolution,
+  session management, encryption, version detection) now imported from
+  `claude_kit` library instead of being embedded inline
+- **`.claude/rules/` updated** — testing-standards (Layer 6), architecture
+  (`claude_kit/` in structure), dev-workflow (`claude_kit` zone), and code-style
+  (library conventions) all reflect the new library architecture
 
 ## [0.12.0] - 2026-03-01
 

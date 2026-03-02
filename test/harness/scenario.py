@@ -63,6 +63,7 @@ class Scenario:
     turns: list[Turn]
     plugins: list[str] = field(default_factory=list)
     validations: list[Validation] = field(default_factory=list)
+    mode: str = "subprocess"  # "subprocess" or "library"
     source_path: str = ""
 
 
@@ -112,6 +113,7 @@ def load_scenario(path: Path) -> Scenario:
         turns=turns,
         plugins=raw.get("plugins", []),
         validations=validations,
+        mode=raw.get("mode", "subprocess"),
         source_path=str(path),
     )
 

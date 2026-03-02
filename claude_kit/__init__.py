@@ -5,6 +5,7 @@ from __future__ import annotations
 from claude_kit.api_client import APIClient
 from claude_kit.encryption import PluginDecryptor, TempDirManager
 from claude_kit.models import Plugin, Session, TelemetryEvent
+from claude_kit.prompt import build_system_prompt
 from claude_kit.resolver import PluginResolver
 from claude_kit.session import SessionManager
 from claude_kit.telemetry import TelemetryEmitter
@@ -22,4 +23,5 @@ __all__ = [
     "TelemetryEvent",
     "TempDirManager",
     "VersionManager",
+    "build_system_prompt",
 ]

@@ -141,6 +141,18 @@ install.sh                  # curl-based installer for end users
 CHANGELOG.md                # release history (Unreleased → versioned sections)
 ROADMAP.md                  # shipped releases + planned work
 README.md                   # repo-level documentation
+pyproject.toml              # root package definition (stdlib-only)
+
+claude_kit/                 # Python library package (stdlib-only)
+  __init__.py               # public API exports
+  models.py                 # Plugin, Session, TelemetryEvent dataclasses
+  telemetry.py              # TelemetryEmitter + event emission
+  api_client.py             # lightweight HTTP client for telemetry API
+  resolver.py               # PluginResolver (find, expand, companions)
+  session.py                # SessionManager (prepare, finalize)
+  encryption.py             # PluginDecryptor + TempDirManager
+  version.py                # VersionManager (current, remote)
+  exceptions.py             # PluginNotFoundError, DecryptionError, etc.
 
 plugins/                    # all plugins — core, team, and system
   core-*/                   # knowledge + system plugins
@@ -184,7 +196,14 @@ api/                        # FastAPI telemetry + auth service
   docker-compose.yml        # local dev with PostgreSQL
   pyproject.toml            # deps, pytest config, ruff config
 
-test/                       # test fixtures and scenarios
+test/                       # test fixtures, scenarios, and library unit tests
+  test_parity.py            # CLI/library parity enforcement tests
+  test_telemetry.py         # TelemetryEmitter + TelemetryEvent tests
+  test_api_client.py        # APIClient HTTP transport tests
+  test_resolver.py          # PluginResolver tests
+  test_session.py           # SessionManager tests
+  test_encryption.py        # PluginDecryptor + TempDirManager tests
+  test_version.py           # VersionManager tests
   scenarios/                # test input scenarios (YAML format)
   src/                      # test source helpers
   results/                  # test output artifacts

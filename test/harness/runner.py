@@ -77,7 +77,53 @@ def _validate_expected_turn(response: str, turn: Turn) -> list[ValidationResult]
     return results
 
 
-def run_scenario(scenario: Scenario) -> ScenarioResult:
+def _prepare_library_session(
+    scenario: Scenario,
+) -> tuple[list[Any], list[dict[str, Any]]]:
+    """Prepare a session using the claude_kit library.
+
+    Resolves plugins via PluginResolver, captures telemetry
+    in memory, and builds a system prompt from loaded plugins.
+
+    Returns:
+        Tuple of (system_prompt_parts, captured_events).
+    """
+    from pathlib import Path
+
+    from claude_kit import (
+        PluginResolver,
+        SessionManager,
+        TelemetryEmitter,
+        build_system_prompt,
+    )
+
+    plugins_dir = Path(__file__).resolve().parents[2] / "plugins"
+    captured: list[dict[str, Any]] = []
+
+    telemetry = TelemetryEmitter(
+        level="debug",
+        on_emit=captured.append,
+    )
+
+    resolver = PluginResolver(
+        plugins_dirs=[plugins_dir],
+        telemetry=telemetry,
+    )
+    session_mgr = SessionManager(resolver, telemetry=telemetry)
+    session = session_mgr.prepare(
+        kit_names=scenario.plugins,
+    )
+
+    prompt = build_system_prompt(session.plugins)
+    session_mgr.finalize(session)
+
+    return prompt, captured
+
+
+def run_scenario(
+    scenario: Scenario,
+    mode: str | None = None,
+) -> ScenarioResult:
     """Execute a scenario against the Anthropic Messages API.
 
     Walks through each turn in the scenario:
@@ -88,10 +134,21 @@ def run_scenario(scenario: Scenario) -> ScenarioResult:
 
     Args:
         scenario: A parsed Scenario object.
+        mode: Override scenario.mode ("subprocess" or "library").
 
     Returns:
         ScenarioResult with metrics, responses, and validation outcomes.
     """
+    effective_mode = mode or scenario.mode
+
+    # Library mode: resolve plugins and capture telemetry in-memory
+    system_prompt = None
+    library_events: list[dict[str, Any]] = []
+    if effective_mode == "library" and scenario.plugins:
+        system_prompt, library_events = _prepare_library_session(
+            scenario,
+        )
+
     client = anthropic.Anthropic()
     session_id = os.environ.get("CLAUDE_KIT_SESSION_ID", str(uuid.uuid4()))
 
@@ -116,11 +173,14 @@ def run_scenario(scenario: Scenario) -> ScenarioResult:
 
             try:
                 turn_start = time.monotonic()
-                response = client.messages.create(
-                    model=scenario.model,
-                    max_tokens=turn.max_tokens or scenario.max_tokens,
-                    messages=messages,
-                )
+                create_kwargs: dict[str, Any] = {
+                    "model": scenario.model,
+                    "max_tokens": (turn.max_tokens or scenario.max_tokens),
+                    "messages": messages,
+                }
+                if system_prompt:
+                    create_kwargs["system"] = system_prompt
+                response = client.messages.create(**create_kwargs)
                 _ = time.monotonic() - turn_start  # track per-turn elapsed time
 
                 # Extract usage
@@ -163,7 +223,9 @@ def run_scenario(scenario: Scenario) -> ScenarioResult:
                     {
                         "type": "expected_no_response",
                         "passed": False,
-                        "reason": "Expected turn has no prior assistant response to validate",
+                        "reason": (
+                            "Expected turn has no prior assistant response to validate"
+                        ),
                     }
                 )
                 all_passed = False
@@ -213,10 +275,15 @@ def run_scenario(scenario: Scenario) -> ScenarioResult:
     metrics.wall_clock_s = time.monotonic() - start_time
     metrics.compute_cost()
 
-    # Load claude-kit telemetry if available
-    kit_session_id = os.environ.get("CLAUDE_KIT_SESSION_ID", "")
-    if kit_session_id:
-        metrics.telemetry_events = load_telemetry_events(kit_session_id)
+    # Load telemetry: in-memory for library mode, JSONL for subprocess
+    if library_events:
+        metrics.telemetry_events = library_events
+    else:
+        kit_session_id = os.environ.get("CLAUDE_KIT_SESSION_ID", "")
+        if kit_session_id:
+            metrics.telemetry_events = load_telemetry_events(
+                kit_session_id,
+            )
 
     return ScenarioResult(
         scenario=scenario,
