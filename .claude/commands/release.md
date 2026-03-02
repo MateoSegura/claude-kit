@@ -244,9 +244,13 @@ Tell the user:
 
 Stop here.
 
-## Step 4 — Preflight: Tier 1 Validation (Strict)
+## Step 4 — Preflight: Full Validation Suite
 
-Run the validator in strict mode (warnings = failures):
+<!-- Enriched by core-ai:instrument on 2026-03-02 — added: Layer 2-6 checks beyond Tier 1 -->
+
+Run the full CI validation suite to catch issues before releasing:
+
+### 4a. Tier 1 plugin validation (strict)
 
 ```bash
 python3 scripts/validate-plugins.py --all --strict
@@ -255,6 +259,51 @@ python3 scripts/validate-plugins.py --all --strict
 If any failures are found, attempt to fix them automatically (frontmatter keys,
 extra plugin.json fields, README version badges). If unfixable failures remain,
 stop and report them.
+
+### 4b. Plugin consistency checks
+
+```bash
+bash scripts/test-plugin-consistency.sh
+```
+
+### 4c. CLI validation
+
+```bash
+python3 -m py_compile claude-kit && echo "Syntax OK"
+bash scripts/test-cli.sh
+```
+
+### 4d. Docs validation
+
+```bash
+bash scripts/validate-docs.sh
+```
+
+### 4e. Library unit tests
+
+```bash
+.venv-lib/bin/python -m pytest test/ -v --tb=short \
+  --ignore=test/scenarios --ignore=test/src
+```
+
+If `.venv-lib` does not exist, create it:
+```bash
+python3 -m venv .venv-lib && .venv-lib/bin/pip install -q -e ".[dev]"
+```
+
+### 4f. API tests
+
+```bash
+cd api && .venv/bin/python -m pytest -v --tb=short
+```
+
+If `api/.venv` does not exist, create it:
+```bash
+cd api && python3 -m venv .venv && .venv/bin/pip install -q -e ".[dev]"
+```
+
+If any step fails, fix the issue before proceeding. All six layers must pass
+before a release can continue.
 
 ## Step 5 — Semantic Impact Analysis
 
@@ -550,11 +599,15 @@ Use Read and Edit to fix the identified issue. Run the same check locally to
 verify:
 
 ```bash
-# Depending on what failed:
-python3 scripts/validate-plugins.py --all --strict
-bash scripts/test-cli.sh
-bash scripts/test-plugin-consistency.sh
+# Depending on what failed — run all affected layers:
 python3 -m py_compile claude-kit
+bash scripts/test-cli.sh
+python3 scripts/validate-plugins.py --all --strict
+bash scripts/test-plugin-consistency.sh
+bash scripts/validate-docs.sh
+.venv-lib/bin/python -m pytest test/ -v --tb=short \
+  --ignore=test/scenarios --ignore=test/src
+cd api && .venv/bin/python -m pytest -v --tb=short
 ```
 
 ### 13c. Re-commit, re-tag, re-push

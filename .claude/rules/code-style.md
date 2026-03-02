@@ -79,6 +79,33 @@ failures.
 Skills that do not restrict tools omit the key entirely — do not add an empty
 `allowed-tools:` entry.
 
+## Python — Test Infrastructure (`test/`)
+
+Test files follow the same style rules as the library (ruff, f-strings, pathlib)
+but have **relaxed dependency rules**:
+
+- **`test/test_*.py`** (top-level unit tests) — stdlib + `pytest` only
+- **`test/engine/`**, **`test/scoring/`**, **`test/benchmark/`** — may import
+  `anthropic` and `pyyaml` for API-driven benchmarks and scoring
+
+Optional imports in test infrastructure files must use the guarded pattern:
+
+```python
+try:
+    import anthropic
+except ModuleNotFoundError:  # CI: anthropic not installed
+    anthropic = None  # type: ignore[assignment]
+```
+
+This preserves `unittest.mock.patch()` compatibility (the module-level attribute
+must exist) while allowing the code to import cleanly in CI where only `pytest`
+and `ruff` are installed. Tests that require these packages use
+`@pytest.mark.skipif` to skip gracefully.
+
+**Never** import `anthropic`, `pyyaml`, or any third-party package in
+`claude_kit/` (the library) or `claude-kit` (the CLI). These remain
+stdlib-only.
+
 ## Required Runtime Dependencies
 
 All of these must be available in the execution environment. They are

@@ -1,14 +1,14 @@
 {
   "version": "1",
   "created": "2026-02-27",
-  "updated": "2026-02-27",
+  "updated": "2026-03-02",
   "generator": "core-ai:instrument",
   "detection": {
     "primary_language": "python",
-    "framework": null,
+    "framework": "pytest",
     "package_manager": null,
-    "test_framework": "bash-scripts",
-    "linter": null,
+    "test_framework": "pytest+bash-scripts",
+    "linter": "ruff",
     "formatter": "ruff",
     "ci_system": "github-actions",
     "ci_workflow_count": 7,
@@ -19,16 +19,19 @@
     "layout": "custom-plugin-architecture",
     "latest_tag": "v0.10.0",
     "plugin_count": 27,
-    "team_count": 3
+    "team_count": 3,
+    "library_package": "claude_kit",
+    "api_service": "fastapi",
+    "benchmark_framework": "test/engine+scoring+benchmark"
   },
   "files": {
     ".claude/rules/testing-standards.md": {
       "generated": "2026-02-27",
-      "updated": "2026-02-27",
+      "updated": "2026-03-02",
       "action": "enriched",
-      "sources": ["scripts/test-cli.sh", "scripts/validate-plugins.py", "scripts/test-plugin-consistency.sh", "scripts/validate-docs.sh", ".github/workflows/push.yml"],
-      "hash": "822c063f46350a5d55e4b48228808d4e47f89c9819fd2fbcc59de3d126a0b909",
-      "enrichment_summary": "Added Layer 4 (Docs Validation) with validate-docs.sh, updated run table and combined command"
+      "sources": ["scripts/test-cli.sh", "scripts/validate-plugins.py", "scripts/test-plugin-consistency.sh", "scripts/validate-docs.sh", ".github/workflows/push.yml", "test/engine/", "test/scoring/", "test/benchmark/"],
+      "hash": "578705bc423ed14249a5f34a0e8a6b6e6d4575acf07b54cc6e53647d7276c998",
+      "enrichment_summary": "Updated Layer 6 to include benchmark framework tests (engine, scoring, benchmark). Removed --ignore=test/harness (deleted). Added optional dependency docs (anthropic, pyyaml)."
     },
     ".claude/rules/documentation.md": {
       "updated": "2026-02-27",
@@ -39,11 +42,11 @@
     },
     ".claude/rules/architecture.md": {
       "generated": "2026-02-27",
-      "updated": "2026-02-27",
+      "updated": "2026-03-02",
       "action": "enriched",
-      "sources": ["plugins/*/.claude-plugin/ctl.json", "claude-kit", "plugins/ directory structure", "docs/", "scripts/", "templates/", "local/", "test/"],
-      "hash": "3fcdea58fad9c81ed4d2e8fd1896c22b36f70cb4b1b2594667a8d3756804eb77",
-      "enrichment_summary": "Added Project Root Structure section documenting all top-level directories: plugins/, scripts/, docs/, templates/, local/, test/, .devcontainer/, .github/workflows/, .claude/"
+      "sources": ["plugins/*/.claude-plugin/ctl.json", "claude-kit", "plugins/ directory structure", "docs/", "scripts/", "templates/", "local/", "test/", "claude_kit/", "api/"],
+      "hash": "aaca36d2dd98e65eca381436adef0982901fb8d5fa6d5fc82f00adbb17b788d8",
+      "enrichment_summary": "Added test/ subdirectory structure: engine/ (config, executor, human, session_factory), scoring/ (base, deterministic, llm_judge, rubric, statistical), benchmark/ (runner, comparator, report, __main__). Added claude_kit/ and api/ package structures."
     },
     ".claude/rules/security.md": {
       "generated": "2026-02-27",
@@ -53,9 +56,11 @@
     },
     ".claude/rules/code-style.md": {
       "generated": "2026-02-27",
-      "action": "created",
-      "sources": ["claude-kit", "scripts/*.sh", ".devcontainer/devcontainer.json", "plugin frontmatter conventions"],
-      "hash": "6fd8183edbfb50f56e5393b74133ffe0541478a8aa501f0b571a09ab99d83d22"
+      "updated": "2026-03-02",
+      "action": "enriched",
+      "sources": ["claude-kit", "scripts/*.sh", ".devcontainer/devcontainer.json", "plugin frontmatter conventions", "test/engine/executor.py", "test/scoring/llm_judge.py", "test/scoring/rubric.py"],
+      "hash": "f7fed6ee8baf3caf9a5b6f36eb7bb53a4a94cede7d242ec2de7a38dd47df4839",
+      "enrichment_summary": "Added Python — Test Infrastructure section documenting relaxed dependency rules for test/ (anthropic, pyyaml allowed with try/except guard pattern). Clarified stdlib-only boundary for claude_kit/ and CLI."
     },
     ".claude/rules/devcontainer.md": {
       "generated": "2026-02-27",
@@ -84,12 +89,33 @@
       "hash": "b1078b3197e1806e114f8d7aff238d4758af185f282f1cf78acb2f2e9835f3f3",
       "enrichment_summary": "Replaced CI Checks section (2 workflows) with comprehensive CI Workflows section documenting all 7 workflows: fast-validate, pr-validate (tier1 + semantic), pr-autofix (3-attempt loop), release (tag-triggered), nightly-plugin-review (auto-fix PR), weekly-full-audit (issue creation), publish-devcontainer (image lifecycle). Added summary table."
     },
-    ".claude/commands/release.md": {
-      "updated": "2026-02-27",
+    ".claude/rules/dev-workflow.md": {
+      "updated": "2026-03-02",
       "action": "enriched",
-      "sources": ["architecture.md", "plugin-conventions.md", "code-style.md", "plugin-versions.md", "cross-team-consistency.md", "git-workflow.md"],
-      "hash": "c95e8603c2c2334551265fa8b51f2ed1a900af8550280fff2b2df40eff8a899d",
-      "enrichment_summary": "Added Step 3 — Semantic Impact Analysis: architectural integrity checks (knowledge plugins, companion resolution, ctl.json roles, frontmatter keys), version bump severity validation (breaking/new/fix vs actual bump), cross-team consistency checks, auto-fix for simple issues, and user-facing report for complex violations. Renumbered Steps 3-13 to 4-14."
+      "sources": ["test/engine/", "test/scoring/", "test/benchmark/"],
+      "hash": "426d3602cf3d8f273251b3a3e4979da9a1671bbc6e1134bdc16423f07a210968",
+      "enrichment_summary": "Added test/engine/**, test/scoring/**, test/benchmark/** zone-to-layer mapping for Layer 6 auto-validation."
+    },
+    ".claude/commands/release.md": {
+      "updated": "2026-03-02",
+      "action": "enriched",
+      "sources": ["architecture.md", "plugin-conventions.md", "code-style.md", "plugin-versions.md", "cross-team-consistency.md", "git-workflow.md", "testing-standards.md"],
+      "hash": "7ba83980e63fd4dac8211d573572fef7fecca26f79df5fd7836fc5fb619ab00c",
+      "enrichment_summary": "Expanded Step 4 preflight from Tier 1 only to full 6-layer validation suite (plugin consistency, CLI, docs, library tests, API tests). Updated Step 13 auto-fix local verification to include all layers."
+    },
+    ".claude/commands/auto-release.md": {
+      "updated": "2026-03-02",
+      "action": "enriched",
+      "sources": ["testing-standards.md", "release.md"],
+      "hash": "ab618e73e9d6d8b76a39ef3c2990570d1462fa8f486eea47e7a62a6f654e6324",
+      "enrichment_summary": "Expanded Step 4 from Tier 1 only to full 6-layer validation suite. Updated Step 13 auto-fix local verification to include all layers."
+    },
+    ".claude/commands/validate-all.md": {
+      "updated": "2026-03-02",
+      "action": "enriched",
+      "sources": ["testing-standards.md", ".github/workflows/push.yml"],
+      "hash": "059ca057148db6f8edd6bd53345303de0f994f2274ab9722654ee8140feb1104",
+      "enrichment_summary": "Expanded from 2-step (Tier 1 + semantic note) to 9-step full CI parity: plugin validation, consistency checks, CLI validation, docs validation, library tests, API tests, upgrade safety, semantic review, combined summary."
     }
   },
   "user_answers": {
@@ -105,7 +131,6 @@
     ".claude/rules/plugin-versions.md",
     ".claude/rules/cross-team-consistency.md",
     ".claude/rules/plugin-conventions.md",
-    ".claude/commands/validate-all.md",
     ".claude/commands/bump-plugin.md"
   ]
 }
