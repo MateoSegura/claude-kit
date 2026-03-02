@@ -26,6 +26,17 @@ All notable changes to claude-kit will be documented in this file.
   session queries, metrics aggregation, and cross-user isolation
 - **Architecture documentation** — `docs/architecture/components/telemetry.md`
   covering data flow, event schema, configuration, and API endpoints
+- **Python library (`claude_kit`)** — importable stdlib-only package extracting
+  core functionality from the CLI into reusable modules: models (`Plugin`,
+  `Session`, `TelemetryEvent`), telemetry (`TelemetryEmitter`), API client
+  (`APIClient`), plugin resolution (`PluginResolver`), session management
+  (`SessionManager`), encryption (`PluginDecryptor`, `TempDirManager`), and
+  version detection (`VersionManager`)
+- **Library test suite** — 145 pytest unit tests covering all library modules
+  with TDD (red-green-refactor) methodology
+- **CI Layer 6** — library unit tests added to `push.yml` fast-validate pipeline
+- **Parity enforcement** — AST-based tests verifying CLI does not duplicate
+  library classes or functions
 
 ## [0.12.0] - 2026-03-01
 
