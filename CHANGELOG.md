@@ -4,7 +4,39 @@ All notable changes to claude-kit will be documented in this file.
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-03-02
+
 ### Added
+- **SvelteKit telemetry dashboard** (`apps/dashboard/`) — full session
+  observability UI with Midnight Aurora dark theme, Grafana-style time controls
+  (1m/5m/20m/1h/All intervals with step navigation), Claude Code-style chat
+  view with grouped tool calls and collapsible errors, Ableton-style swim lane
+  timeline with two-card layout (Conversation + Kit Orchestration tracks),
+  interactive histogram scrubber, event summary sparkline, session list with
+  pagination and plugin filtering, auth flow with JWT token management
+- **Nx workspace** — monorepo setup (`nx.json`, `package.json`,
+  `tsconfig.base.json`) for managing the dashboard app alongside the Python CLI
+- **Telemetry hooks** (`plugins/core-kit/hooks/`) — 8 hook scripts for
+  comprehensive session instrumentation: prompt, tool, tool-failure, stop,
+  compact, subagent, session-end hooks; all emit structured events via curl
+  to the telemetry API with API key auth
+- **Multi-turn session driver** (`test/engine/driver.py`) — SessionDriver with
+  4 modes (Human, Autonomous, Benchmark, CI), InputStrategy protocol with
+  implementations, TerminalRenderer with live display callbacks, JsonlWriter
+  for CI output, and auto_runner entry point
+- **Benchmark framework** — SDK executor for real-world testing, pairwise
+  comparator (kit vs raw), multi-turn scorers for conversation evaluation,
+  statistical analysis with bootstrap confidence intervals
+- **Per-message telemetry** — API ingestion now supports all event types
+  (prompt.submitted, message.assistant, tool.used, tool.result, turn.completed,
+  subagent.start/stop, session.compact) with auto session summary creation and
+  incremental token/cost accumulation
+- **Cursor-based event streaming** — new `/sessions/{id}/events/stream`
+  endpoint for live session replay with after-timestamp polling
+- **API key auth for hooks** — telemetry ingestion supports both JWT Bearer
+  tokens and X-API-Key headers for hook-based event submission
+- **Dev stack management** (`scripts/dev-stack.sh`) — orchestrates API +
+  PostgreSQL + Dashboard lifecycle for local development
 - **Telemetry system** — opt-in structured event capture during Claude Code
   sessions. Configurable via `CLAUDE_KIT_TELEMETRY` env var with four levels:
   `off` (default), `debug`, `local`, `full`
@@ -18,14 +50,6 @@ All notable changes to claude-kit will be documented in this file.
 - **CLI upload path** — automatic HTTP upload of session events to the
   telemetry API when `CLAUDE_KIT_TELEMETRY=full` and API credentials are
   configured; uses stdlib `http.client` with graceful failure
-- **Test harness** — Claude SDK-based test runner (`test/`) with YAML scenario
-  format for scripted multi-turn conversations with validation assertions
-- **E2E telemetry scenario** — `test/scenarios/e2e-telemetry.yml` validates
-  local JSONL output and event schema compliance
-- **API test suite** — 50+ async tests covering auth, telemetry ingestion,
-  session queries, metrics aggregation, and cross-user isolation
-- **Architecture documentation** — `docs/architecture/components/telemetry.md`
-  covering data flow, event schema, configuration, and API endpoints
 - **Python library (`claude_kit`)** — importable stdlib-only package extracting
   core functionality from the CLI into reusable modules: models (`Plugin`,
   `Session`, `TelemetryEvent`), telemetry (`TelemetryEmitter`), API client
@@ -35,24 +59,21 @@ All notable changes to claude-kit will be documented in this file.
 - **System prompt builder** — `build_system_prompt()` function in
   `claude_kit.prompt` reads and concatenates skill content from loaded plugins,
   stripping YAML frontmatter for use with the Anthropic Messages API
-- **Library-mode test harness** — test harness supports `mode: library` in
-  scenarios for programmatic plugin resolution and in-memory telemetry capture
-  (no JSONL file parsing needed)
-- **Library test suite** — 154 pytest unit tests covering all library modules
-  with TDD (red-green-refactor) methodology
+- **Library test suite** — 429 pytest unit tests covering all library modules,
+  benchmark framework, scoring pipeline, and multi-turn session driver
 - **CI Layer 6** — library unit tests added to `push.yml` fast-validate pipeline
 - **Parity enforcement** — AST-based tests verifying CLI does not duplicate
   library classes or functions; import validation ensures CLI uses library
-- **Architecture documentation** — `docs/architecture/components/python-library.md`
-  covering public API, design principles, security boundary, and consumers
 
 ### Changed
 - **CLI refactored to thin wrapper** — core logic (telemetry, plugin resolution,
   session management, encryption, version detection) now imported from
   `claude_kit` library instead of being embedded inline
 - **`.claude/rules/` updated** — testing-standards (Layer 6), architecture
-  (`claude_kit/` in structure), dev-workflow (`claude_kit` zone), and code-style
-  (library conventions) all reflect the new library architecture
+  (`claude_kit/` in structure), dev-workflow (dev stack management, `claude_kit`
+  zone), and code-style (library conventions) all reflect the new architecture
+- **`.gitignore` updated** — added Node/Nx artifacts (node_modules, .nx,
+  .svelte-kit, build) and Claude local settings
 
 ## [0.12.0] - 2026-03-01
 
