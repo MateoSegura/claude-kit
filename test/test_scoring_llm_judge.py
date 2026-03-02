@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from unittest.mock import MagicMock
 
+import pytest
+
 from test.engine.config import RunResult
 from test.scoring.llm_judge import LLMJudge
 from test.scoring.rubric import (
@@ -69,6 +71,10 @@ def test_rubric_total_weight():
     assert DEFAULT_RUBRIC.total_weight == 7.5
 
 
+@pytest.mark.skipif(
+    not __import__("importlib").util.find_spec("yaml"),
+    reason="PyYAML not installed",
+)
 def test_load_rubric_from_yaml(tmp_path):
     yaml_content = """
 name: test-rubric
