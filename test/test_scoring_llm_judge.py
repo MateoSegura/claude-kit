@@ -14,6 +14,7 @@ from test.scoring.rubric import (
     Dimension,
     Rubric,
     load_rubric,
+    yaml as _yaml,
 )
 
 
@@ -72,7 +73,7 @@ def test_rubric_total_weight():
 
 
 @pytest.mark.skipif(
-    not __import__("importlib").util.find_spec("yaml"),
+    _yaml is None,
     reason="PyYAML not installed",
 )
 def test_load_rubric_from_yaml(tmp_path):
