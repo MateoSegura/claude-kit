@@ -14,8 +14,18 @@ from test.scoring.rubric import (
     Dimension,
     Rubric,
     load_rubric,
-    yaml as _yaml,
 )
+
+
+def _pyyaml_available() -> bool:
+    """Return True only if PyYAML is installed and functional."""
+    try:
+        import yaml
+
+        yaml.safe_load("")
+        return True
+    except Exception:
+        return False
 
 
 def _result(**kwargs) -> RunResult:
@@ -73,7 +83,7 @@ def test_rubric_total_weight():
 
 
 @pytest.mark.skipif(
-    _yaml is None,
+    not _pyyaml_available(),
     reason="PyYAML not installed",
 )
 def test_load_rubric_from_yaml(tmp_path):
