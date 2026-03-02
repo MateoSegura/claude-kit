@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from claude_kit.driver_config import SessionDriverConfig
 from test.engine.config import (
     BenchmarkResult,
     EvalScenario,
@@ -53,14 +54,20 @@ class BenchmarkRunner:
         plugins_dirs: list[Path | str] | None = None,
         scorers: list[Scorer] | None = None,
         executor_type: str = "api",
+        driver_config: SessionDriverConfig | None = None,
     ) -> None:
         self.scenario = scenario
         self._plugins_dirs = [
             Path(d) if isinstance(d, str) else d for d in (plugins_dirs or [])
         ]
         self.scorers = scorers or self._default_scorers()
-        self.human = HumanSimulator()
+        self.human = HumanSimulator(
+            persona=scenario.human_persona,
+            model=scenario.human_model,
+            max_responses=scenario.human_max_responses,
+        )
         self._executor_type = executor_type
+        self._driver_config = driver_config
 
     def _default_scorers(self) -> list[Scorer]:
         return [
@@ -85,7 +92,30 @@ class BenchmarkRunner:
         Returns:
             ScoredRun with result and scores.
         """
-        if self._executor_type == "sdk":
+        if self._executor_type == "session":
+            from test.engine.driver import SessionDriver
+            from test.engine.input_strategies import SimulatedInput
+
+            try:
+                import anthropic
+
+                client = anthropic.Anthropic()
+            except ModuleNotFoundError:
+                client = None
+
+            input_strategy = SimulatedInput(
+                human=self.human,
+                anthropic_client=client,
+                follow_ups=self.scenario.follow_up_prompts or None,
+                auto_respond=self.scenario.auto_respond,
+            )
+            executor = SessionDriver(
+                scenario=self.scenario,
+                input_strategy=input_strategy,
+                plugins_dirs=self._plugins_dirs or None,
+                driver_config=self._driver_config,
+            )
+        elif self._executor_type == "sdk":
             executor = SdkExecutor(
                 scenario=self.scenario,
                 plugins_dirs=self._plugins_dirs or None,

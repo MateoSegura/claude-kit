@@ -45,6 +45,9 @@ def _load_scenario(path: Path, overrides: dict) -> EvalScenario:
         for c in raw.get("configs", [])
     ]
 
+    # Parse human simulator config
+    human_raw = raw.get("human", {})
+
     return EvalScenario(
         name=raw["name"],
         description=raw.get("description", ""),
@@ -54,6 +57,12 @@ def _load_scenario(path: Path, overrides: dict) -> EvalScenario:
         max_turns=raw.get("max_turns", 20),
         max_tokens=raw.get("max_tokens", 4096),
         runs=overrides.get("runs", raw.get("runs", 1)),
+        follow_up_prompts=raw.get("follow_ups", []),
+        human_persona=human_raw.get("persona"),
+        human_model=human_raw.get("model", "claude-haiku-4-5-20251001"),
+        human_max_responses=human_raw.get("max_responses", 10),
+        auto_respond=raw.get("auto_respond", True),
+        executor_type=overrides.get("executor", raw.get("executor", "sdk")),
     )
 
 
@@ -94,9 +103,9 @@ def main() -> int:
     parser.add_argument(
         "--executor",
         type=str,
-        choices=["sdk", "api"],
+        choices=["sdk", "api", "session"],
         default="sdk",
-        help="Executor: sdk (Claude Code CLI) or api (Anthropic SDK)",
+        help="Executor: sdk | api | session (multi-turn CLI)",
     )
     args = parser.parse_args()
 
@@ -109,6 +118,8 @@ def main() -> int:
         overrides["runs"] = args.runs
     if args.model is not None:
         overrides["model"] = args.model
+    if args.executor is not None:
+        overrides["executor"] = args.executor
 
     scenario = _load_scenario(args.scenario, overrides)
 

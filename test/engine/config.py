@@ -60,6 +60,14 @@ class EvalScenario:
     max_tokens: int = 4096
     runs: int = 1
 
+    # Multi-turn support
+    follow_up_prompts: list[str] = field(default_factory=list)
+    human_persona: str | None = None
+    human_model: str = "claude-haiku-4-5-20251001"
+    human_max_responses: int = 10
+    auto_respond: bool = True
+    executor_type: str = "sdk"
+
 
 @dataclass
 class Transcript:
@@ -133,6 +141,10 @@ class RunResult:
     tool_use_count: int = 0
     mcp_call_count: int = 0
     compact_count: int = 0
+
+    # Multi-turn + history
+    human_response_count: int = 0
+    pre_compact_snapshots: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def estimated_cost_usd(self) -> float:

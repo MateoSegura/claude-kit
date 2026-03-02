@@ -17,6 +17,8 @@ import time
 import atexit
 import io
 import tarfile
+import urllib.request
+import urllib.error
 
 # ── Library import ────────────────────────────────────────────────────────────
 # The claude_kit package provides core functionality. In dev mode it's pip-
@@ -58,16 +60,16 @@ except ImportError:
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
-INSTALL_DIR      = pathlib.Path(os.path.realpath(__file__)).parent
-PLUGINS_DIR      = INSTALL_DIR / "plugins"
-LOCAL_DIR        = INSTALL_DIR / "local" / "plugins"
+INSTALL_DIR = pathlib.Path(os.path.realpath(__file__)).parent
+PLUGINS_DIR = INSTALL_DIR / "plugins"
+LOCAL_DIR = INSTALL_DIR / "local" / "plugins"
 INSTALLED_MARKER = INSTALL_DIR / ".installed"
-MANIFEST_FILE    = INSTALL_DIR / "local" / "setup-manifest.json"
-BACKUP_DIR       = INSTALL_DIR / "local" / "backups"
+MANIFEST_FILE = INSTALL_DIR / "local" / "setup-manifest.json"
+BACKUP_DIR = INSTALL_DIR / "local" / "backups"
 
-CK_MODE       = "user" if INSTALLED_MARKER.exists() else "dev"
+CK_MODE = "user" if INSTALLED_MARKER.exists() else "dev"
 CK_OUTPUT_DIR = LOCAL_DIR if CK_MODE == "user" else PLUGINS_DIR
-VERBOSE       = False
+VERBOSE = False
 
 # Content directories that get encrypted (everything else stays plaintext)
 _CONTENT_DIRS = ("agents", "commands", "skills", "hooks", "scripts")
@@ -76,6 +78,101 @@ _CONTENT_DIRS = ("agents", "commands", "skills", "hooks", "scripts")
 
 _TELEMETRY_DIR = pathlib.Path.home() / ".claude-kit" / "telemetry"
 _TELEMETRY_CONF = pathlib.Path.home() / ".claude-kit" / "telemetry.conf"
+
+# Dev-mode defaults: when running ./claude-kit from the repo, auto-wire
+# telemetry to the local API so every session shows up in the dashboard.
+_DEV_API_URL = "http://172.17.0.1:8000/api/v1"
+_DEV_API_KEY_FILE = pathlib.Path.home() / ".claude-kit" / "dev-api-key"
+_DEV_CREDS = {"email": "dev@example.com", "password": "password123"}
+
+
+def _ensure_dev_api_key() -> str:
+    """Auto-provision an API key for the dev dashboard user.
+
+    Reads from ~/.claude-kit/dev-api-key if it exists and is still valid.
+    Otherwise registers/logs in, creates a key, and caches it.
+    """
+    # Try cached key first
+    if _DEV_API_KEY_FILE.exists():
+        cached = _DEV_API_KEY_FILE.read_text().strip()
+        if cached:
+            # Quick validation: try a test ingest
+            try:
+                req = urllib.request.Request(
+                    f"{_DEV_API_URL}/telemetry/ingest",
+                    data=json.dumps(
+                        {
+                            "session_id": "key-check",
+                            "events": [
+                                {
+                                    "event_type": "session.start",
+                                    "timestamp": "2000-01-01T00:00:00Z",
+                                    "payload": {},
+                                }
+                            ],
+                        }
+                    ).encode(),
+                    headers={
+                        "Content-Type": "application/json",
+                        "X-API-Key": cached,
+                    },
+                )
+                resp = urllib.request.urlopen(req, timeout=3)
+                if resp.status in (200, 201, 202):
+                    return cached
+            except Exception:
+                pass  # Key is stale, re-provision below
+
+    # Register (idempotent — 409 if exists) then login
+    for url_suffix, payload in [
+        ("/auth/register", _DEV_CREDS),
+        ("/auth/login", _DEV_CREDS),
+    ]:
+        try:
+            req = urllib.request.Request(
+                f"{_DEV_API_URL}{url_suffix}",
+                data=json.dumps(payload).encode(),
+                headers={"Content-Type": "application/json"},
+            )
+            resp = urllib.request.urlopen(req, timeout=5)
+            body = json.loads(resp.read())
+            if "access_token" in body:
+                token = body["access_token"]
+                break
+        except urllib.error.HTTPError:
+            continue
+    else:
+        print(
+            "[claude-kit:telemetry] cannot provision dev API key — "
+            "API unreachable or login failed",
+            file=sys.stderr,
+        )
+        return ""
+
+    # Create an API key
+    try:
+        req = urllib.request.Request(
+            f"{_DEV_API_URL}/auth/api-keys",
+            data=json.dumps({"name": "dev-auto"}).encode(),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {token}",
+            },
+        )
+        resp = urllib.request.urlopen(req, timeout=5)
+        key_data = json.loads(resp.read())
+        api_key = key_data.get("raw_key", "")
+    except Exception:
+        print(
+            "[claude-kit:telemetry] API key creation failed",
+            file=sys.stderr,
+        )
+        return ""
+
+    # Cache for next time
+    _DEV_API_KEY_FILE.parent.mkdir(parents=True, exist_ok=True)
+    _DEV_API_KEY_FILE.write_text(api_key)
+    return api_key
 
 
 def _write_stderr(event: dict) -> None:
@@ -105,11 +202,15 @@ _telemetry: TelemetryEmitter | None = None
 def _init_telemetry() -> TelemetryEmitter:
     """Initialize the global telemetry emitter from env or config file."""
     global _telemetry
-    level = os.environ.get("CLAUDE_KIT_TELEMETRY", "").lower()
-    if not level and _TELEMETRY_CONF.exists():
-        level = _TELEMETRY_CONF.read_text().strip().lower()
-    if not level:
-        level = "off"
+    # Dev mode: always use full telemetry (auto-upload to local API)
+    if CK_MODE == "dev":
+        level = os.environ.get("CLAUDE_KIT_TELEMETRY", "full").lower()
+    else:
+        level = os.environ.get("CLAUDE_KIT_TELEMETRY", "").lower()
+        if not level and _TELEMETRY_CONF.exists():
+            level = _TELEMETRY_CONF.read_text().strip().lower()
+        if not level:
+            level = "off"
     _telemetry = TelemetryEmitter(
         level=level,
         telemetry_dir=_TELEMETRY_DIR,
@@ -126,21 +227,75 @@ def _get_telemetry() -> TelemetryEmitter:
     return _telemetry
 
 
+def _get_api_client() -> APIClient | None:
+    """Return an APIClient if telemetry API is configured, else None."""
+    api_url = os.environ.get("CLAUDE_KIT_API_URL", "").rstrip("/")
+    api_key = os.environ.get("CLAUDE_KIT_API_KEY", "")
+    if not api_url or not api_key:
+        if CK_MODE == "dev":
+            api_url = _DEV_API_URL
+            api_key = _ensure_dev_api_key()
+        else:
+            return None
+    return APIClient(base_url=api_url, api_key=api_key)
+
+
+def _preflight_telemetry(tel: TelemetryEmitter) -> None:
+    """Pre-launch check: if telemetry is full, verify the API is reachable.
+
+    Exits with error if the API is down in dev mode.
+    """
+    if tel.level != "full":
+        return
+    client = _get_api_client()
+    if client is None:
+        return
+    if not client.healthcheck():
+        print(file=sys.stderr)
+        print(
+            f"  \033[31m✗ Telemetry API is not reachable\033[0m",
+            file=sys.stderr,
+        )
+        print(file=sys.stderr)
+        print(
+            f"  Dev mode requires a running API. Start it with:",
+            file=sys.stderr,
+        )
+        print(
+            f"    \033[36mbash scripts/dev-stack.sh up\033[0m",
+            file=sys.stderr,
+        )
+        print(file=sys.stderr)
+        print(
+            f"  Or disable telemetry for this run:",
+            file=sys.stderr,
+        )
+        print(
+            f"    \033[36mCLAUDE_KIT_TELEMETRY=off ./claude-kit --kit ...\033[0m",
+            file=sys.stderr,
+        )
+        print(file=sys.stderr)
+        sys.exit(1)
+
+
 def _upload_telemetry(tel: TelemetryEmitter) -> bool:
     """Upload buffered telemetry events to the API if configured."""
     if tel.level != "full":
         return False
-    api_url = os.environ.get("CLAUDE_KIT_API_URL", "").rstrip("/")
-    api_key = os.environ.get("CLAUDE_KIT_API_KEY", "")
-    if not api_url or not api_key:
+    client = _get_api_client()
+    if client is None:
         return False
     events = tel.flush_buffer()
     if not events:
         return True
-    client = APIClient(base_url=api_url, api_key=api_key)
     result = client.upload(session_id=tel.session_id, events=events)
     if not result:
         print("[claude-kit:telemetry] upload failed", file=sys.stderr)
+        if CK_MODE == "dev":
+            print(
+                "[claude-kit:telemetry] run: bash scripts/dev-stack.sh status",
+                file=sys.stderr,
+            )
     return result
 
 
@@ -149,10 +304,12 @@ def _upload_telemetry(tel: TelemetryEmitter) -> bool:
 # Temp dir manager and decryptor — initialized when needed.
 _temp_mgr = TempDirManager()
 
+
 def _get_key() -> str:
     """Assemble the encryption passphrase from split parts."""
     _p = ["cK9x@", "Vm4p", "Lw2R", "qJ7n", "Ht5Z", "bF3s"]
     return "".join(_p)
+
 
 def _setup_cleanup_handlers() -> None:
     """Register cleanup for temp dirs on exit and signals."""
@@ -170,22 +327,27 @@ def _setup_cleanup_handlers() -> None:
     signal.signal(signal.SIGTERM, _on_signal)
     signal.signal(signal.SIGINT, _on_signal)
 
+
 # ── Colors ───────────────────────────────────────────────────────────────────
 
+
 class C:
-    R   = '\033[0;31m'
-    G   = '\033[0;32m'
-    Y   = '\033[0;33m'
-    CY  = '\033[0;36m'
-    W   = '\033[1;37m'
-    DIM = '\033[2m'
-    N   = '\033[0m'
+    R = "\033[0;31m"
+    G = "\033[0;32m"
+    Y = "\033[0;33m"
+    CY = "\033[0;36m"
+    W = "\033[1;37m"
+    DIM = "\033[2m"
+    N = "\033[0m"
+
 
 def col(color: str, text: str) -> str:
     return f"{color}{text}{C.N}"
 
+
 def p(text: str = "") -> None:
     print(text)
+
 
 # ── Tips ──────────────────────────────────────────────────────────────────────
 
@@ -197,6 +359,7 @@ _TIPS = [
     f"See what's coming:  {C.CY}claude-kit roadmap{C.N}",
 ]
 
+
 def _maybe_show_tip() -> None:
     if random.random() >= 0.3:
         return
@@ -205,10 +368,12 @@ def _maybe_show_tip() -> None:
     p(f"  {col(C.DIM, chr(0x2500) * 2)} tip {col(C.DIM, chr(0x2500) * 33)}")
     p(f"  {tip}")
 
+
 # ── Plugin helpers ────────────────────────────────────────────────────────────
 
 # Shared resolver instance — created once, used by cmd_run, cmd_list, etc.
 _resolver: PluginResolver | None = None
+
 
 def _get_resolver() -> PluginResolver:
     """Return the shared PluginResolver, creating it if needed."""
@@ -216,6 +381,7 @@ def _get_resolver() -> PluginResolver:
     if _resolver is None:
         _resolver = PluginResolver(plugins_dirs=[PLUGINS_DIR, LOCAL_DIR])
     return _resolver
+
 
 def find_plugin_dir(name: str):
     """Locate a plugin directory by name. Returns path or None."""
@@ -225,10 +391,12 @@ def find_plugin_dir(name: str):
     except PluginNotFoundError:
         return None
 
+
 def resolve_core_plugins(domain: str) -> list[str]:
     """Return sorted list of core plugin names matching a domain."""
     plugins = _get_resolver().resolve_core_plugins(domain)
     return sorted(p.name for p in plugins)
+
 
 def plugin_version(plugin_dir: pathlib.Path) -> str:
     """Read version from plugin.json."""
@@ -240,13 +408,16 @@ def plugin_version(plugin_dir: pathlib.Path) -> str:
     except Exception:
         return "?"
 
+
 def _read_ctl(plugin_dir: pathlib.Path) -> dict:
     """Read ctl.json for a plugin, or empty dict if missing/invalid."""
     return PluginResolver._read_ctl(plugin_dir)
 
+
 # ── Launch display ────────────────────────────────────────────────────────────
 
 _ROLE_SUFFIXES = ("knowledge", "engineer", "grader", "tester", "debugger")
+
 
 def _group_plugins(names: list) -> tuple:
     """Split plugin list into core group, team groups, and standalone plugins."""
@@ -263,15 +434,18 @@ def _group_plugins(names: list) -> tuple:
             standalone.append(name)
     return core, groups, standalone
 
+
 def _print_launch_header(plugin_names: list) -> None:
     core, groups, standalone = _group_plugins(plugin_names)
-    total       = len(plugin_names)
-    n_kits      = len(groups) + len(standalone) + (1 if core else 0)
-    kit_word    = "kit"    if n_kits == 1 else "kits"
-    plugin_word = "plugin" if total  == 1 else "plugins"
+    total = len(plugin_names)
+    n_kits = len(groups) + len(standalone) + (1 if core else 0)
+    kit_word = "kit" if n_kits == 1 else "kits"
+    plugin_word = "plugin" if total == 1 else "plugins"
 
     p()
-    p(f"  {col(C.W, 'claude-kit')}  {col(C.DIM, f'·  {n_kits} {kit_word}  ·  {total} {plugin_word}')}")
+    p(
+        f"  {col(C.W, 'claude-kit')}  {col(C.DIM, f'·  {n_kits} {kit_word}  ·  {total} {plugin_word}')}"
+    )
     p(f"  {col(C.DIM, '─' * 40)}")
     p()
 
@@ -300,14 +474,18 @@ def _print_launch_header(plugin_names: list) -> None:
     # Telemetry indicator
     tel = _get_telemetry()
     if tel.active:
-        p(f"  {col(C.Y, 'telemetry')}  {col(C.DIM, f'·  level={tel.level}  ·  session={tel.session_id[:8]}')}")
+        p(
+            f"  {col(C.Y, 'telemetry')}  {col(C.DIM, f'·  level={tel.level}  ·  session={tel.session_id[:8]}')}"
+        )
         p()
 
     p(f"  {col(C.DIM, '─' * 40)}")
     p(f"  {col(C.DIM, 'Launching Claude Code...')}")
     p()
 
+
 # ── cmd_run ───────────────────────────────────────────────────────────────────
+
 
 def cmd_run(args: list) -> None:
     kit_names = []
@@ -315,10 +493,28 @@ def cmd_run(args: list) -> None:
     model = "opus"
     skip_permissions = False
     passthrough = []  # flags/args forwarded to claude as-is
+    auto_prompt = None  # --auto <prompt>: autonomous mode
+    ci_prompt = None  # --ci <prompt>: CI mode (JSONL output)
+    history = False  # --history: preserve pre-compact transcript
+    human_persona = None  # --human-persona <text>
+    human_model = None  # --human-model <model>
+    max_turns = 20  # --max-turns <int>
 
     # Flags we consume ourselves; everything else goes to claude.
-    OUR_KV_FLAGS = {"--kit", "-k", "--plugin", "-p", "--model", "-m"}
-    OUR_BOOL_FLAGS = {"--dangerously-skip-permissions", "--yolo", "-y"}
+    OUR_KV_FLAGS = {
+        "--kit",
+        "-k",
+        "--plugin",
+        "-p",
+        "--model",
+        "-m",
+        "--auto",
+        "--ci",
+        "--human-persona",
+        "--human-model",
+        "--max-turns",
+    }
+    OUR_BOOL_FLAGS = {"--dangerously-skip-permissions", "--yolo", "-y", "--history"}
 
     i = 0
     while i < len(args):
@@ -326,20 +522,55 @@ def cmd_run(args: list) -> None:
         if a in ("--kit", "-k"):
             i += 1
             if i >= len(args):
-                print("Error: --kit requires a name"); sys.exit(1)
+                print("Error: --kit requires a name")
+                sys.exit(1)
             kit_names.append(args[i])
         elif a in ("--plugin", "-p"):
             i += 1
             if i >= len(args):
-                print("Error: --plugin requires a name"); sys.exit(1)
+                print("Error: --plugin requires a name")
+                sys.exit(1)
             plugin_names_raw.append(args[i])
         elif a in ("--model", "-m"):
             i += 1
             if i >= len(args):
-                print("Error: --model requires a value"); sys.exit(1)
+                print("Error: --model requires a value")
+                sys.exit(1)
             model = args[i]
         elif a in ("--dangerously-skip-permissions", "--yolo", "-y"):
             skip_permissions = True
+        elif a == "--auto":
+            i += 1
+            if i >= len(args):
+                print("Error: --auto requires a prompt")
+                sys.exit(1)
+            auto_prompt = args[i]
+        elif a == "--ci":
+            i += 1
+            if i >= len(args):
+                print("Error: --ci requires a prompt")
+                sys.exit(1)
+            ci_prompt = args[i]
+        elif a == "--history":
+            history = True
+        elif a == "--human-persona":
+            i += 1
+            if i >= len(args):
+                print("Error: --human-persona requires a value")
+                sys.exit(1)
+            human_persona = args[i]
+        elif a == "--human-model":
+            i += 1
+            if i >= len(args):
+                print("Error: --human-model requires a value")
+                sys.exit(1)
+            human_model = args[i]
+        elif a == "--max-turns":
+            i += 1
+            if i >= len(args):
+                print("Error: --max-turns requires a value")
+                sys.exit(1)
+            max_turns = int(args[i])
         elif a.startswith("-"):
             # Unknown flag → pass through to claude
             passthrough.append(a)
@@ -353,7 +584,9 @@ def cmd_run(args: list) -> None:
         i += 1
 
     if not kit_names and not plugin_names_raw:
-        print("Error: Specify at least one kit with --kit <name> or plugin with --plugin <name>")
+        print(
+            "Error: Specify at least one kit with --kit <name> or plugin with --plugin <name>"
+        )
         p()
         cmd_list()
         sys.exit(1)
@@ -367,8 +600,10 @@ def cmd_run(args: list) -> None:
     for pname in plugin_names_raw:
         pdir = find_plugin_dir(pname)
         if pdir is None:
-            print(f"Error: Plugin '{pname}' not found in {PLUGINS_DIR}/ or {LOCAL_DIR}/",
-                  file=sys.stderr)
+            print(
+                f"Error: Plugin '{pname}' not found in {PLUGINS_DIR}/ or {LOCAL_DIR}/",
+                file=sys.stderr,
+            )
             p()
             cmd_list()
             sys.exit(1)
@@ -385,18 +620,28 @@ def cmd_run(args: list) -> None:
                     seen.add(plugin.name)
                     all_plugins.append(plugin.name)
         except PluginNotFoundError:
-            print(f"Error: Kit '{name}' not found in {PLUGINS_DIR}/ or {LOCAL_DIR}/",
-                  file=sys.stderr)
+            print(
+                f"Error: Kit '{name}' not found in {PLUGINS_DIR}/ or {LOCAL_DIR}/",
+                file=sys.stderr,
+            )
             p()
             cmd_list()
             sys.exit(1)
 
     os.environ["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] = "1"
-    os.environ["CLAUDE_KIT_HOME"]        = str(INSTALL_DIR)
+    os.environ["CLAUDE_KIT_HOME"] = str(INSTALL_DIR)
     os.environ["CLAUDE_KIT_BUNDLED_DIR"] = str(PLUGINS_DIR)
-    os.environ["CLAUDE_KIT_LOCAL_DIR"]   = str(LOCAL_DIR)
-    os.environ["CLAUDE_KIT_OUTPUT_DIR"]  = str(CK_OUTPUT_DIR)
-    os.environ["CLAUDE_KIT_MODE"]        = CK_MODE
+    os.environ["CLAUDE_KIT_LOCAL_DIR"] = str(LOCAL_DIR)
+    os.environ["CLAUDE_KIT_OUTPUT_DIR"] = str(CK_OUTPUT_DIR)
+    os.environ["CLAUDE_KIT_MODE"] = CK_MODE
+
+    # Dev mode: auto-enable debug traces (setup/restore are still manual)
+    if CK_MODE == "dev":
+        _debug_dest = pathlib.Path.home() / ".claude" / "rules" / "claude-kit-debug.md"
+        _debug_src = INSTALL_DIR / "scripts" / "rules" / "claude-kit-debug.md"
+        if not _debug_dest.exists() and _debug_src.exists():
+            _debug_dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(_debug_src, _debug_dest)
 
     LOCAL_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -405,22 +650,84 @@ def cmd_run(args: list) -> None:
         print("Install it first: https://claude.ai/code")
         sys.exit(1)
 
-    # ── Telemetry: emit plugin.loaded and session.start ──────────────
+    # ── Telemetry: preflight check, then emit events ─────────────────
     tel = _get_telemetry()
+    _preflight_telemetry(tel)
     cli_ver = _current_version()
     for pname in all_plugins:
         pdir = find_plugin_dir(pname)
         ctl = _read_ctl(pdir) if pdir else {}
-        tel.emit("plugin.loaded", {
-            "plugin": pname,
-            "role": ctl.get("role", "unknown"),
-            "domain": ctl.get("domain", "unknown"),
-        })
+        tel.emit(
+            "plugin.loaded",
+            {
+                "plugin": pname,
+                "role": ctl.get("role", "unknown"),
+                "domain": ctl.get("domain", "unknown"),
+            },
+        )
     tel.emit_session_start(all_plugins, cli_version=cli_ver)
 
     # Export session ID so downstream processes (test harness) can
     # locate the JSONL file for this session.
     os.environ["CLAUDE_KIT_SESSION_ID"] = tel.session_id
+
+    # Export telemetry credentials so plugin hooks (core-kit/scripts/*)
+    # can POST events to the API during the live Claude session.
+    os.environ["CK_SESSION_ID"] = tel.session_id
+    if tel.level == "full":
+        api_url = os.environ.get("CLAUDE_KIT_API_URL", "").rstrip("/")
+        api_key = os.environ.get("CLAUDE_KIT_API_KEY", "")
+        if not api_url and CK_MODE == "dev":
+            api_url = _DEV_API_URL
+        if not api_key and CK_MODE == "dev":
+            api_key = _ensure_dev_api_key()
+        if api_url:
+            os.environ["CK_API_URL"] = api_url
+        if api_key:
+            os.environ["CK_API_KEY"] = api_key
+
+    # ── Autonomous or CI mode: delegate to auto_runner subprocess ──────
+    if auto_prompt or ci_prompt:
+        _mode = "ci" if ci_prompt else "autonomous"
+        _prompt = ci_prompt or auto_prompt
+
+        runner_cmd = [
+            sys.executable,
+            "-m",
+            "test.engine.auto_runner",
+            "--prompt",
+            _prompt,
+            "--mode",
+            _mode,
+            "--model",
+            model,
+            "--max-turns",
+            str(max_turns),
+        ]
+
+        for pname in all_plugins:
+            pdir = find_plugin_dir(pname)
+            if pdir:
+                runner_cmd.extend(["--plugin-dir", str(pdir)])
+
+        if history:
+            runner_cmd.append("--history")
+        if human_persona:
+            runner_cmd.extend(["--human-persona", human_persona])
+        if human_model:
+            runner_cmd.extend(["--human-model", human_model])
+        if skip_permissions:
+            runner_cmd.extend(["--permission-mode", "bypassPermissions"])
+
+        _print_launch_header(all_plugins)
+        p(f"  {col(C.CY, 'Mode:')} {_mode}")
+        p()
+
+        result = subprocess.run(runner_cmd)
+        tel.emit_session_end()
+        _upload_telemetry(tel)
+        tel.close()
+        sys.exit(result.returncode)
 
     # Determine which plugins need decryption (encrypted at rest).
     decryptor = PluginDecryptor(key=_get_key())
@@ -465,7 +772,8 @@ def cmd_run(args: list) -> None:
 
         # Use subprocess.run so we can clean up the temp dir afterward.
         result = subprocess.run(claude_args)
-        tel.emit_session_end()
+        if tel.level != "full":
+            tel.emit_session_end()
         _upload_telemetry(tel)
         tel.close()
         _temp_mgr.cleanup()
@@ -489,12 +797,18 @@ def cmd_run(args: list) -> None:
             p()
 
         # In dev mode we use execvp which replaces this process.
-        tel.emit_session_end()
+        # When telemetry is full, DON'T emit session.end here — the
+        # core-kit Stop hook will emit it with real session data
+        # (tokens, cost, model, turns) from the Claude process.
+        if tel.level != "full":
+            tel.emit_session_end()
         _upload_telemetry(tel)
         tel.close()
         os.execvp("claude", claude_args)
 
+
 # ── cmd_list ──────────────────────────────────────────────────────────────────
+
 
 def _list_section(dirs: list, label: str, empty_msg: str) -> None:
     """Render one section (Bundled or Local) with grouped plugins and versions.
@@ -539,14 +853,13 @@ def _list_section(dirs: list, label: str, empty_msg: str) -> None:
             if VERBOSE:
                 p(f"  {col(C.DIM, 'claude-kit -k')} {col(C.W, prefix)}")
                 parts_str = sep.join(
-                    f"{col(C.CY, d.name[len(prefix)+1:])}  {col(C.DIM, plugin_version(d))}"
+                    f"{col(C.CY, d.name[len(prefix) + 1 :])}  {col(C.DIM, plugin_version(d))}"
                     for d in members
                 )
             else:
                 p(f"  {col(C.W, prefix)}")
                 parts_str = sep.join(
-                    f"{col(C.CY, d.name[len(prefix)+1:])}"
-                    for d in members
+                    f"{col(C.CY, d.name[len(prefix) + 1 :])}" for d in members
                 )
             p(f"    {parts_str}")
             p()
@@ -561,8 +874,7 @@ def _list_section(dirs: list, label: str, empty_msg: str) -> None:
             )
         else:
             parts_str = sep.join(
-                f"{col(C.DIM, d.name.removeprefix('core-'))}"
-                for d in core
+                f"{col(C.DIM, d.name.removeprefix('core-'))}" for d in core
             )
         p(f"    {parts_str}")
         p()
@@ -577,8 +889,7 @@ def _list_section(dirs: list, label: str, empty_msg: str) -> None:
             )
         else:
             parts_str = sep.join(
-                f"{col(C.DIM, d.name.removeprefix('system-'))}"
-                for d in system
+                f"{col(C.DIM, d.name.removeprefix('system-'))}" for d in system
             )
         p(f"    {parts_str}")
         p()
@@ -594,14 +905,19 @@ def _list_section(dirs: list, label: str, empty_msg: str) -> None:
                 p(f"  {col(C.W, d.name)}")
         p()
 
-def cmd_list() -> None:
-    bundled = sorted(
-        (d for d in PLUGINS_DIR.iterdir() if d.is_dir()), key=lambda x: x.name
-    ) if PLUGINS_DIR.exists() else []
 
-    local = sorted(
-        (d for d in LOCAL_DIR.iterdir() if d.is_dir()), key=lambda x: x.name
-    ) if LOCAL_DIR.exists() else []
+def cmd_list() -> None:
+    bundled = (
+        sorted((d for d in PLUGINS_DIR.iterdir() if d.is_dir()), key=lambda x: x.name)
+        if PLUGINS_DIR.exists()
+        else []
+    )
+
+    local = (
+        sorted((d for d in LOCAL_DIR.iterdir() if d.is_dir()), key=lambda x: x.name)
+        if LOCAL_DIR.exists()
+        else []
+    )
 
     total = len(bundled) + len(local)
 
@@ -625,9 +941,12 @@ def cmd_list() -> None:
 
 # ── cmd_update ────────────────────────────────────────────────────────────────
 
-def _show_changelog(changelog_path: pathlib.Path,
-                    since_tag: str | None = None,
-                    latest_only: bool | None = None) -> None:
+
+def _show_changelog(
+    changelog_path: pathlib.Path,
+    since_tag: str | None = None,
+    latest_only: bool | None = None,
+) -> None:
     """Parse CHANGELOG.md and display release entries newer than *since_tag*.
 
     If *since_tag* is ``None`` only the latest release entry is shown.
@@ -708,11 +1027,12 @@ def _show_changelog(changelog_path: pathlib.Path,
                 for cont in wrapped[1:]:
                     p(f"        {cont}")
 
+
 def _git(args: list) -> str:
     return subprocess.run(
-        ["git", "-C", str(INSTALL_DIR)] + args,
-        capture_output=True, text=True
+        ["git", "-C", str(INSTALL_DIR)] + args, capture_output=True, text=True
     ).stdout.strip()
+
 
 def _version_from_changelog(cl_path: pathlib.Path) -> str:
     """Extract latest version from CHANGELOG.md."""
@@ -725,6 +1045,7 @@ def _version_from_changelog(cl_path: pathlib.Path) -> str:
     except OSError:
         pass
     return "unknown"
+
 
 def _show_version_diff(old_versions: dict, new_versions: dict) -> None:
     """Display plugin version change summary."""
@@ -752,13 +1073,19 @@ def _show_version_diff(old_versions: dict, new_versions: dict) -> None:
         if nv is None:
             return f"{col(C.R, '−')} {role}  {col(C.R, '(removed)')}", True
         if ov is None:
-            return f"{col(C.G, '+')} {col(C.CY, role)}  {col(C.G, nv)}  {col(C.DIM, '(new)')}", True
+            return (
+                f"{col(C.G, '+')} {col(C.CY, role)}  {col(C.G, nv)}  {col(C.DIM, '(new)')}",
+                True,
+            )
         if ov != nv:
-            return f"{col(C.Y, '↑')} {col(C.CY, role)}  {col(C.Y, f'{ov} → {nv}')}", True
+            return (
+                f"{col(C.Y, '↑')} {col(C.CY, role)}  {col(C.Y, f'{ov} → {nv}')}",
+                True,
+            )
         return f"{col(C.DIM, f'{role} {nv}')}", False
 
     for prefix, members in sorted(groups.items()):
-        entries = [_ver_entry(n, n[len(prefix)+1:]) for n in members]
+        entries = [_ver_entry(n, n[len(prefix) + 1 :]) for n in members]
         if not VERBOSE:
             changed = [e for e, c in entries if c]
             if not changed:
@@ -777,24 +1104,33 @@ def _show_version_diff(old_versions: dict, new_versions: dict) -> None:
         if nv is None:
             p(f"  {col(C.R, '−')} {name}  {col(C.R, '(removed)')}")
         elif ov is None:
-            p(f"  {col(C.G, '+')} {col(C.CY, name)}  {col(C.G, nv)}  {col(C.DIM, '(new)')}")
+            p(
+                f"  {col(C.G, '+')} {col(C.CY, name)}  {col(C.G, nv)}  {col(C.DIM, '(new)')}"
+            )
         elif ov != nv:
             p(f"  {col(C.Y, '↑')} {col(C.CY, name)}  {col(C.Y, f'{ov} → {nv}')}")
         else:
             p(f"  {col(C.DIM, f'{name} {nv}')}")
 
+
 def _sync_installed_files() -> list:
     """Auto-update setup files (statusline, rules) if they changed."""
     auto_sync = [
-        ("statusline-command.sh",
-         INSTALL_DIR / "scripts" / "statusline-command.sh",
-         pathlib.Path.home() / ".claude" / "statusline-command.sh"),
-        ("claude-kit-autoroute.md",
-         INSTALL_DIR / "scripts" / "rules" / "claude-kit-autoroute.md",
-         pathlib.Path.home() / ".claude" / "rules" / "claude-kit-autoroute.md"),
-        ("claude-kit-debug.md",
-         INSTALL_DIR / "scripts" / "rules" / "claude-kit-debug.md",
-         pathlib.Path.home() / ".claude" / "rules" / "claude-kit-debug.md"),
+        (
+            "statusline-command.sh",
+            INSTALL_DIR / "scripts" / "statusline-command.sh",
+            pathlib.Path.home() / ".claude" / "statusline-command.sh",
+        ),
+        (
+            "claude-kit-autoroute.md",
+            INSTALL_DIR / "scripts" / "rules" / "claude-kit-autoroute.md",
+            pathlib.Path.home() / ".claude" / "rules" / "claude-kit-autoroute.md",
+        ),
+        (
+            "claude-kit-debug.md",
+            INSTALL_DIR / "scripts" / "rules" / "claude-kit-debug.md",
+            pathlib.Path.home() / ".claude" / "rules" / "claude-kit-debug.md",
+        ),
     ]
     synced = []
     for label, src, dest in auto_sync:
@@ -803,6 +1139,7 @@ def _sync_installed_files() -> list:
                 shutil.copy2(src, dest)
                 synced.append(label)
     return synced
+
 
 def _update_dev() -> None:
     """Dev-mode update: git pull (has .git directory)."""
@@ -813,7 +1150,9 @@ def _update_dev() -> None:
         for d in sorted(PLUGINS_DIR.iterdir()):
             if not d.is_dir():
                 continue
-            blob = _git(["show", f"{old_tag}:plugins/{d.name}/.claude-plugin/plugin.json"])
+            blob = _git(
+                ["show", f"{old_tag}:plugins/{d.name}/.claude-plugin/plugin.json"]
+            )
             if blob:
                 try:
                     old_versions[d.name] = json.loads(blob).get("version", "?")
@@ -825,11 +1164,13 @@ def _update_dev() -> None:
 
     subprocess.run(
         ["git", "-C", str(INSTALL_DIR), "fetch", "--tags", "--force", "-q", "origin"],
-        capture_output=True, text=True
+        capture_output=True,
+        text=True,
     )
     result = subprocess.run(
         ["git", "-C", str(INSTALL_DIR), "pull", "--ff-only"],
-        capture_output=True, text=True
+        capture_output=True,
+        text=True,
     )
 
     if result.returncode != 0:
@@ -851,7 +1192,9 @@ def _update_dev() -> None:
 
     n_commits = _git(["rev-list", f"{old_hash}..HEAD", "--count"]) or "?"
     commit_word = "commit" if n_commits == "1" else "commits"
-    p(f"  {col(C.G, '✓ Updated to')} {col(C.W, new_ver)}  {col(C.DIM, f'({n_commits} new {commit_word})')}")
+    p(
+        f"  {col(C.G, '✓ Updated to')} {col(C.W, new_ver)}  {col(C.DIM, f'({n_commits} new {commit_word})')}"
+    )
     p()
 
     changelog = INSTALL_DIR / "CHANGELOG.md"
@@ -878,7 +1221,9 @@ def _update_dev() -> None:
     p(f"  {col(C.G, 'Done.')}")
     p()
 
+
 REPO_SLUG = "MateoSegura/claude-kit"
+
 
 def _update_user() -> None:
     """User-mode update: clone to temp, encrypt, sync to install dir."""
@@ -906,12 +1251,18 @@ def _update_user() -> None:
         with open(tar_file, "wb") as tf:
             dl_result = subprocess.run(
                 ["gh", "api", f"repos/{REPO_SLUG}/tarball/main"],
-                stdout=tf, stderr=subprocess.PIPE, text=False,
+                stdout=tf,
+                stderr=subprocess.PIPE,
+                text=False,
             )
         if dl_result.returncode != 0 or tar_file.stat().st_size == 0:
             p(f"  {col(C.R, '✗ Download failed')}")
             p()
-            stderr_text = dl_result.stderr.decode("utf-8", errors="replace") if isinstance(dl_result.stderr, bytes) else (dl_result.stderr or "")
+            stderr_text = (
+                dl_result.stderr.decode("utf-8", errors="replace")
+                if isinstance(dl_result.stderr, bytes)
+                else (dl_result.stderr or "")
+            )
             for line in stderr_text.splitlines():
                 p(f"    {line}")
             p()
@@ -921,8 +1272,14 @@ def _update_user() -> None:
         extract_dir = pathlib.Path(tmp_dir) / "extract"
         extract_dir.mkdir()
         subprocess.run(
-            ["tar", "xzf", str(tar_file), "-C", str(extract_dir),
-             "--strip-components=1"],
+            [
+                "tar",
+                "xzf",
+                str(tar_file),
+                "-C",
+                str(extract_dir),
+                "--strip-components=1",
+            ],
             capture_output=True,
         )
         tar_file.unlink()
@@ -937,17 +1294,24 @@ def _update_user() -> None:
             p()
             return
 
-        p(f"  {col(C.G, '✓ Updated to')} {col(C.W, new_ver)}  {col(C.DIM, f'(from {old_ver})')}")
+        p(
+            f"  {col(C.G, '✓ Updated to')} {col(C.W, new_ver)}  {col(C.DIM, f'(from {old_ver})')}"
+        )
         p()
 
         # Encrypt plugins in the downloaded source
         encrypt_script = extract_dir / "scripts" / "encrypt-plugins.sh"
         if encrypt_script.exists():
             enc_result = subprocess.run(
-                ["bash", str(encrypt_script),
-                 "--plugins-dir", str(extract_dir / "plugins"),
-                 "--remove-plaintext"],
-                capture_output=True, text=True,
+                [
+                    "bash",
+                    str(encrypt_script),
+                    "--plugins-dir",
+                    str(extract_dir / "plugins"),
+                    "--remove-plaintext",
+                ],
+                capture_output=True,
+                text=True,
             )
             if enc_result.returncode != 0:
                 p(f"  {col(C.R, '✗ Encryption failed')}")
@@ -1009,6 +1373,7 @@ def _update_user() -> None:
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
+
 def cmd_update() -> None:
     p()
     p(f"  {col(C.W, 'claude-kit update')}")
@@ -1021,17 +1386,21 @@ def cmd_update() -> None:
     else:
         _update_user()
 
+
 # ── cmd_version ───────────────────────────────────────────────────────────────
 
 _version_mgr = VersionManager(INSTALL_DIR)
+
 
 def _current_version() -> str:
     """Return the version of the local claude-kit installation."""
     return _version_mgr.current_version()
 
+
 def _remote_version() -> str:
     """Return the latest version on origin/main."""
     return _version_mgr.remote_version() or "?"
+
 
 def cmd_version() -> None:
     local_ver = _current_version()
@@ -1043,7 +1412,8 @@ def cmd_version() -> None:
 
     fetch = subprocess.run(
         ["git", "-C", str(INSTALL_DIR), "fetch", "--tags", "-q", "origin"],
-        capture_output=True, text=True
+        capture_output=True,
+        text=True,
     )
 
     if fetch.returncode != 0:
@@ -1056,12 +1426,16 @@ def cmd_version() -> None:
     if local_ver == remote_ver:
         p(f"  {col(C.G, '✓')} Up to date  {col(C.DIM, f'({local_ver})')}")
     else:
-        p(f"  {col(C.Y, '↑')} Update available: {col(C.W, remote_ver)}  {col(C.DIM, f'(current: {local_ver})')}")
+        p(
+            f"  {col(C.Y, '↑')} Update available: {col(C.W, remote_ver)}  {col(C.DIM, f'(current: {local_ver})')}"
+        )
         p()
         p(f"  Run {col(C.CY, 'claude-kit update')} to upgrade.")
     p()
 
+
 # ── cmd_validate ──────────────────────────────────────────────────────────────
+
 
 def cmd_validate(args: list) -> None:
     validator = INSTALL_DIR / "scripts" / "validate-plugins.py"
@@ -1086,7 +1460,9 @@ def cmd_validate(args: list) -> None:
     )
     sys.exit(result.returncode)
 
+
 # ── Manifest helpers ──────────────────────────────────────────────────────────
+
 
 def _read_manifest():
     if not MANIFEST_FILE.exists():
@@ -1096,20 +1472,23 @@ def _read_manifest():
     except Exception:
         return None
 
+
 def _write_manifest(manifest: dict) -> None:
     MANIFEST_FILE.parent.mkdir(parents=True, exist_ok=True)
     MANIFEST_FILE.write_text(json.dumps(manifest, indent=2) + "\n")
 
+
 # ── cmd_setup ─────────────────────────────────────────────────────────────────
 
+
 def cmd_setup(args: list) -> None:
-    CLAUDE_DIR      = pathlib.Path.home() / ".claude"
-    RULES_DIR       = CLAUDE_DIR / "rules"
-    SETTINGS_FILE   = CLAUDE_DIR / "settings.json"
+    CLAUDE_DIR = pathlib.Path.home() / ".claude"
+    RULES_DIR = CLAUDE_DIR / "rules"
+    SETTINGS_FILE = CLAUDE_DIR / "settings.json"
     STATUSLINE_DEST = CLAUDE_DIR / "statusline-command.sh"
-    STATUSLINE_SRC  = INSTALL_DIR / "scripts" / "statusline-command.sh"
-    AUTOROUTE_DEST  = RULES_DIR / "claude-kit-autoroute.md"
-    AUTOROUTE_SRC   = INSTALL_DIR / "scripts" / "rules" / "claude-kit-autoroute.md"
+    STATUSLINE_SRC = INSTALL_DIR / "scripts" / "statusline-command.sh"
+    AUTOROUTE_DEST = RULES_DIR / "claude-kit-autoroute.md"
+    AUTOROUTE_SRC = INSTALL_DIR / "scripts" / "rules" / "claude-kit-autoroute.md"
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
@@ -1131,7 +1510,9 @@ def cmd_setup(args: list) -> None:
 
     # ── Statusline ─────────────────────────────────────────────────────────────
 
-    p(f"  {col(C.W, 'Status line')}  {col(C.DIM, 'ctx %, tokens, model in Claude Code footer')}")
+    p(
+        f"  {col(C.W, 'Status line')}  {col(C.DIM, 'ctx %, tokens, model in Claude Code footer')}"
+    )
     p()
 
     skip_statusline = False
@@ -1145,7 +1526,9 @@ def cmd_setup(args: list) -> None:
                 p(f"  {col(C.Y, '!')} Existing statusLine detected:")
                 p(f"      {col(C.DIM, existing_cmd)}")
                 p()
-                p(f"    {col(C.W, '[o]')} overwrite  {col(C.W, '[s]')} skip  {col(C.DIM, '(default: o)')}")
+                p(
+                    f"    {col(C.W, '[o]')} overwrite  {col(C.W, '[s]')} skip  {col(C.DIM, '(default: o)')}"
+                )
                 choice = input("    Choice: ").strip().lower() or "o"
                 if choice == "s":
                     skip_statusline = True
@@ -1172,11 +1555,16 @@ def cmd_setup(args: list) -> None:
 
         # Update settings.json
         try:
-            settings = json.loads(SETTINGS_FILE.read_text()) if SETTINGS_FILE.exists() else {}
+            settings = (
+                json.loads(SETTINGS_FILE.read_text()) if SETTINGS_FILE.exists() else {}
+            )
         except Exception:
             settings = {}
 
-        settings["statusLine"] = {"type": "command", "command": f"bash {STATUSLINE_DEST}"}
+        settings["statusLine"] = {
+            "type": "command",
+            "command": f"bash {STATUSLINE_DEST}",
+        }
         SETTINGS_FILE.write_text(json.dumps(settings, indent=2) + "\n")
 
         keys = manifest["settings_keys"].setdefault(str(SETTINGS_FILE), [])
@@ -1188,7 +1576,9 @@ def cmd_setup(args: list) -> None:
 
     # ── Auto-routing rules ────────────────────────────────────────────────────
 
-    p(f"  {col(C.W, 'Auto-routing')}  {col(C.DIM, 'natural language → skill invocation')}")
+    p(
+        f"  {col(C.W, 'Auto-routing')}  {col(C.DIM, 'natural language → skill invocation')}"
+    )
     p()
 
     skip_autoroute = False
@@ -1219,7 +1609,9 @@ def cmd_setup(args: list) -> None:
     p(f"  Undo anytime:  {col(C.CY, 'claude-kit restore')}")
     p()
 
+
 # ── cmd_restore ───────────────────────────────────────────────────────────────
+
 
 def cmd_restore(args: list) -> None:
     manifest = _read_manifest()
@@ -1234,8 +1626,8 @@ def cmd_restore(args: list) -> None:
     p(f"  {col(C.DIM, '─' * 40)}")
     p()
 
-    backups       = manifest.get("backups", {})
-    files_added   = manifest.get("files_added", [])
+    backups = manifest.get("backups", {})
+    files_added = manifest.get("files_added", [])
     settings_keys = manifest.get("settings_keys", {})
 
     if not backups and not files_added:
@@ -1248,9 +1640,11 @@ def cmd_restore(args: list) -> None:
         p()
         for orig, bak in backups.items():
             orig_path = pathlib.Path(orig)
-            bak_path  = pathlib.Path(bak)
+            bak_path = pathlib.Path(bak)
             keys = settings_keys.get(orig, [])
-            keys_str = f"  {col(C.DIM, '(keys: ' + ', '.join(keys) + ')')}" if keys else ""
+            keys_str = (
+                f"  {col(C.DIM, '(keys: ' + ', '.join(keys) + ')')}" if keys else ""
+            )
             p(f"    {col(C.CY, orig_path.name)}{keys_str}")
 
             # Diff: current vs what we'll restore
@@ -1258,10 +1652,15 @@ def cmd_restore(args: list) -> None:
                 try:
                     cur_lines = orig_path.read_text().splitlines(keepends=True)
                     bak_lines = bak_path.read_text().splitlines(keepends=True)
-                    diff = list(difflib.unified_diff(
-                        cur_lines, bak_lines,
-                        fromfile="current", tofile="backup", n=2
-                    ))
+                    diff = list(
+                        difflib.unified_diff(
+                            cur_lines,
+                            bak_lines,
+                            fromfile="current",
+                            tofile="backup",
+                            n=2,
+                        )
+                    )
                     if diff:
                         p(f"    {col(C.DIM, 'Diff (current → backup):')}")
                         for line in diff[:24]:
@@ -1273,7 +1672,7 @@ def cmd_restore(args: list) -> None:
                             else:
                                 p(f"      {col(C.DIM, line)}")
                         if len(diff) > 24:
-                            p(f"      {col(C.DIM, f'… {len(diff)-24} more lines')}")
+                            p(f"      {col(C.DIM, f'… {len(diff) - 24} more lines')}")
                 except Exception:
                     pass
             p()
@@ -1296,7 +1695,7 @@ def cmd_restore(args: list) -> None:
 
     for orig, bak in backups.items():
         orig_path = pathlib.Path(orig)
-        bak_path  = pathlib.Path(bak)
+        bak_path = pathlib.Path(bak)
         if bak_path.exists():
             shutil.copy2(bak_path, orig_path)
             p(f"  {col(C.G, '✓')} Restored {orig_path.name}")
@@ -1321,13 +1720,15 @@ def cmd_restore(args: list) -> None:
     p(f"  {col(C.G, 'Restore complete.')} All setup changes reverted.")
     p()
 
+
 # ── cmd_debug ─────────────────────────────────────────────────────────────────
 
+
 def cmd_debug(args: list) -> None:
-    CLAUDE_DIR  = pathlib.Path.home() / ".claude"
-    RULES_DIR   = CLAUDE_DIR / "rules"
-    DEBUG_DEST  = RULES_DIR / "claude-kit-debug.md"
-    DEBUG_SRC   = INSTALL_DIR / "scripts" / "rules" / "claude-kit-debug.md"
+    CLAUDE_DIR = pathlib.Path.home() / ".claude"
+    RULES_DIR = CLAUDE_DIR / "rules"
+    DEBUG_DEST = RULES_DIR / "claude-kit-debug.md"
+    DEBUG_SRC = INSTALL_DIR / "scripts" / "rules" / "claude-kit-debug.md"
 
     is_on = DEBUG_DEST.exists()
 
@@ -1390,7 +1791,9 @@ def cmd_debug(args: list) -> None:
         p(f"  Usage: {col(C.CY, 'claude-kit debug [on|off]')}")
         p()
 
+
 # ── cmd_feedback ──────────────────────────────────────────────────────────────
+
 
 def _feedback_ask(prompt: str, required: bool = True) -> str:
     """Ask a single question in the feedback flow. Returns empty string on cancel."""
@@ -1405,6 +1808,7 @@ def _feedback_ask(prompt: str, required: bool = True) -> str:
         p()
         p(f"  {col(C.DIM, 'Cancelled.')}")
         return ""
+
 
 def cmd_feedback() -> None:
     # Check gh is installed
@@ -1461,19 +1865,26 @@ def cmd_feedback() -> None:
     # 3. Details (type-specific)
     details = ""
     if fb_type == "bug":
-        details = _feedback_ask("What happened vs what you expected? (or press Enter to skip)", required=False)
+        details = _feedback_ask(
+            "What happened vs what you expected? (or press Enter to skip)",
+            required=False,
+        )
     elif fb_type == "feature":
-        details = _feedback_ask("What problem would this solve? (or press Enter to skip)", required=False)
+        details = _feedback_ask(
+            "What problem would this solve? (or press Enter to skip)", required=False
+        )
     else:
-        details = _feedback_ask("Any additional context? (or press Enter to skip)", required=False)
+        details = _feedback_ask(
+            "Any additional context? (or press Enter to skip)", required=False
+        )
     p()
 
     # 4. Build the issue
-    name  = _git(["config", "user.name"])  or "unknown"
+    name = _git(["config", "user.name"]) or "unknown"
     email = _git(["config", "user.email"]) or "unknown"
-    ver   = _current_version()
+    ver = _current_version()
     os_info = f"{platform.system()} {platform.release()}"
-    date  = datetime.now().strftime("%Y-%m-%d")
+    date = datetime.now().strftime("%Y-%m-%d")
 
     title = f"{title_prefix[fb_type]}: {summary[:60]}"
 
@@ -1517,21 +1928,38 @@ def cmd_feedback() -> None:
     # 6. Create issue
     label = label_map[fb_type]
     result = subprocess.run(
-        ["gh", "issue", "create",
-         "--repo", "MateoSegura/claude-kit",
-         "--title", title,
-         "--body", body,
-         "--label", label],
-        capture_output=True, text=True,
+        [
+            "gh",
+            "issue",
+            "create",
+            "--repo",
+            "MateoSegura/claude-kit",
+            "--title",
+            title,
+            "--body",
+            body,
+            "--label",
+            label,
+        ],
+        capture_output=True,
+        text=True,
     )
     if result.returncode != 0:
         # Retry without label (label may not exist)
         result = subprocess.run(
-            ["gh", "issue", "create",
-             "--repo", "MateoSegura/claude-kit",
-             "--title", title,
-             "--body", body],
-            capture_output=True, text=True,
+            [
+                "gh",
+                "issue",
+                "create",
+                "--repo",
+                "MateoSegura/claude-kit",
+                "--title",
+                title,
+                "--body",
+                body,
+            ],
+            capture_output=True,
+            text=True,
         )
 
     if result.returncode == 0:
@@ -1549,7 +1977,9 @@ def cmd_feedback() -> None:
         p()
         sys.exit(1)
 
+
 # ── cmd_roadmap ──────────────────────────────────────────────────────────────
+
 
 def cmd_roadmap() -> None:
     roadmap_file = INSTALL_DIR / "ROADMAP.md"
@@ -1597,7 +2027,7 @@ def cmd_roadmap() -> None:
             bold_end = rest_after_dash.find("**", 2)
             if bold_end > 0:
                 bold_text = rest_after_dash[2:bold_end]  # text inside **...**
-                remainder = rest_after_dash[bold_end + 2:]  # after closing **
+                remainder = rest_after_dash[bold_end + 2 :]  # after closing **
                 p(f"    {col(C.W, bold_text)}{col(section_color, remainder)}")
             else:
                 p(f"    {col(section_color, stripped[2:])}")
@@ -1612,7 +2042,9 @@ def cmd_roadmap() -> None:
     p(f"  {col(C.DIM, 'github.com/MateoSegura/claude-kit')}")
     p()
 
+
 # ── cmd_uninstall ─────────────────────────────────────────────────────────────
+
 
 def _remove_rc_lines(marker: str = "# claude-kit") -> list:
     """Remove the claude-kit PATH block from shell rc files. Returns cleaned files."""
@@ -1654,6 +2086,7 @@ def _remove_rc_lines(marker: str = "# claude-kit") -> list:
 
     return cleaned
 
+
 def cmd_uninstall() -> None:
     bin_link = pathlib.Path.home() / ".local" / "bin" / "claude-kit"
 
@@ -1664,7 +2097,9 @@ def cmd_uninstall() -> None:
     p(f"  This will remove:")
     p(f"    {col(C.R, chr(0x2022))} {INSTALL_DIR}  {col(C.DIM, '(plugins and CLI)')}")
     p(f"    {col(C.R, chr(0x2022))} {bin_link}  {col(C.DIM, '(symlink)')}")
-    p(f"    {col(C.R, chr(0x2022))} PATH entries in shell rc files  {col(C.DIM, '(~/.bashrc, ~/.zshrc)')}")
+    p(
+        f"    {col(C.R, chr(0x2022))} PATH entries in shell rc files  {col(C.DIM, '(~/.bashrc, ~/.zshrc)')}"
+    )
     p()
 
     confirm = input(f"  {col(C.W, 'Continue?')} [y/N] ").strip().lower()
@@ -1699,7 +2134,9 @@ def cmd_uninstall() -> None:
     p(f"  Until then, your shell may still try the old path.")
     p()
 
+
 # ── cmd_help ──────────────────────────────────────────────────────────────────
+
 
 def cmd_help() -> None:
     W, CY, DIM = C.W, C.CY, C.DIM
@@ -1716,6 +2153,14 @@ def cmd_help() -> None:
     {CY}claude-kit -k <name> --resume{C.N}                 {DIM}resume last session{C.N}
     {CY}claude-kit -k <name> --continue{C.N}               {DIM}continue last conversation{C.N}
 
+  {DIM}Session modes:{C.N}
+    {CY}claude-kit -k <name> --auto "prompt"{C.N}          {DIM}autonomous mode with HumanSimulator{C.N}
+    {CY}claude-kit -k <name> --ci "prompt"{C.N}            {DIM}CI mode with JSONL output{C.N}
+    {CY}claude-kit -k <name> --history{C.N}                {DIM}preserve full pre-compact transcript{C.N}
+    {CY}claude-kit -k <name> --human-persona "..."{C.N}    {DIM}persona for HumanSimulator{C.N}
+    {CY}claude-kit -k <name> --human-model <id>{C.N}       {DIM}model for HumanSimulator{C.N}
+    {CY}claude-kit -k <name> --max-turns <N>{C.N}          {DIM}max conversation turns (default: 20){C.N}
+
   {DIM}All flags not listed below are passed through to claude:{C.N}
     {CY}--resume, --continue, --print, --verbose, --output-format, ...{C.N}
 
@@ -1724,6 +2169,12 @@ def cmd_help() -> None:
     {CY}--plugin, -p <name>{C.N}    load exactly one plugin (no expansion, no auto-load)
     {CY}--model, -m <model>{C.N}    model to use (default: opus)
     {CY}-y, --yolo{C.N}             shorthand for --dangerously-skip-permissions
+    {CY}--auto "prompt"{C.N}       autonomous mode — AI completes task with HumanSimulator
+    {CY}--ci "prompt"{C.N}         CI mode — JSONL output for pipelines
+    {CY}--history{C.N}             preserve pre-compact transcript
+    {CY}--human-persona{C.N}      persona for HumanSimulator
+    {CY}--human-model{C.N}        model for HumanSimulator
+    {CY}--max-turns <N>{C.N}      max conversation turns (default: 20)
     {CY}-v, --verbose{C.N}          show full details (versions, hints, full changelog)
 
   {DIM}Commands:{C.N}
@@ -1739,7 +2190,9 @@ def cmd_help() -> None:
     {CY}claude-kit uninstall{C.N}          remove claude-kit and the CLI symlink
 """)
 
+
 # ── cmd_telemetry ─────────────────────────────────────────────────────────────
+
 
 def cmd_telemetry(args: list) -> None:
     """Toggle telemetry on/off, or set a specific level."""
@@ -1787,7 +2240,9 @@ def cmd_telemetry(args: list) -> None:
         p(f"  {col(C.G, '✓')} Telemetry {col(C.G, 'full')}")
         p()
         p(f"  Sessions write JSONL + upload to API on close.")
-        p(f"  Requires: {col(C.W, 'CLAUDE_KIT_API_URL')} and {col(C.W, 'CLAUDE_KIT_API_KEY')}")
+        p(
+            f"  Requires: {col(C.W, 'CLAUDE_KIT_API_URL')} and {col(C.W, 'CLAUDE_KIT_API_KEY')}"
+        )
         p(f"  Takes effect on next {col(C.CY, 'claude-kit --kit')} session.")
         p()
 
@@ -1808,6 +2263,7 @@ def cmd_telemetry(args: list) -> None:
 
 # ── cmd_telemetry_test ───────────────────────────────────────────────────────
 
+
 def cmd_telemetry_test() -> None:
     """Hidden smoke test for the telemetry emitter.
 
@@ -1823,8 +2279,12 @@ def cmd_telemetry_test() -> None:
     p()
 
     # Emit test events
-    tel.emit_session_start(["test-plugin-a", "test-plugin-b"], cli_version=_current_version())
-    tel.emit("skill.invoked", {"skill": "test-plugin-a:example-skill", "trigger": "explicit"})
+    tel.emit_session_start(
+        ["test-plugin-a", "test-plugin-b"], cli_version=_current_version()
+    )
+    tel.emit(
+        "skill.invoked", {"skill": "test-plugin-a:example-skill", "trigger": "explicit"}
+    )
     tel.emit_session_end()
     tel.close()
 
@@ -1843,25 +2303,33 @@ def cmd_telemetry_test() -> None:
         sys.exit(1)
 
     errors = []
-    required_keys = {"schema_version", "event_type", "timestamp", "session_id", "payload"}
+    required_keys = {
+        "schema_version",
+        "event_type",
+        "timestamp",
+        "session_id",
+        "payload",
+    }
     expected_types = ["session.start", "skill.invoked", "session.end"]
 
     for i, line in enumerate(lines):
         try:
             event = json.loads(line)
         except json.JSONDecodeError as e:
-            errors.append(f"  Line {i+1}: invalid JSON — {e}")
+            errors.append(f"  Line {i + 1}: invalid JSON — {e}")
             continue
 
         missing = required_keys - set(event.keys())
         if missing:
-            errors.append(f"  Line {i+1}: missing keys: {missing}")
+            errors.append(f"  Line {i + 1}: missing keys: {missing}")
 
         if event.get("event_type") != expected_types[i]:
-            errors.append(f"  Line {i+1}: expected type '{expected_types[i]}', got '{event.get('event_type')}'")
+            errors.append(
+                f"  Line {i + 1}: expected type '{expected_types[i]}', got '{event.get('event_type')}'"
+            )
 
         if event.get("session_id") != tel.session_id:
-            errors.append(f"  Line {i+1}: session_id mismatch")
+            errors.append(f"  Line {i + 1}: session_id mismatch")
 
     # Clean up test file
     jsonl_path.unlink(missing_ok=True)
@@ -1876,10 +2344,14 @@ def cmd_telemetry_test() -> None:
     p(f"  {col(C.G, '✓')} 3 events emitted and validated")
     p(f"  {col(C.DIM, f'  session_id: {tel.session_id}')}")
     p(f"  {col(C.DIM, f'  event types: {", ".join(expected_types)}')}")
-    p(f"  {col(C.DIM, f'  all events have: schema_version, event_type, timestamp, session_id, payload')}")
+    p(
+        f"  {col(C.DIM, f'  all events have: schema_version, event_type, timestamp, session_id, payload')}"
+    )
     p()
 
+
 # ── dispatch ──────────────────────────────────────────────────────────────────
+
 
 def _maybe_show_setup_banner() -> None:
     """Show a one-time banner when setup has not been run after install."""
@@ -1890,13 +2362,27 @@ def _maybe_show_setup_banner() -> None:
     B = C.Y  # border color
     p()
     p(f"  {col(B, '┌─────────────────────────────────────────────────────┐')}")
-    p(f"  {col(B, '│')}  Run  {col(C.CY, 'claude-kit setup')}  to configure Claude Code    {col(B, '│')}")
-    p(f"  {col(B, '│')}                                                     {col(B, '│')}")
-    p(f"  {col(B, '│')}  This will add to ~/.claude/:                       {col(B, '│')}")
-    p(f"  {col(B, '│')}    {col(C.DIM, '•')} {col(C.DIM, 'statusline (context %, tokens, model)')}          {col(B, '│')}")
-    p(f"  {col(B, '│')}    {col(C.DIM, '•')} {col(C.DIM, 'auto-routing rules (intent → skill matching)')}   {col(B, '│')}")
-    p(f"  {col(B, '│')}                                                     {col(B, '│')}")
-    p(f"  {col(B, '│')}  All changes can be undone with: {col(C.CY, 'claude-kit restore')} {col(B, '│')}")
+    p(
+        f"  {col(B, '│')}  Run  {col(C.CY, 'claude-kit setup')}  to configure Claude Code    {col(B, '│')}"
+    )
+    p(
+        f"  {col(B, '│')}                                                     {col(B, '│')}"
+    )
+    p(
+        f"  {col(B, '│')}  This will add to ~/.claude/:                       {col(B, '│')}"
+    )
+    p(
+        f"  {col(B, '│')}    {col(C.DIM, '•')} {col(C.DIM, 'statusline (context %, tokens, model)')}          {col(B, '│')}"
+    )
+    p(
+        f"  {col(B, '│')}    {col(C.DIM, '•')} {col(C.DIM, 'auto-routing rules (intent → skill matching)')}   {col(B, '│')}"
+    )
+    p(
+        f"  {col(B, '│')}                                                     {col(B, '│')}"
+    )
+    p(
+        f"  {col(B, '│')}  All changes can be undone with: {col(C.CY, 'claude-kit restore')} {col(B, '│')}"
+    )
     p(f"  {col(B, '└─────────────────────────────────────────────────────┘')}")
     p()
 
@@ -1909,13 +2395,24 @@ def main() -> None:
         cmd_help()
         return
 
-    cmd  = args[0]
+    cmd = args[0]
     rest = args[1:]
 
     # Extract -v/--verbose for subcommands (not for launch mode via cmd_run)
-    subcommands = {"list", "update", "version", "setup", "restore", "debug",
-                   "validate", "uninstall", "feedback", "roadmap",
-                   "telemetry", "telemetry-test"}
+    subcommands = {
+        "list",
+        "update",
+        "version",
+        "setup",
+        "restore",
+        "debug",
+        "validate",
+        "uninstall",
+        "feedback",
+        "roadmap",
+        "telemetry",
+        "telemetry-test",
+    }
     if cmd in subcommands:
         if "-v" in rest or "--verbose" in rest:
             VERBOSE = True
@@ -1932,18 +2429,18 @@ def main() -> None:
         _maybe_show_setup_banner()
 
     dispatch = {
-        "list":            lambda: cmd_list(),
-        "update":          lambda: cmd_update(),
-        "version":         lambda: cmd_version(),
-        "setup":           lambda: cmd_setup(rest),
-        "restore":         lambda: cmd_restore(rest),
-        "debug":           lambda: cmd_debug(rest),
-        "validate":        lambda: cmd_validate(rest),
-        "uninstall":       lambda: cmd_uninstall(),
-        "feedback":        lambda: cmd_feedback(),
-        "roadmap":         lambda: cmd_roadmap(),
-        "telemetry":       lambda: cmd_telemetry(rest),
-        "telemetry-test":  lambda: cmd_telemetry_test(),
+        "list": lambda: cmd_list(),
+        "update": lambda: cmd_update(),
+        "version": lambda: cmd_version(),
+        "setup": lambda: cmd_setup(rest),
+        "restore": lambda: cmd_restore(rest),
+        "debug": lambda: cmd_debug(rest),
+        "validate": lambda: cmd_validate(rest),
+        "uninstall": lambda: cmd_uninstall(),
+        "feedback": lambda: cmd_feedback(),
+        "roadmap": lambda: cmd_roadmap(),
+        "telemetry": lambda: cmd_telemetry(rest),
+        "telemetry-test": lambda: cmd_telemetry_test(),
     }
 
     if cmd in dispatch:
@@ -1954,6 +2451,7 @@ def main() -> None:
         # Any flag or positional not matching a subcommand goes to cmd_run,
         # which separates claude-kit flags from claude passthrough flags.
         cmd_run(args)
+
 
 if __name__ == "__main__":
     main()

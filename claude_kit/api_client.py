@@ -45,7 +45,12 @@ class APIClient:
         host = parsed.hostname or "localhost"
         port = parsed.port
         use_https = parsed.scheme == "https"
-        path = f"{parsed.path}/api/v1/telemetry/ingest"
+        # If base_url already ends with /api/v1, don't double it
+        base_path = parsed.path.rstrip("/")
+        if base_path.endswith("/api/v1"):
+            path = f"{base_path}/telemetry/ingest"
+        else:
+            path = f"{base_path}/api/v1/telemetry/ingest"
 
         for attempt in range(2):  # one retry on failure
             try:
@@ -77,7 +82,12 @@ class APIClient:
         host = parsed.hostname or "localhost"
         port = parsed.port
         use_https = parsed.scheme == "https"
-        path = f"{parsed.path}/healthz"
+        # Health endpoint is at root, not under /api/v1
+        base_path = parsed.path.rstrip("/")
+        if base_path.endswith("/api/v1"):
+            path = "/healthz"
+        else:
+            path = f"{base_path}/healthz"
 
         try:
             if use_https:

@@ -9,8 +9,15 @@ Thumbs.db
 # Build artifacts
 /tmp/claude-kit-build-*/
 
+# Node / Nx
+node_modules/
+.nx/
+.svelte-kit/
+build/
+
 # Local overrides
 *.local
+.claude/settings.local.json
 
 # Python runtime
 __pycache__/

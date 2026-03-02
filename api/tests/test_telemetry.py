@@ -72,6 +72,14 @@ def _make_events(
                 },
             },
             {
+                "event_type": "prompt.submitted",
+                "timestamp": (base_time + timedelta(seconds=10)).isoformat(),
+                "payload": {
+                    "prompt": "build a REST API",
+                    "turn": 1,
+                },
+            },
+            {
                 "event_type": "skill.invoked",
                 "timestamp": (base_time + timedelta(seconds=30)).isoformat(),
                 "payload": {"skill": "core-kit:routing", "trigger": "autoroute"},
@@ -193,7 +201,7 @@ class TestIngest:
         )
         assert resp.status_code == 202
         data = resp.json()
-        assert data["accepted"] == 13
+        assert data["accepted"] == 14
         assert data["session_id"] == "test-session-001"
 
     async def test_ingest_with_api_key(
@@ -206,7 +214,7 @@ class TestIngest:
             headers=api_key_headers,
         )
         assert resp.status_code == 202
-        assert resp.json()["accepted"] == 13
+        assert resp.json()["accepted"] == 14
 
     async def test_ingest_without_auth(self, client: AsyncClient):
         body = _make_events()
@@ -288,7 +296,7 @@ class TestSessions:
         assert resp.status_code == 200
         data = resp.json()
         assert data["session_id"] == "test-session-001"
-        assert data["event_count"] == 13
+        assert data["event_count"] == 14
 
     async def test_session_detail_not_found(
         self, client: AsyncClient, auth_headers: dict
@@ -312,8 +320,8 @@ class TestSessions:
         )
         assert resp.status_code == 200
         data = resp.json()
-        assert data["total"] == 13
-        assert len(data["events"]) == 13
+        assert data["total"] == 14
+        assert len(data["events"]) == 14
         # Events should be ordered by timestamp
         types = [e["event_type"] for e in data["events"]]
         assert types[0] == "session.start"
@@ -421,3 +429,85 @@ class TestMetrics:
     async def test_metrics_unauthenticated(self, client: AsyncClient):
         resp = await client.get("/api/v1/telemetry/metrics/summary")
         assert resp.status_code == 401
+
+
+class TestEventStream:
+    """Event stream endpoint tests."""
+
+    async def test_stream_all_events(self, client: AsyncClient, auth_headers: dict):
+        """First call without 'after' returns all events."""
+        await client.post(
+            "/api/v1/telemetry/ingest",
+            json=_make_events(),
+            headers=auth_headers,
+        )
+
+        resp = await client.get(
+            "/api/v1/telemetry/sessions/test-session-001/events/stream",
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total"] == 14
+        assert len(data["events"]) == 14
+        assert data["page"] == 1
+        assert data["per_page"] == 1000
+        # Events should be ordered by timestamp
+        types = [e["event_type"] for e in data["events"]]
+        assert types[0] == "session.start"
+        assert types[-1] == "session.end"
+
+    async def test_stream_with_after(self, client: AsyncClient, auth_headers: dict):
+        """Passing 'after' returns only events after that timestamp."""
+        await client.post(
+            "/api/v1/telemetry/ingest",
+            json=_make_events(),
+            headers=auth_headers,
+        )
+
+        # Get all events to find a midpoint timestamp
+        all_resp = await client.get(
+            "/api/v1/telemetry/sessions/test-session-001/events/stream",
+            headers=auth_headers,
+        )
+        all_events = all_resp.json()["events"]
+        midpoint_ts = all_events[5]["timestamp"]
+
+        # Now stream with after=midpoint
+        resp = await client.get(
+            "/api/v1/telemetry/sessions/test-session-001/events/stream",
+            params={"after": midpoint_ts},
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        # Should return fewer events (only those after the midpoint)
+        assert len(data["events"]) < 14
+        assert len(data["events"]) > 0
+        # Total should still reflect all session events
+        assert data["total"] == 14
+
+    async def test_stream_not_found(self, client: AsyncClient, auth_headers: dict):
+        resp = await client.get(
+            "/api/v1/telemetry/sessions/nonexistent/events/stream",
+            headers=auth_headers,
+        )
+        assert resp.status_code == 404
+
+    async def test_stream_prompt_submitted_event(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        """Verify prompt.submitted event type is accepted and returned."""
+        await client.post(
+            "/api/v1/telemetry/ingest",
+            json=_make_events(),
+            headers=auth_headers,
+        )
+
+        resp = await client.get(
+            "/api/v1/telemetry/sessions/test-session-001/events/stream",
+            headers=auth_headers,
+        )
+        assert resp.status_code == 200
+        types = [e["event_type"] for e in resp.json()["events"]]
+        assert "prompt.submitted" in types

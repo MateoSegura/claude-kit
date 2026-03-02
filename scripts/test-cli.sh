@@ -166,6 +166,25 @@ ROADMAP_FILE="$(cd "$(dirname "$0")/.." && pwd)/ROADMAP.md"
 if [ -f "$ROADMAP_FILE" ]; then _ok "ROADMAP.md exists"
 else _fail "ROADMAP.md exists" "file not found at $ROADMAP_FILE"; fi
 
+# ── session modes ────────────────────────────────────────────────────────────
+# --auto and --ci require a prompt argument
+expect_error  "--auto without prompt fails"     --kit embedded-zephyr-engineer --auto
+expect_error  "--ci without prompt fails"       --kit embedded-zephyr-engineer --ci
+
+# --human-persona, --human-model, --max-turns require values
+expect_error  "--human-persona without value"   --kit embedded-zephyr-engineer --human-persona
+expect_error  "--human-model without value"     --kit embedded-zephyr-engineer --human-model
+expect_error  "--max-turns without value"       --kit embedded-zephyr-engineer --max-turns
+
+# help text shows all session mode flags
+expect_output "help shows --auto"              "--auto" help
+expect_output "help shows --ci"                "--ci" help
+expect_output "help shows --history"           "--history" help
+expect_output "help shows --human-persona"     "--human-persona" help
+expect_output "help shows --human-model"       "--human-model" help
+expect_output "help shows --max-turns"         "--max-turns" help
+expect_output "help shows Session modes"       "Session modes" help
+
 # ── summary ───────────────────────────────────────────────────────────────────
 echo ""
 echo "  ──────────────────────────────────────"

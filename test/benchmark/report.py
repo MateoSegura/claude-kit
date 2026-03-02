@@ -69,6 +69,41 @@ def generate_markdown(report: PairwiseReport) -> str:
         "[95% bootstrap CI] [* = significant: CI excludes zero]",
     )
 
+    # Multi-turn conversation flow
+    if report.multi_turn_metrics:
+        lines.append("")
+        lines.append("## Conversation Flow")
+        lines.append("")
+        raw_m = report.multi_turn_metrics.get(report.raw_config, {})
+        kit_m = report.multi_turn_metrics.get(report.kit_config, {})
+        lines.append(
+            f"| Metric | {report.raw_config} | {report.kit_config} |",
+        )
+        lines.append("|---|---|---|")
+        for key, label in [
+            ("avg_turns", "Avg turns"),
+            ("avg_human_responses", "Avg human responses"),
+            ("avg_tool_calls", "Avg tool calls"),
+            ("avg_compaction_events", "Auto-compaction events"),
+        ]:
+            rv = raw_m.get(key, 0)
+            kv = kit_m.get(key, 0)
+            lines.append(f"| {label} | {rv} | {kv} |")
+
+    # Human simulator interaction samples
+    if report.conversation_samples:
+        lines.append("")
+        lines.append("## Human Simulator Interactions")
+        lines.append("")
+        lines.append("| Config | Turn | Question | Response |")
+        lines.append("|---|---|---|---|")
+        for s in report.conversation_samples[:10]:
+            q = s.get("question", "")[:60]
+            r = s.get("response", "")[:60]
+            lines.append(
+                f"| {s['config']} | {s['turn']} | {q} | {r} |",
+            )
+
     # Pairwise judge results if available
     if report.pairwise_judge:
         pj = report.pairwise_judge
@@ -106,6 +141,8 @@ def generate_json(report: PairwiseReport) -> dict[str, Any]:
         ],
         "kit_wins": report.kit_wins,
         "pairwise_judge": report.pairwise_judge,
+        "multi_turn_metrics": report.multi_turn_metrics,
+        "conversation_samples": report.conversation_samples,
     }
 
 

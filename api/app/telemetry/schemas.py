@@ -27,6 +27,9 @@ class EventType(StrEnum):
     TOOL_RESULT = "tool.result"
     MESSAGE_ASSISTANT = "message.assistant"
     MESSAGE_SYSTEM = "message.system"
+    PROMPT_SUBMITTED = "prompt.submitted"
+    SUBAGENT_START = "subagent.start"
+    SUBAGENT_STOP = "subagent.stop"
 
 
 class MetricsPeriod(StrEnum):

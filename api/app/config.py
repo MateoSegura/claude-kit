@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "claude-kit-api"
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
+    AUTO_CREATE_TABLES: bool = True
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

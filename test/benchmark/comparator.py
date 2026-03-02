@@ -35,6 +35,12 @@ class PairwiseReport:
     pairwise_judge: dict[str, Any] = field(
         default_factory=dict,
     )
+    multi_turn_metrics: dict[str, Any] = field(
+        default_factory=dict,
+    )
+    conversation_samples: list[dict[str, Any]] = field(
+        default_factory=list,
+    )
 
     @property
     def kit_wins(self) -> bool:
@@ -113,12 +119,22 @@ class PairwiseComparator:
         kit_avgs = self._per_run_averages(kit_results)
         overall = self.analyzer.compare(raw_avgs, kit_avgs)
 
+        # Multi-turn metrics
+        multi_turn = self._compute_multi_turn_metrics(
+            raw_results, kit_results, raw_config, kit_config
+        )
+        samples = self._collect_conversation_samples(
+            raw_results, kit_results, raw_config, kit_config
+        )
+
         return PairwiseReport(
             scenario_name=scenario_name,
             raw_config=raw_config,
             kit_config=kit_config,
             dimensions=dimensions,
             overall=overall,
+            multi_turn_metrics=multi_turn,
+            conversation_samples=samples,
         )
 
     def _group_by_dimension(
@@ -143,3 +159,70 @@ class PairwiseComparator:
                 avg = sum(s.score for s in scores) / len(scores)
                 avgs.append(avg)
         return avgs
+
+    def _compute_multi_turn_metrics(
+        self,
+        raw_results: list[tuple[RunResult, list[ScoringResult]]],
+        kit_results: list[tuple[RunResult, list[ScoringResult]]],
+        raw_config: str,
+        kit_config: str,
+    ) -> dict[str, Any]:
+        """Compute multi-turn conversation metrics for both configs."""
+
+        def _avg(vals: list[float]) -> float:
+            return sum(vals) / len(vals) if vals else 0.0
+
+        def _metrics(
+            results: list[tuple[RunResult, list[ScoringResult]]],
+        ) -> dict[str, float]:
+            turns = [float(r.turns) for r, _ in results]
+            human = [float(r.human_response_count) for r, _ in results]
+            tools = [float(r.tool_use_count) for r, _ in results]
+            compacts = [float(r.compact_count) for r, _ in results]
+            return {
+                "avg_turns": round(_avg(turns), 1),
+                "avg_human_responses": round(_avg(human), 1),
+                "avg_tool_calls": round(_avg(tools), 1),
+                "avg_compaction_events": round(_avg(compacts), 1),
+            }
+
+        return {
+            raw_config: _metrics(raw_results),
+            kit_config: _metrics(kit_results),
+        }
+
+    def _collect_conversation_samples(
+        self,
+        raw_results: list[tuple[RunResult, list[ScoringResult]]],
+        kit_results: list[tuple[RunResult, list[ScoringResult]]],
+        raw_config: str,
+        kit_config: str,
+    ) -> list[dict[str, Any]]:
+        """Collect human simulator interaction samples from both configs."""
+        samples: list[dict[str, Any]] = []
+
+        for config_name, results in [
+            (raw_config, raw_results),
+            (kit_config, kit_results),
+        ]:
+            for result, _ in results[:2]:  # Cap at 2 runs per config
+                for i, entry in enumerate(result.transcript):
+                    if entry.role != "human_sim":
+                        continue
+                    # Find preceding assistant message
+                    question = ""
+                    for j in range(i - 1, -1, -1):
+                        prev = result.transcript[j]
+                        if prev.role == "assistant":
+                            question = prev.content[:200]
+                            break
+                    samples.append(
+                        {
+                            "config": config_name,
+                            "turn": i,
+                            "question": question,
+                            "response": entry.content[:200],
+                        },
+                    )
+
+        return samples
