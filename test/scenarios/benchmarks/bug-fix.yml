@@ -1,0 +1,30 @@
+name: Pagination Bug Fix
+description: >
+  Focused scenario: fix an off-by-one error in pagination logic.
+  Tests debugging ability, targeted fix without over-engineering,
+  and test awareness. Should complete in 1-2 turns.
+
+model: claude-sonnet-4-20250514
+max_turns: 3
+max_tokens: 4096
+runs: 5
+
+prompt: >
+  Fix the off-by-one error in the pagination logic. The function
+  `paginate(items, page, page_size)` returns one fewer item on the
+  last page than expected. The issue is in the total_pages calculation:
+  `total_pages = len(items) // page_size` should use ceiling division.
+  Also update the test to verify the fix.
+
+configs:
+  - name: raw-claude
+    plugins: []
+
+  - name: cloud-python-kit
+    plugins:
+      - cloud-python-engineer
+      - cloud-python-knowledge
+
+expected_strings:
+  - "pagination"
+  - "ceiling"

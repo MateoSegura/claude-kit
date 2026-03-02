@@ -107,6 +107,7 @@ RUN curl -fsSL \
 
 # ── Python global packages ────────────────────────────────────────────────────
 RUN pip3 install --break-system-packages \
+    claude-code-sdk \
     httpx \
     mkdocs-material \
     pandas \

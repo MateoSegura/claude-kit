@@ -1,0 +1,25 @@
+name: JWT Auth Service (Multi-Turn)
+description: >
+  Tests plan approval and iterative refinement with scripted follow-ups.
+  Exercises the SessionDriver's multi-turn capability with deterministic
+  inputs. Claude should ask clarifying questions, and the scripted
+  follow-ups provide design decisions.
+
+model: claude-sonnet-4-20250514
+max_turns: 15
+runs: 1
+executor: session
+
+prompt: >
+  Implement JWT authentication for a FastAPI service. Include:
+  - User registration endpoint with password hashing
+  - Login endpoint returning access and refresh tokens
+  - Token refresh endpoint
+  - Protected route example using a dependency
+
+  Ask me about any design decisions before proceeding.
+
+follow_ups:
+  - "Use bcrypt for password hashing and RS256 for the JWT algorithm."
+  - "Yes, store refresh tokens in the database. Use SQLAlchemy for the ORM."
+  - "Add rate limiting to the login endpoint — 5 attempts per minute."

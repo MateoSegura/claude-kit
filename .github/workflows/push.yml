@@ -82,6 +82,13 @@ jobs:
       - name: Tier 1 — changed plugins
         run: python3 scripts/validate-plugins.py --changed --json
 
+      - name: Library unit tests
+        run: |
+          python3 -m venv .venv-lib
+          .venv-lib/bin/pip install -q -e ".[dev]"
+          .venv-lib/bin/python -m pytest test/ -v --tb=short \
+            --ignore=test/scenarios --ignore=test/src
+
       - name: API syntax check
         run: python3 -m py_compile api/app/main.py && echo "API syntax OK"
 

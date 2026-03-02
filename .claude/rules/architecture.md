@@ -141,6 +141,18 @@ install.sh                  # curl-based installer for end users
 CHANGELOG.md                # release history (Unreleased → versioned sections)
 ROADMAP.md                  # shipped releases + planned work
 README.md                   # repo-level documentation
+pyproject.toml              # root package definition (stdlib-only)
+
+claude_kit/                 # Python library package (stdlib-only)
+  __init__.py               # public API exports
+  models.py                 # Plugin, Session, TelemetryEvent dataclasses
+  telemetry.py              # TelemetryEmitter + event emission
+  api_client.py             # lightweight HTTP client for telemetry API
+  resolver.py               # PluginResolver (find, expand, companions)
+  session.py                # SessionManager (prepare, finalize)
+  encryption.py             # PluginDecryptor + TempDirManager
+  version.py                # VersionManager (current, remote)
+  exceptions.py             # PluginNotFoundError, DecryptionError, etc.
 
 plugins/                    # all plugins — core, team, and system
   core-*/                   # knowledge + system plugins
@@ -184,9 +196,32 @@ api/                        # FastAPI telemetry + auth service
   docker-compose.yml        # local dev with PostgreSQL
   pyproject.toml            # deps, pytest config, ruff config
 
-test/                       # test fixtures and scenarios
+test/                       # test fixtures, scenarios, and library unit tests
+  test_parity.py            # CLI/library parity enforcement tests
+  test_telemetry.py         # TelemetryEmitter + TelemetryEvent tests
+  test_api_client.py        # APIClient HTTP transport tests
+  test_resolver.py          # PluginResolver tests
+  test_session.py           # SessionManager tests
+  test_encryption.py        # PluginDecryptor + TempDirManager tests
+  test_version.py           # VersionManager tests
+  engine/                   # unified execution layer
+    config.py               # EvalScenario, RunConfig, RunResult, BenchmarkResult
+    executor.py             # ConversationExecutor (API conversation driver)
+    human.py                # HumanSimulator (Claude-backed human stand-in)
+    session_factory.py      # wraps claude_kit library for benchmark use
+  scoring/                  # scoring pipeline
+    base.py                 # Scorer protocol + ScoringResult
+    deterministic.py        # Contains, NoError, TelemetrySchema, TokenEfficiency
+    llm_judge.py            # LLM-as-Judge (individual + pairwise)
+    rubric.py               # Rubric definitions (YAML-loadable)
+    statistical.py          # Bootstrap CI, paired tests (stdlib only)
+  benchmark/                # orchestration + reporting
+    runner.py               # BenchmarkRunner (wires executor + scorers)
+    comparator.py           # PairwiseComparator (kit vs raw)
+    report.py               # JSON + markdown report generation
+    __main__.py             # CLI entry point for running benchmarks
   scenarios/                # test input scenarios (YAML format)
-  src/                      # test source helpers
+    benchmarks/             # benchmark scenario definitions
   results/                  # test output artifacts
 
 .devcontainer/              # developer environment (not for end users)

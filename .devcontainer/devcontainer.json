@@ -1,7 +1,7 @@
 {
   "name": "claude-kit",
   "image": "ghcr.io/mateosegura/dev-env-claude-kit:latest",
-  "postCreateCommand": "chmod +x .devcontainer/ctl.sh && .devcontainer/ctl.sh post-create",
+  "postCreateCommand": "chmod +x .devcontainer/ctl.sh && .devcontainer/ctl.sh post-create && npm install",
   "postStartCommand": "chmod +x .devcontainer/ctl.sh && .devcontainer/ctl.sh post-start",
   "runArgs": [
     "--init",
@@ -37,7 +37,9 @@
         "ms-azuretools.vscode-docker",
         "eamodio.gitlens",
         "usernamehw.errorlens",
-        "bierner.markdown-mermaid"
+        "bierner.markdown-mermaid",
+        "svelte.svelte-vscode",
+        "nrwl.angular-console"
       ]
     }
   }

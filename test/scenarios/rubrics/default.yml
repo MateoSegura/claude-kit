@@ -1,0 +1,33 @@
+name: default
+description: Standard quality rubric for benchmark evaluations
+
+dimensions:
+  - name: task_completion
+    weight: 1.5
+    description: Did it finish the requested task?
+    scoring_guide: "10: Fully complete. 7: Mostly complete with minor gaps. 4: Partially done. 0: Did not attempt."
+
+  - name: correctness
+    weight: 2.0
+    description: Is the code/answer technically correct?
+    scoring_guide: "10: Flawless. 7: Minor issues. 4: Significant errors. 0: Completely wrong."
+
+  - name: instruction_adherence
+    weight: 1.5
+    description: Did it follow constraints and instructions?
+    scoring_guide: "10: Followed all constraints. 7: Missed minor details. 4: Missed key constraints. 0: Ignored instructions."
+
+  - name: code_quality
+    weight: 1.0
+    description: Is the code idiomatic and maintainable?
+    scoring_guide: "10: Clean, idiomatic, well-structured. 7: Good but minor style issues. 4: Hard to read or maintain. 0: Unmaintainable."
+
+  - name: domain_awareness
+    weight: 1.0
+    description: Does it show domain knowledge?
+    scoring_guide: "10: Expert domain knowledge evident. 7: Good awareness. 4: Basic awareness. 0: No domain knowledge."
+
+  - name: efficiency
+    weight: 0.5
+    description: Did it avoid unnecessary steps?
+    scoring_guide: "10: Minimal, efficient approach. 7: Mostly efficient. 4: Some unnecessary work. 0: Extremely wasteful."

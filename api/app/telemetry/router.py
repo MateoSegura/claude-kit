@@ -85,16 +85,22 @@ async def _update_session_summary(
     )
     summary = result.scalar_one_or_none()
 
+    # Auto-create a SessionSummary on first event if none exists
+    if summary is None and events:
+        first_ts = min(e.timestamp for e in events)
+        summary = SessionSummary(
+            user_id=user_id,
+            session_id=session_id,
+            start_time=first_ts,
+            plugins_loaded=[],
+        )
+        db.add(summary)
+
     for event in events:
         if event.event_type == "session.start":
-            if summary is None:
-                summary = SessionSummary(
-                    user_id=user_id,
-                    session_id=session_id,
-                    start_time=event.timestamp,
-                    plugins_loaded=event.payload.get("plugins", []),
-                )
-                db.add(summary)
+            if summary is not None:
+                summary.start_time = event.timestamp
+                summary.plugins_loaded = event.payload.get("plugins", [])
 
         elif event.event_type == "session.end":
             if summary is not None:
@@ -104,6 +110,39 @@ async def _update_session_summary(
                 summary.hooks_fired = event.payload.get("hooks_fired", {})
                 summary.autorouter_matches = event.payload.get("autorouter_matches", 0)
                 summary.autorouter_misses = event.payload.get("autorouter_misses", 0)
+                summary.tool_uses = event.payload.get("tool_uses", {})
+                summary.mcp_calls = event.payload.get("mcp_calls", {})
+                summary.compact_count = event.payload.get("compact_count", 0)
+                summary.total_tokens_in = event.payload.get("total_tokens_in", 0)
+                summary.total_tokens_out = event.payload.get("total_tokens_out", 0)
+                summary.cost_usd = event.payload.get("cost_usd")
+                summary.model = event.payload.get("model")
+                summary.total_turns = event.payload.get("total_turns", 0)
+
+        elif event.event_type == "turn.completed" and summary is not None:
+            # Incrementally accumulate per-turn token/cost stats
+            summary.total_tokens_in = (
+                summary.total_tokens_in or 0
+            ) + event.payload.get("tokens_in", 0)
+            summary.total_tokens_out = (
+                summary.total_tokens_out or 0
+            ) + event.payload.get("tokens_out", 0)
+            cost = event.payload.get("cost_usd", 0)
+            if cost:
+                summary.cost_usd = (summary.cost_usd or 0) + cost
+            summary.total_turns = (summary.total_turns or 0) + 1
+            if event.payload.get("model"):
+                summary.model = event.payload["model"]
+
+        elif event.event_type == "plugin.loaded" and summary is not None:
+            name = event.payload.get("plugin") or event.payload.get("name", "")
+            if name and name not in (summary.plugins_loaded or []):
+                plugins = list(summary.plugins_loaded or [])
+                plugins.append(name)
+                summary.plugins_loaded = plugins
+
+        elif event.event_type == "session.compact" and summary is not None:
+            summary.compact_count = (summary.compact_count or 0) + 1
 
 
 # --- Sessions ---
@@ -235,6 +274,57 @@ async def get_session_events(
         events=[EventResponse.model_validate(e) for e in events],
         total=total,
         page=page,
+        per_page=per_page,
+    )
+
+
+@router.get(
+    "/sessions/{session_id}/events/stream", response_model=SessionEventsResponse
+)
+async def stream_session_events(
+    session_id: str,
+    after: datetime | None = None,
+    per_page: int = Query(1000, ge=1, le=1000),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Stream events for session replay with cursor-based polling."""
+    # Verify session belongs to user
+    session_check = await db.execute(
+        select(SessionSummary.id).where(
+            SessionSummary.session_id == session_id,
+            SessionSummary.user_id == user.id,
+        )
+    )
+    if session_check.scalar_one_or_none() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found",
+        )
+
+    query = select(TelemetryEvent).where(
+        TelemetryEvent.session_id == session_id,
+        TelemetryEvent.user_id == user.id,
+    )
+    if after is not None:
+        query = query.where(TelemetryEvent.timestamp > after)
+
+    query = query.order_by(TelemetryEvent.timestamp).limit(per_page)
+    result = await db.execute(query)
+    events = result.scalars().all()
+
+    count_result = await db.execute(
+        select(func.count(TelemetryEvent.id)).where(
+            TelemetryEvent.session_id == session_id,
+            TelemetryEvent.user_id == user.id,
+        )
+    )
+    total = count_result.scalar_one()
+
+    return SessionEventsResponse(
+        events=[EventResponse.model_validate(e) for e in events],
+        total=total,
+        page=1,
         per_page=per_page,
     )
 

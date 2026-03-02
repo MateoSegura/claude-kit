@@ -25,6 +25,16 @@ import os
 plugin_dir = os.path.join(args.plugins_dir, plugin_name)
 ```
 
+## Python — Library (`claude_kit/`)
+
+- Same style as the CLI: ruff formatted, f-strings, pathlib
+- **Zero runtime dependencies** — stdlib only
+- **No global state** — all state is instance-level (dependency injection)
+- **Docstrings required** on all public classes and methods (not private)
+- **Type hints required** on all public method signatures
+- **`from __future__ import annotations`** — use in every file for
+  forward reference support on Python 3.10
+
 ## Shell Scripts (`scripts/*.sh`, `plugins/*/scripts/*.sh`)
 
 Every shell script must start with these two lines:
@@ -68,6 +78,33 @@ failures.
 
 Skills that do not restrict tools omit the key entirely — do not add an empty
 `allowed-tools:` entry.
+
+## Python — Test Infrastructure (`test/`)
+
+Test files follow the same style rules as the library (ruff, f-strings, pathlib)
+but have **relaxed dependency rules**:
+
+- **`test/test_*.py`** (top-level unit tests) — stdlib + `pytest` only
+- **`test/engine/`**, **`test/scoring/`**, **`test/benchmark/`** — may import
+  `anthropic` and `pyyaml` for API-driven benchmarks and scoring
+
+Optional imports in test infrastructure files must use the guarded pattern:
+
+```python
+try:
+    import anthropic
+except ModuleNotFoundError:  # CI: anthropic not installed
+    anthropic = None  # type: ignore[assignment]
+```
+
+This preserves `unittest.mock.patch()` compatibility (the module-level attribute
+must exist) while allowing the code to import cleanly in CI where only `pytest`
+and `ruff` are installed. Tests that require these packages use
+`@pytest.mark.skipif` to skip gracefully.
+
+**Never** import `anthropic`, `pyyaml`, or any third-party package in
+`claude_kit/` (the library) or `claude-kit` (the CLI). These remain
+stdlib-only.
 
 ## Required Runtime Dependencies
 

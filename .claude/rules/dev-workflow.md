@@ -69,6 +69,10 @@ asked. Print:
 | `docs/**` | 4 | `bash scripts/validate-docs.sh` |
 | `scripts/validate-docs.sh` | 4 | `bash scripts/validate-docs.sh` |
 | `api/**` | 5 | `cd api && pip install -q -e ".[dev]" && python3 -m pytest -v --tb=short` |
+| `claude_kit/**` | 1, 6 | `python3 -m py_compile claude-kit && pytest test/` |
+| `pyproject.toml` (root) | 6 | `pytest test/` |
+| `test/test_*.py` (library tests) | 6 | `pytest test/` |
+| `test/engine/**`, `test/scoring/**`, `test/benchmark/**` | 6 | `pytest test/` |
 | Multiple zones | union of layers | Run each affected layer in order |
 
 If validation fails, **fix the issue before proceeding**. Do not commit broken
@@ -178,6 +182,8 @@ All `[codebase:]` prefixes at a glance:
 | `[codebase:version]` | Version bump assessment |
 | `[codebase:route]` | Developer command auto-routing |
 | `[codebase:ci]` | CI status monitoring |
+| `[codebase:stack]` | Local dev stack status (API + Dashboard + DB) |
+| `[codebase:stack-test]` | Verifying changes against live API |
 
 These print **alongside** the `[claude-kit:]` traces, not instead of them. A typical
 turn header looks like:
@@ -189,7 +195,85 @@ turn header looks like:
 
 ---
 
-## 10. Extension Point
+## 10. Local Dev Stack — API + Dashboard
+
+claude-kit has a remote component (the telemetry API) and a web dashboard that
+must be running during development. **Whenever the user requests a feature,
+bug fix, or any implementation work**, ensure the local dev stack is up before
+writing code.
+
+### Trigger
+
+Any user message that implies code changes — feature requests, bug fixes,
+refactoring, extending the CLI, modifying the API, or dashboard work. This
+includes messages like "implement X", "add Y", "fix Z", "build a feature",
+"extend the CLI", etc.
+
+### Action
+
+1. **Check stack status** — run the health-check script:
+   ```bash
+   bash scripts/dev-stack.sh status
+   ```
+2. **Start if needed** — if any component is down:
+   ```bash
+   bash scripts/dev-stack.sh up
+   ```
+3. **Print trace**:
+   ```
+   [codebase:stack] api: <up|down> (port 8000) | dashboard: <up|down> (port 5173) | db: <up|down> (port 5432)
+   ```
+
+### What the stack includes
+
+| Service | How | Port | Health check |
+|---------|-----|------|-------------|
+| PostgreSQL 16 | Docker Compose (`api/docker-compose.yml`) | 5432 | `pg_isready` via Docker |
+| Telemetry API | Docker Compose (same file) | 8000 | `GET /healthz` → `{"status":"ok"}` |
+| Dashboard | Vite dev server (`apps/dashboard/`) | 5173 | `GET /` → HTML response |
+
+### Network notes
+
+The devcontainer runs on bridge networking. The API container exposes ports on
+`0.0.0.0`, accessible from the devcontainer via the Docker gateway
+(`172.17.0.1`). The dashboard's Vite proxy is configured to forward `/api/*`
+and `/healthz` to the API via this gateway.
+
+### When NOT to auto-start
+
+- Pure research or read-only exploration (e.g., "what does X do?")
+- Plugin content editing (skills, agents, commands) that doesn't touch code
+- CI/release workflows
+- When the user explicitly says "don't start the stack"
+
+### Teardown
+
+Do not tear down the stack between tasks within a session. The stack should
+stay up for the duration of the development session. Only stop it when:
+- The user explicitly asks to stop it
+- The session is ending (commit + push complete)
+
+---
+
+## 11. Dev Stack Awareness in Testing
+
+After making changes to any of these zones, verify against the running API:
+
+| Changed zone | Additional verification |
+|-------------|----------------------|
+| `api/**` | Rebuild API container: `docker compose -f api/docker-compose.yml up -d --build api` |
+| `claude_kit/telemetry.py` | Verify events reach API: `curl -s http://172.17.0.1:8000/api/v1/telemetry/sessions` |
+| `claude_kit/api_client.py` | Verify HTTP transport works against live API |
+| `apps/dashboard/**` | Dashboard auto-reloads via Vite HMR — verify in browser or `curl localhost:5173` |
+
+Print trace:
+```
+[codebase:stack-test] verifying <zone> against live API...
+```
+
+---
+
+## 12. Extension Point
 
 To add new developer automation behaviors, add a new numbered section to this
 file following the pattern:

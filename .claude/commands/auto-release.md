@@ -225,20 +225,68 @@ Must be on main or a release/* branch.
 
 Stop here.
 
-## Step 4 — Tier 1 Validation (Strict)
+## Step 4 — Full Validation Suite
+
+<!-- Enriched by core-ai:instrument on 2026-03-02 — added: Layer 2-6 checks beyond Tier 1 -->
+
+Run the full CI validation suite. All steps must pass before proceeding.
+
+### 4a. Tier 1 plugin validation (strict)
 
 ```bash
 python3 scripts/validate-plugins.py --all --strict
 ```
 
-If failures are found:
+### 4b. Plugin consistency checks
+
+```bash
+bash scripts/test-plugin-consistency.sh
+```
+
+### 4c. CLI validation
+
+```bash
+python3 -m py_compile claude-kit && echo "Syntax OK"
+bash scripts/test-cli.sh
+```
+
+### 4d. Docs validation
+
+```bash
+bash scripts/validate-docs.sh
+```
+
+### 4e. Library unit tests
+
+```bash
+.venv-lib/bin/python -m pytest test/ -v --tb=short \
+  --ignore=test/scenarios --ignore=test/src
+```
+
+If `.venv-lib` does not exist, create it:
+```bash
+python3 -m venv .venv-lib && .venv-lib/bin/pip install -q -e ".[dev]"
+```
+
+### 4f. API tests
+
+```bash
+cd api && .venv/bin/python -m pytest -v --tb=short
+```
+
+If `api/.venv` does not exist, create it:
+```bash
+cd api && python3 -m venv .venv && .venv/bin/pip install -q -e ".[dev]"
+```
+
+If any step fails:
 1. Attempt auto-fixes (frontmatter keys, extra plugin.json fields, README
-   version badges)
-2. Re-run validation
+   version badges, syntax errors)
+2. Re-run the failing step
 3. If still failing:
 
 ```
-AUTO-RELEASE FAILED: Tier 1 validation errors remain after auto-fix.
+AUTO-RELEASE FAILED: validation errors remain after auto-fix.
 <paste validation output>
 ```
 
@@ -248,7 +296,7 @@ If auto-fixes were applied, commit them:
 
 ```bash
 git add -A
-git commit -m "fix: auto-fix tier 1 validation issues"
+git commit -m "fix: auto-fix validation issues"
 ```
 
 ## Step 5 — Semantic Impact Analysis
@@ -456,13 +504,17 @@ gh run view <FAILED_RUN_ID> --log 2>&1 | tail -300
 
 2. Diagnose and fix with Read + Edit.
 
-3. Verify locally:
+3. Verify locally — run all affected layers:
 
 ```bash
-python3 scripts/validate-plugins.py --all --strict
-bash scripts/test-cli.sh
-bash scripts/test-plugin-consistency.sh
 python3 -m py_compile claude-kit
+bash scripts/test-cli.sh
+python3 scripts/validate-plugins.py --all --strict
+bash scripts/test-plugin-consistency.sh
+bash scripts/validate-docs.sh
+.venv-lib/bin/python -m pytest test/ -v --tb=short \
+  --ignore=test/scenarios --ignore=test/src
+cd api && .venv/bin/python -m pytest -v --tb=short
 ```
 
 4. Re-commit, re-tag, re-push:

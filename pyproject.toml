@@ -1,0 +1,22 @@
+[project]
+name = "claude-kit"
+version = "0.14.0"
+description = "Plugin management and telemetry library for Claude Code"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.3.0", "ruff>=0.8.0"]
+
+[tool.setuptools.packages.find]
+include = ["claude_kit*"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["test"]

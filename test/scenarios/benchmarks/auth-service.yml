@@ -1,0 +1,32 @@
+name: JWT Authentication Service
+description: >
+  Complex scenario: implement JWT authentication for a FastAPI service.
+  Tests multi-step implementation, security awareness, and architectural
+  decisions. Expects human interaction (plan approval, clarification).
+
+model: claude-sonnet-4-20250514
+max_turns: 10
+max_tokens: 4096
+runs: 3
+
+prompt: >
+  Implement JWT authentication for our FastAPI service. We need:
+  1. User registration with email and password
+  2. Login endpoint that returns a JWT token
+  3. Protected route middleware that validates the token
+  4. Password hashing with a secure algorithm
+  Use Pydantic for request/response models.
+
+configs:
+  - name: raw-claude
+    plugins: []
+
+  - name: cloud-python-kit
+    plugins:
+      - cloud-python-engineer
+      - cloud-python-knowledge
+
+expected_strings:
+  - "JWT"
+  - "password"
+  - "token"
