@@ -11,7 +11,10 @@ import time
 from pathlib import Path
 from typing import Any
 
-import anthropic
+try:
+    import anthropic
+except ModuleNotFoundError:  # CI: anthropic not installed
+    anthropic = None  # type: ignore[assignment]
 
 from test.engine.config import EvalScenario, RunConfig, RunResult, Transcript
 from test.engine.human import HumanSimulator, NeedsInputResult

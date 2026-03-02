@@ -7,7 +7,10 @@ import random
 import re
 from typing import Any
 
-import anthropic
+try:
+    import anthropic
+except ModuleNotFoundError:  # CI: anthropic not installed
+    anthropic = None  # type: ignore[assignment]
 
 from test.engine.config import RunResult
 from test.scoring.base import ScoringResult
