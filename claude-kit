@@ -139,7 +139,7 @@ def _ensure_dev_api_key() -> str:
             if "access_token" in body:
                 token = body["access_token"]
                 break
-        except urllib.error.HTTPError:
+        except (urllib.error.HTTPError, urllib.error.URLError):
             continue
     else:
         print(
@@ -240,42 +240,105 @@ def _get_api_client() -> APIClient | None:
     return APIClient(base_url=api_url, api_key=api_key)
 
 
+def _autostart_dev_backend() -> bool:
+    """Start the API + DB via Docker Compose and wait for healthy.
+
+    Returns True if the API becomes healthy within 30 seconds.
+    """
+    compose_file = INSTALL_DIR / "api" / "docker-compose.yml"
+    if not compose_file.exists():
+        return False
+    print(
+        "  \033[33m⟳ Telemetry API not running — starting Docker Compose...\033[0m",
+        file=sys.stderr,
+    )
+    try:
+        subprocess.run(
+            ["docker", "compose", "-f", str(compose_file), "up", "-d"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=120,
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError,
+            KeyboardInterrupt):
+        return False
+
+    # Poll /healthz until the API is ready
+    for _ in range(30):
+        try:
+            resp = urllib.request.urlopen(
+                "http://172.17.0.1:8000/healthz", timeout=2
+            )
+            if resp.status == 200:
+                print(
+                    "  \033[32m✓ API is healthy\033[0m",
+                    file=sys.stderr,
+                )
+                return True
+        except (urllib.error.URLError, OSError):
+            pass
+        try:
+            time.sleep(1)
+        except KeyboardInterrupt:
+            return False
+    return False
+
+
 def _preflight_telemetry(tel: TelemetryEmitter) -> None:
     """Pre-launch check: if telemetry is full, verify the API is reachable.
 
-    Exits with error if the API is down in dev mode.
+    In dev mode, auto-starts the Docker Compose backend if the API is down.
+    Exits with error only if the API cannot be started.
     """
     if tel.level != "full":
         return
     client = _get_api_client()
     if client is None:
         return
-    if not client.healthcheck():
-        print(file=sys.stderr)
+    if client.healthcheck():
+        return
+
+    # API is down — attempt auto-start in dev mode
+    if CK_MODE == "dev" and _autostart_dev_backend():
+        # Re-provision the API key now that the backend is up
+        _DEV_API_KEY_FILE.unlink(missing_ok=True)
+        return
+
+    print(file=sys.stderr)
+    print(
+        f"  \033[31m✗ Telemetry API is not reachable\033[0m",
+        file=sys.stderr,
+    )
+    print(file=sys.stderr)
+    if CK_MODE == "dev":
         print(
-            f"  \033[31m✗ Telemetry API is not reachable\033[0m",
-            file=sys.stderr,
-        )
-        print(file=sys.stderr)
-        print(
-            f"  Dev mode requires a running API. Start it with:",
+            f"  Auto-start failed. Try manually:",
             file=sys.stderr,
         )
         print(
             f"    \033[36mbash scripts/dev-stack.sh up\033[0m",
             file=sys.stderr,
         )
-        print(file=sys.stderr)
+    else:
         print(
-            f"  Or disable telemetry for this run:",
+            f"  Start the API with:",
             file=sys.stderr,
         )
         print(
-            f"    \033[36mCLAUDE_KIT_TELEMETRY=off ./claude-kit --kit ...\033[0m",
+            f"    \033[36mbash scripts/dev-stack.sh up\033[0m",
             file=sys.stderr,
         )
-        print(file=sys.stderr)
-        sys.exit(1)
+    print(file=sys.stderr)
+    print(
+        f"  Or disable telemetry for this run:",
+        file=sys.stderr,
+    )
+    print(
+        f"    \033[36mCLAUDE_KIT_TELEMETRY=off ./claude-kit --kit ...\033[0m",
+        file=sys.stderr,
+    )
+    print(file=sys.stderr)
+    sys.exit(1)
 
 
 def _upload_telemetry(tel: TelemetryEmitter) -> bool:
